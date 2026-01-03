@@ -36,7 +36,7 @@ jobs:
         run: |
           echo "🌟 Fetching popular repos (5000+ stars)..."
           python -m scripts.ingest_data \
-            --repos-per-language 30 \
+            --repos-per-language 10 \
             --min-stars 5000
 
       # Mode 2: Fresh Issues - Issues from last week
