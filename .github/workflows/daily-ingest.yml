@@ -1,0 +1,75 @@
+name: Daily Data Ingestion
+
+on:
+  schedule:
+    # Runs daily at 10:00 AM UTC (5:00 AM EST)
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+    # Allows manual trigger from GitHub Actions tab
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: pip install -r requirements.txt
+
+      # Mode 1: Popular Only - Top-tier repos only
+      - name: "Ingest: Popular Repos (5000+ stars)"
+        working-directory: ./backend
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+          PINECONE_INDEX_NAME: ${{ secrets.PINECONE_INDEX_NAME }}
+        run: |
+          echo "🌟 Fetching popular repos (5000+ stars)..."
+          python -m scripts.ingest_data \
+            --repos-per-language 30 \
+            --min-stars 5000
+
+      # Mode 2: Fresh Issues - Issues from last week
+      - name: "Ingest: Fresh Issues (last 7 days)"
+        working-directory: ./backend
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+          PINECONE_INDEX_NAME: ${{ secrets.PINECONE_INDEX_NAME }}
+        run: |
+          echo "📅 Fetching fresh issues (last 7 days)..."
+          python -m scripts.ingest_data \
+            --repos-per-language 20 \
+            --recent-days 7
+
+      # Mode 3: Today's Issues - Daily fresh batch
+      - name: "Ingest: Today's Issues (last 24 hours)"
+        working-directory: ./backend
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+          PINECONE_INDEX_NAME: ${{ secrets.PINECONE_INDEX_NAME }}
+        run: |
+          echo "🔥 Fetching today's issues (last 24 hours)..."
+          python -m scripts.ingest_data \
+            --repos-per-language 50 \
+            --recent-days 1
+
+      - name: Log completion
+        run: |
+          echo "✅ All ingestion modes completed at $(date)"
+          echo "   - Popular repos (5000+ stars)"
+          echo "   - Fresh issues (7 days)"
+          echo "   - Today's issues (24 hours)"
