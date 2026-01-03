@@ -24,6 +24,16 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# Skip these large repos that trigger abuse detection
+SKIP_REPOS = {
+    "microsoft/vscode",
+    "home-assistant/core",
+    "flutter/flutter",
+    "kubernetes/kubernetes",
+    "tensorflow/tensorflow",
+    "facebook/react-native",
+}
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -113,12 +123,18 @@ def main():
             )
             
             for repo in repos:
+                # Skip very large repos that trigger abuse detection
+                if repo.full_name in SKIP_REPOS:
+                    logger.info(f"\nSkipping: {repo.full_name} (too large, causes rate limits)")
+                    continue
+                    
                 logger.info(f"\nProcessing: {repo.full_name} ({repo.stargazers_count} stars)")
                 
-                # Get ALL recent contribution issues (no max limit)
+                # Limit issues per repo to avoid rate limits
                 issues_metadata = fetcher.get_contribution_issues(
                     repo,
-                    recent_days=args.recent_days
+                    recent_days=args.recent_days,
+                    max_issues=50  # Cap at 50 issues per repo
                 )
                 
                 if not issues_metadata:
@@ -147,9 +163,9 @@ def main():
                 
                 logger.info(f"  Ingested {len(issues)} issues (total: {total_issues})")
                 
-                # Sleep briefly to avoid secondary rate limits (403 Forbidden)
-                # GitHub doesn't like rapid sequential requests to different repos
-                time.sleep(2)
+                # Sleep longer to avoid secondary rate limits (403 Forbidden)
+                # GitHub's abuse detection is aggressive
+                time.sleep(5)
                 
         except Exception as e:
             logger.error(f"Error processing {lang}: {e}")

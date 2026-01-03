@@ -2,14 +2,31 @@ name: Daily Data Ingestion
 
 on:
   schedule:
-    # Runs daily at 10:00 AM UTC (5:00 AM EST)
-    - cron: '0 10 * * *'
+    # Staggered schedules to avoid rate limits
+    - cron: '0 6 * * *'   # 6 AM UTC - Popular repos
+    - cron: '0 12 * * *'  # 12 PM UTC - Fresh issues
+    - cron: '0 18 * * *'  # 6 PM UTC - Today's issues
   workflow_dispatch:
-    # Allows manual trigger from GitHub Actions tab
+    inputs:
+      mode:
+        description: 'Ingestion mode to run'
+        required: true
+        default: 'popular'
+        type: choice
+        options:
+          - popular
+          - fresh
+          - today
+          - all
 
 jobs:
-  ingest:
+  # Job 1: Popular Repos (runs at 6 AM UTC or manually)
+  popular-repos:
     runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' && 
+      (github.event.inputs.mode == 'popular' || github.event.inputs.mode == 'all') ||
+      github.event.schedule == '0 6 * * *'
     
     steps:
       - name: Checkout repository
@@ -25,7 +42,6 @@ jobs:
         working-directory: ./backend
         run: pip install -r requirements.txt
 
-      # Mode 1: Popular Only - Top-tier repos only
       - name: "Ingest: Popular Repos (5000+ stars)"
         working-directory: ./backend
         env:
@@ -39,7 +55,28 @@ jobs:
             --repos-per-language 10 \
             --min-stars 5000
 
-      # Mode 2: Fresh Issues - Issues from last week
+  # Job 2: Fresh Issues (runs at 12 PM UTC or manually)
+  fresh-issues:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' && 
+      (github.event.inputs.mode == 'fresh' || github.event.inputs.mode == 'all') ||
+      github.event.schedule == '0 12 * * *'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: pip install -r requirements.txt
+
       - name: "Ingest: Fresh Issues (last 7 days)"
         working-directory: ./backend
         env:
@@ -50,10 +87,31 @@ jobs:
         run: |
           echo "📅 Fetching fresh issues (last 7 days)..."
           python -m scripts.ingest_data \
-            --repos-per-language 20 \
+            --repos-per-language 15 \
             --recent-days 7
 
-      # Mode 3: Today's Issues - Daily fresh batch
+  # Job 3: Today's Issues (runs at 6 PM UTC or manually)
+  todays-issues:
+    runs-on: ubuntu-latest
+    if: >
+      github.event_name == 'workflow_dispatch' && 
+      (github.event.inputs.mode == 'today' || github.event.inputs.mode == 'all') ||
+      github.event.schedule == '0 18 * * *'
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install dependencies
+        working-directory: ./backend
+        run: pip install -r requirements.txt
+
       - name: "Ingest: Today's Issues (last 24 hours)"
         working-directory: ./backend
         env:
@@ -64,12 +122,5 @@ jobs:
         run: |
           echo "🔥 Fetching today's issues (last 24 hours)..."
           python -m scripts.ingest_data \
-            --repos-per-language 50 \
+            --repos-per-language 30 \
             --recent-days 1
-
-      - name: Log completion
-        run: |
-          echo "✅ All ingestion modes completed at $(date)"
-          echo "   - Popular repos (5000+ stars)"
-          echo "   - Fresh issues (7 days)"
-          echo "   - Today's issues (24 hours)"

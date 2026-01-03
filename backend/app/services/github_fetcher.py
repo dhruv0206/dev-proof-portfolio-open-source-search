@@ -64,13 +64,15 @@ class GitHubFetcher:
     def get_contribution_issues(
         self, 
         repo: Repository,
-        recent_days: int = 90
+        recent_days: int = 90,
+        max_issues: int | None = None
     ) -> list[IssueMetadata]:
-        """Fetch ALL contribution issues with recent activity from a repo.
+        """Fetch contribution issues with recent activity from a repo.
         
         Args:
             repo: GitHub repository
             recent_days: Only fetch issues updated in the last N days
+            max_issues: Maximum number of issues to fetch (None = no limit)
         """
         issues = []
         
@@ -89,7 +91,13 @@ class GitHubFetcher:
                 since=since_date
             )
             
+            issue_count = 0
             for issue in open_issues:
+                # Check max limit
+                if max_issues and issue_count >= max_issues:
+                    logger.info(f"Reached max issues limit ({max_issues}) for {repo.full_name}")
+                    break
+                    
                 # Skip pull requests (they show up in issues API)
                 if issue.pull_request is not None:
                     continue
@@ -98,6 +106,7 @@ class GitHubFetcher:
                 if issue.updated_at.replace(tzinfo=timezone.utc) < since_date:
                     break  # Issues are sorted by updated, so we can stop
                 
+                issue_count += 1
                 # Check if has any contribution labels
                 issue_labels = [label.name.lower() for label in issue.labels]
                 has_contrib_label = any(
