@@ -9,15 +9,15 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'Ingestion mode to run'
+        description: 'Which ingestion mode to run?'
         required: true
-        default: 'popular'
+        default: '🌟 Popular Repos (5000+ stars)'
         type: choice
         options:
-          - popular
-          - fresh
-          - today
-          - all
+          - '🌟 Popular Repos (5000+ stars)'
+          - '📅 Fresh Issues (last 7 days)'
+          - '🔥 Todays Issues (last 24 hours)'
+          - '🚀 Run All Three'
 
 jobs:
   # Job 1: Popular Repos (runs at 6 AM UTC or manually)
@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' && 
-      (github.event.inputs.mode == 'popular' || github.event.inputs.mode == 'all') ||
+      (contains(github.event.inputs.mode, 'Popular') || contains(github.event.inputs.mode, 'All Three')) ||
       github.event.schedule == '0 6 * * *'
     
     steps:
@@ -60,7 +60,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' && 
-      (github.event.inputs.mode == 'fresh' || github.event.inputs.mode == 'all') ||
+      (contains(github.event.inputs.mode, 'Fresh') || contains(github.event.inputs.mode, 'All Three')) ||
       github.event.schedule == '0 12 * * *'
     
     steps:
@@ -95,7 +95,7 @@ jobs:
     runs-on: ubuntu-latest
     if: >
       github.event_name == 'workflow_dispatch' && 
-      (github.event.inputs.mode == 'today' || github.event.inputs.mode == 'all') ||
+      (contains(github.event.inputs.mode, 'Todays') || contains(github.event.inputs.mode, 'All Three')) ||
       github.event.schedule == '0 18 * * *'
     
     steps:
