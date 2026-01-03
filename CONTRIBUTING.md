@@ -80,11 +80,31 @@ Thank you for your interest in contributing! This project helps developers find 
    ```
 
 ### Commit Message Format
+
+**Always reference the issue number in your commit:**
+```bash
+git commit -m "Add: feature description (#123)"
+git commit -m "Fix: bug description (closes #45)"
+```
+
+Prefixes:
 - `Add:` for new features
 - `Fix:` for bug fixes
 - `Update:` for changes to existing features
 - `Refactor:` for code improvements
 - `Docs:` for documentation changes
+
+## ⚠️ AI-Generated Code Policy
+
+**AI-generated code MUST be reviewed and tested by a human before submitting.**
+
+- ✅ Use AI tools to help write code
+- ✅ Understand every line you submit
+- ✅ Test the code locally before PR
+- ❌ Don't submit AI output without reviewing it
+- ❌ Don't submit code you don't understand
+
+We welcome AI-assisted contributions, but **you are responsible for the code you submit**.
 
 ## 📂 Project Structure
 
