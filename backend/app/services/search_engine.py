@@ -119,11 +119,14 @@ class SearchEngine:
         except:
             recency_score = 0.5  # Default if parsing fails
         
-        # Combined weighted score
+        # Updated weights (User Request: Remove star bias by default)
+        # - 70% semantic relevance 
+        # - 30% recency
+        # - 0% popularity (stars excluded from default ranking)
         combined = (
-            0.40 * semantic_score +
-            0.35 * recency_score +
-            0.25 * stars_score
+            0.70 * semantic_score +
+            0.30 * recency_score +
+            0.00 * stars_score
         )
         
         return round(combined, 4)
