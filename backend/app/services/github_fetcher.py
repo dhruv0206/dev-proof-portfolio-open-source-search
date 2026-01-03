@@ -20,6 +20,21 @@ class GitHubFetcher:
         settings = get_settings()
         self.github = Github(settings.github_token)
         self.contribution_labels = settings.contribution_labels
+        self._rate_limited = False  # Track if we've hit rate limit
+    
+    def is_rate_limited(self) -> bool:
+        """Check if we've hit rate limit or have no remaining quota."""
+        if self._rate_limited:
+            return True
+        try:
+            rate_limit = self.github.get_rate_limit()
+            if rate_limit.core.remaining == 0:
+                logger.warning("⚠️ Rate limit exhausted (0 remaining). Stopping.")
+                self._rate_limited = True
+                return True
+        except GithubException:
+            pass
+        return False
         
     def get_top_repos(
         self, 
@@ -134,15 +149,24 @@ class GitHubFetcher:
         try:
             if repo.license:
                 license_name = repo.license.name
+        except GithubException as e:
+            if e.status in (403, 429):
+                self._rate_limited = True
+                logger.warning(f"⚠️ Rate limited while getting license for {repo.full_name}")
         except:
             pass
         
-        # Get topics
+        # Get topics - skip if rate limited
         topics = []
-        try:
-            topics = repo.get_topics()
-        except:
-            pass
+        if not self._rate_limited:
+            try:
+                topics = repo.get_topics()
+            except GithubException as e:
+                if e.status in (403, 429):
+                    self._rate_limited = True
+                    logger.warning(f"⚠️ Rate limited while getting topics for {repo.full_name}")
+            except:
+                pass
             
         return {
             "description": repo.description[:500] if repo.description else None,

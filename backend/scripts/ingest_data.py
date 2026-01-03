@@ -123,6 +123,11 @@ def main():
             )
             
             for repo in repos:
+                # Check if we've hit rate limit - exit gracefully
+                if fetcher.is_rate_limited():
+                    logger.warning("⛔ Rate limit hit - stopping ingestion early to save progress")
+                    break
+                    
                 # Skip very large repos that trigger abuse detection
                 if repo.full_name in SKIP_REPOS:
                     logger.info(f"\nSkipping: {repo.full_name} (too large, causes rate limits)")
