@@ -291,24 +291,6 @@ export default function Home() {
                 >
                   Dhruv
                 </a>
-                {' '}• Powered by{' '}
-                <a
-                  href="https://ai.google.dev/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  Gemini AI
-                </a>
-                {' '}&{' '}
-                <a
-                  href="https://www.pinecone.io/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-primary hover:underline"
-                >
-                  Pinecone
-                </a>
               </p>
             </div>
 
