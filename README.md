@@ -11,6 +11,7 @@ AI-powered search engine to discover open source contribution opportunities on G
 
 - **Frontend:** [opensource-search.vercel.app](https://opensource-search.vercel.app)
 - **Backend API:** [github-finder-backend-18267677210.us-central1.run.app/docs](https://github-finder-backend-18267677210.us-central1.run.app/docs)
+- **Discord:** [Join our community!](https://discord.gg/dZRFt9kN)
 ## ✨ Features
 
 - **Natural Language Search** - Find issues using plain English: "beginner Python issues in ML projects"
