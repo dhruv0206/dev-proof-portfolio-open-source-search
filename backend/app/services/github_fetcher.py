@@ -85,7 +85,7 @@ class GitHubFetcher:
         
         Args:
             repo: GitHub repository
-            recent_days: Only fetch issues updated in the last N days
+            recent_days: Only fetch issues updated in the last N days (can be fractional)
             max_issues: Maximum number of issues to fetch (None = no limit)
         """
         issues = []
@@ -135,8 +135,8 @@ class GitHubFetcher:
         except GithubException as e:
             # Check if this is a rate limit error (403 Forbidden or 429)
             if e.status in (403, 429):
-                logger.warning(f"⚠️ RATE LIMITED on {repo.full_name} - skipping repo (got {len(issues)} issues before limit)")
-                # Return whatever we got so far instead of waiting
+                logger.warning(f"⚠️ RATE LIMITED on {repo.full_name} - stopping")
+                self._rate_limited = True  # Signal to exit
                 return issues
             else:
                 logger.warning(f"Error fetching issues from {repo.full_name}: {e}")

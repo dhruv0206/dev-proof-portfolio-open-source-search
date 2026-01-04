@@ -66,8 +66,14 @@ def main():
     parser.add_argument(
         "--recent-days",
         type=int,
-        default=90,
-        help="Only fetch issues with activity in the last N days (default: 90)"
+        default=None,
+        help="Only fetch issues with activity in the last N days"
+    )
+    parser.add_argument(
+        "--recent-hours",
+        type=int,
+        default=None,
+        help="Only fetch issues with activity in the last N hours (overrides --recent-days)"
     )
     parser.add_argument(
         "--clear",
@@ -85,7 +91,14 @@ def main():
     logger.info(f"Min stars: {args.min_stars}")
     if args.min_contributors:
         logger.info(f"Min contributors: {args.min_contributors}")
-    logger.info(f"Issues with activity in last {args.recent_days} days")
+    
+    # Calculate recent_days from hours if specified
+    if args.recent_hours:
+        recent_days = args.recent_hours / 24.0
+        logger.info(f"Issues with activity in last {args.recent_hours} hours")
+    else:
+        recent_days = args.recent_days or 90
+        logger.info(f"Issues with activity in last {recent_days} days")
     
     # Initialize services
     fetcher = GitHubFetcher()
@@ -125,8 +138,9 @@ def main():
             for repo in repos:
                 # Check if we've hit rate limit - exit gracefully
                 if fetcher.is_rate_limited():
-                    logger.warning("⛔ Rate limit hit - stopping ingestion early to save progress")
-                    break
+                    logger.warning("⛔ Rate limit hit - stopping ingestion to save progress")
+                    logger.info(f"Total issues ingested before limit: {total_issues}")
+                    sys.exit(0)  # Exit cleanly, don't wait
                     
                 # Skip very large repos that trigger abuse detection
                 if repo.full_name in SKIP_REPOS:
@@ -138,7 +152,7 @@ def main():
                 # Limit issues per repo to avoid rate limits
                 issues_metadata = fetcher.get_contribution_issues(
                     repo,
-                    recent_days=args.recent_days,
+                    recent_days=recent_days,
                     max_issues=50  # Cap at 50 issues per repo
                 )
                 
