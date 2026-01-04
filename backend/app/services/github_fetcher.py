@@ -28,12 +28,14 @@ class GitHubFetcher:
             return True
         try:
             rate_limit = self.github.get_rate_limit()
-            if rate_limit.core.remaining == 0:
+            # Handle both 'core' (standard) and 'rate' (some versions/GHE)
+            core = getattr(rate_limit, 'core', getattr(rate_limit, 'rate', None))
+            if core and core.remaining == 0:
                 logger.warning("⚠️ Rate limit exhausted (0 remaining). Stopping.")
                 self._rate_limited = True
                 return True
-        except GithubException:
-            pass
+        except Exception as e:
+            logger.warning(f"Error checking rate limit: {e}")
         return False
         
     def get_top_repos(
@@ -142,6 +144,19 @@ class GitHubFetcher:
         logger.info(f"Found {len(issues)} contribution issues in {repo.full_name} (active in last {recent_days} days)")
         return issues
     
+    def get_issue_status(self, repo_full_name: str, issue_number: int) -> str | None:
+        """Fetch the current state (open/closed) of a specific issue.
+        
+        Returns 'open', 'closed', or None if fetching fails.
+        """
+        try:
+            repo = self.github.get_repo(repo_full_name)
+            issue = repo.get_issue(issue_number)
+            return issue.state
+        except Exception as e:
+            logger.warning(f"Error checking status for {repo_full_name}#{issue_number}: {e}")
+            return None
+    
     def _get_repo_info(self, repo: Repository) -> dict:
         """Extract repo-level info once for all issues."""
         # Get license
@@ -229,11 +244,14 @@ class GitHubFetcher:
         """Get current rate limit status."""
         try:
             rate_limit = self.github.get_rate_limit()
+            core = getattr(rate_limit, 'core', getattr(rate_limit, 'rate', None))
+            search = getattr(rate_limit, 'search', None)
+            
             return {
-                "core_remaining": getattr(getattr(rate_limit, 'core', rate_limit.rate), 'remaining', 0),
-                "core_limit": getattr(getattr(rate_limit, 'core', rate_limit.rate), 'limit', 0),
-                "search_remaining": getattr(getattr(rate_limit, 'search', None), 'remaining', 0) if hasattr(rate_limit, 'search') else 0,
-                "search_limit": getattr(getattr(rate_limit, 'search', None), 'limit', 0) if hasattr(rate_limit, 'search') else 0
+                "core_remaining": core.remaining if core else 0,
+                "core_limit": core.limit if core else 0,
+                "search_remaining": search.remaining if search else 0,
+                "search_limit": search.limit if search else 0
             }
         except Exception as e:
             logger.warning(f"Could not get rate limit: {e}")

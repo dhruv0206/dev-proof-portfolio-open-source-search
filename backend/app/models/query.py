@@ -59,6 +59,7 @@ class SearchResult(BaseModel):
     repo_description: str | None = None
     repo_topics: list[str] = []
     repo_license: str | None = None
+    state: str = "open"
 
 
 class PaginatedResponse(BaseModel):
