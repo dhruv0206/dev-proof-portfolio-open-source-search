@@ -42,6 +42,9 @@ class IssueMetadata(BaseModel):
     is_good_first_issue: bool = False
     is_help_wanted: bool = False
     
+    # Ingestion metadata
+    ingested_at: int = 0  # Unix timestamp
+    
     @computed_field
     @property
     def created_at_ts(self) -> int:

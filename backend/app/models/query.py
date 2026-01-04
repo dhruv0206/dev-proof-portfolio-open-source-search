@@ -15,8 +15,7 @@ class SearchQuery(BaseModel):
     language: str | None = None
     labels: list[str] | None = None
     sort_by: Literal["stars", "recency", "relevance"] | None = None
-    days_ago: int | None = None
-
+    days_ago: float | None = None
 
 class ParsedQuery(BaseModel):
     """Structured query parsed from natural language."""
@@ -28,7 +27,7 @@ class ParsedQuery(BaseModel):
     labels: list[str] | None = None
     difficulty: Literal["beginner", "intermediate", "advanced"] | None = None
     sort_by: Literal["stars", "recency", "relevance"] = "relevance"
-    days_ago: int | None = None  # Filter issues updated within X days
+    days_ago: float | None = None  # Filter issues updated within X days
     unassigned_only: bool = False  # Only show unassigned issues
     topics: list[str] | None = None  # GitHub repo topics filter
 

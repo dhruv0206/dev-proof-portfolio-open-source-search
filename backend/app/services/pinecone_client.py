@@ -61,7 +61,7 @@ class PineconeClient:
                 vectors.append({
                     "id": issue.id,
                     "values": issue.embedding,
-                    "metadata": issue.metadata.model_dump()
+                    "metadata": issue.metadata.model_dump(exclude_none=True)
                 })
                 
             self.index.upsert(vectors=vectors)

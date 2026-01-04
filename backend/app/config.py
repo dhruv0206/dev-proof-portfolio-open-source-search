@@ -7,8 +7,13 @@ from functools import lru_cache
 class Settings(BaseSettings):
     """Application settings."""
     
-    # GitHub
-    github_token: str
+    # GitHub (legacy token - keep for fallback)
+    github_token: str | None = None
+    
+    # GitHub App (preferred) - use GH_ prefix to avoid Actions naming conflict
+    gh_app_id: int | None = None
+    gh_private_key: str | None = None  # PEM content as string
+    gh_private_key_path: str | None = None # Path to PEM file (for local dev)
     
     # Gemini
     gemini_api_key: str

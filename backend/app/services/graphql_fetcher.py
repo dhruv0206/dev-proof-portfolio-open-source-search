@@ -1,0 +1,338 @@
+"""GitHub GraphQL API fetcher for efficient issue discovery."""
+
+import logging
+import time
+import jwt
+import requests
+from datetime import datetime, timezone, timedelta
+from typing import Optional
+
+from app.config import get_settings
+from app.models.issue import IssueMetadata
+
+logger = logging.getLogger(__name__)
+
+GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
+
+# GraphQL query for searching issues
+SEARCH_ISSUES_QUERY = """
+query SearchIssues($query: String!, $cursor: String) {
+  rateLimit {
+    remaining
+    resetAt
+  }
+  search(query: $query, type: ISSUE, first: 100, after: $cursor) {
+    issueCount
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    nodes {
+      ... on Issue {
+        id
+        number
+        title
+        body
+        state
+        createdAt
+        updatedAt
+        url
+        labels(first: 10) {
+          nodes {
+            name
+          }
+        }
+        assignees(first: 5) {
+          nodes {
+            login
+          }
+        }
+        comments {
+          totalCount
+        }
+        repository {
+          name
+          nameWithOwner
+          stargazerCount
+          forkCount
+          url
+          primaryLanguage {
+            name
+          }
+          description
+          licenseInfo {
+            name
+          }
+          repositoryTopics(first: 10) {
+            nodes {
+              topic {
+                name
+              }
+            }
+          }
+          openIssues: issues(states: OPEN) {
+            totalCount
+          }
+        }
+      }
+    }
+  }
+}
+"""
+
+
+class GraphQLFetcher:
+    """Fetches issues using GitHub GraphQL API for efficiency."""
+    
+    def __init__(self):
+        settings = get_settings()
+        self.app_id = settings.gh_app_id
+        
+        # Resolve private key
+        self.private_key = settings.gh_private_key
+        
+        # Prefer file path if set (fixes local dev .env issues)
+        if settings.gh_private_key_path:
+            try:
+                with open(settings.gh_private_key_path, "r") as f:
+                    self.private_key = f.read()
+            except Exception as e:
+                logger.warning(f"Failed to read private key from {settings.gh_private_key_path}: {e}")
+                
+        self.token = settings.github_token
+        self._installation_token = None
+        self._token_expires_at = None
+        
+    def _generate_jwt(self) -> str:
+        """Generate a JWT for GitHub App authentication."""
+        now = int(time.time())
+        payload = {
+            "iat": now - 60,  # Issued 60 seconds ago
+            "exp": now + (10 * 60),  # Expires in 10 minutes
+            "iss": self.app_id
+        }
+        return jwt.encode(payload, self.private_key, algorithm="RS256")
+    
+    def _get_installation_token(self) -> str:
+        """Get an installation token for API requests."""
+        # If we have a valid token, reuse it
+        if self._installation_token and self._token_expires_at:
+            if datetime.now(timezone.utc) < self._token_expires_at - timedelta(minutes=5):
+                return self._installation_token
+        
+        # Generate JWT
+        jwt_token = self._generate_jwt()
+        
+        # Get installations
+        response = requests.get(
+            "https://api.github.com/app/installations",
+            headers={
+                "Authorization": f"Bearer {jwt_token}",
+                "Accept": "application/vnd.github+json"
+            }
+        )
+        response.raise_for_status()
+        installations = response.json()
+        
+        if not installations:
+            raise ValueError("No installations found. Install the app on your account first.")
+        
+        installation_id = installations[0]["id"]
+        
+        # Get installation access token
+        response = requests.post(
+            f"https://api.github.com/app/installations/{installation_id}/access_tokens",
+            headers={
+                "Authorization": f"Bearer {jwt_token}",
+                "Accept": "application/vnd.github+json"
+            }
+        )
+        response.raise_for_status()
+        token_data = response.json()
+        
+        self._installation_token = token_data["token"]
+        self._token_expires_at = datetime.fromisoformat(
+            token_data["expires_at"].replace("Z", "+00:00")
+        )
+        
+        logger.info(f"Got installation token, expires at {self._token_expires_at}")
+        return self._installation_token
+    
+    def _get_auth_token(self) -> str:
+        """Get the best available auth token."""
+        if self.app_id and self.private_key:
+            try:
+                return self._get_installation_token()
+            except Exception as e:
+                logger.warning(f"Failed to get installation token: {e}")
+        
+        if self.token:
+            return self.token
+        
+        raise ValueError("No GitHub authentication available")
+    
+    def _execute_query(self, query: str, variables: dict) -> dict:
+        """Execute a GraphQL query."""
+        token = self._get_auth_token()
+        
+        response = requests.post(
+            GITHUB_GRAPHQL_URL,
+            json={"query": query, "variables": variables},
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json"
+            }
+        )
+        
+        if response.status_code == 403:
+            logger.error("Rate limited by GitHub")
+            raise Exception("GitHub rate limit exceeded")
+        
+        response.raise_for_status()
+        result = response.json()
+        
+        if "errors" in result:
+            logger.error(f"GraphQL errors: {result['errors']}")
+            raise Exception(f"GraphQL error: {result['errors']}")
+        
+        # Log rate limit info
+        rate_limit = result.get("data", {}).get("rateLimit", {})
+        if rate_limit:
+            logger.info(f"GraphQL rate limit remaining: {rate_limit.get('remaining')}")
+        
+        return result
+    
+    def search_issues(
+        self,
+        language: str | None = None,
+        label: str | None = "good first issue",
+        min_stars: int = 100,
+        updated_within_hours: int | None = None,
+        updated_within_days: int | None = None,
+        max_issues: int = 100
+    ) -> list[IssueMetadata]:
+        """
+        Search for contribution-friendly issues using GraphQL.
+        
+        Much more efficient than REST - fetches 100 issues per request
+        with full repository data included.
+        """
+        # Build search query
+        query_parts = [
+            "is:issue",
+            "is:open",
+            f"stars:>={min_stars}"
+        ]
+        
+        if label:
+            query_parts.append(f'label:"{label}"')
+        
+        if language:
+            query_parts.append(f"language:{language}")
+        
+        if updated_within_hours:
+            since = datetime.now(timezone.utc) - timedelta(hours=updated_within_hours)
+            query_parts.append(f"updated:>{since.strftime('%Y-%m-%d')}")
+        elif updated_within_days:
+            since = datetime.now(timezone.utc) - timedelta(days=updated_within_days)
+            query_parts.append(f"updated:>{since.strftime('%Y-%m-%d')}")
+        
+        search_query = " ".join(query_parts)
+        logger.info(f"GraphQL search: {search_query}")
+        
+        all_issues = []
+        cursor = None
+        
+        while len(all_issues) < max_issues:
+            result = self._execute_query(
+                SEARCH_ISSUES_QUERY,
+                {"query": search_query, "cursor": cursor}
+            )
+            
+            search_data = result["data"]["search"]
+            nodes = search_data["nodes"]
+            
+            for node in nodes:
+                if node is None:
+                    continue
+                    
+                try:
+                    metadata = self._node_to_metadata(node)
+                    all_issues.append(metadata)
+                except Exception as e:
+                    logger.warning(f"Failed to parse issue: {e}")
+                
+                if len(all_issues) >= max_issues:
+                    break
+            
+            # Check pagination
+            page_info = search_data["pageInfo"]
+            if not page_info["hasNextPage"]:
+                break
+            
+            cursor = page_info["endCursor"]
+            
+            # Small delay between pages
+            time.sleep(0.5)
+        
+        logger.info(f"Found {len(all_issues)} issues for query: {search_query}")
+        return all_issues
+    
+    def _node_to_metadata(self, node: dict) -> IssueMetadata:
+        """Convert a GraphQL node to IssueMetadata."""
+        repo = node["repository"]
+        labels = [l["name"] for l in node["labels"]["nodes"]]
+        labels_lower = [l.lower() for l in labels]
+        assignees = [a["login"] for a in node["assignees"]["nodes"]]
+        topics = [t["topic"]["name"] for t in repo["repositoryTopics"]["nodes"]]
+        
+        return IssueMetadata(
+            issue_id=hash(node["id"]),  # GraphQL returns string ID
+            issue_number=node["number"],
+            title=node["title"],
+            body=node["body"][:2000] if node["body"] else None,
+            labels=labels,
+            created_at=node["createdAt"],
+            updated_at=node["updatedAt"],
+            comments_count=node["comments"]["totalCount"],
+            issue_url=node["url"],
+            state=node["state"].lower(),
+            is_assigned=len(assignees) > 0,
+            assignees_count=len(assignees),
+            assignees=assignees,
+            repo_name=repo["name"],
+            repo_full_name=repo["nameWithOwner"],
+            repo_stars=repo["stargazerCount"],
+            repo_forks=repo["forkCount"],
+            repo_url=repo["url"],
+            language=repo["primaryLanguage"]["name"] if repo["primaryLanguage"] else None,
+            repo_description=repo["description"][:500] if repo["description"] else None,
+            repo_topics=topics,
+            repo_license=repo["licenseInfo"]["name"] if repo["licenseInfo"] else None,
+            repo_open_issues_count=repo["openIssues"]["totalCount"],
+            is_good_first_issue="good first issue" in labels_lower,
+            is_help_wanted="help wanted" in labels_lower,
+        )
+    
+    def get_rate_limit_status(self) -> dict:
+        """Check current rate limit."""
+        query = """
+        query {
+          rateLimit {
+            limit
+            remaining
+            resetAt
+          }
+        }
+        """
+        try:
+            result = self._execute_query(query, {})
+            rate_limit = result["data"]["rateLimit"]
+            return {
+                "limit": rate_limit["limit"],
+                "remaining": rate_limit["remaining"],
+                "reset_at": rate_limit["resetAt"]
+            }
+        except Exception as e:
+            logger.warning(f"Failed to get rate limit: {e}")
+            return {"limit": 5000, "remaining": 5000, "reset_at": None}
