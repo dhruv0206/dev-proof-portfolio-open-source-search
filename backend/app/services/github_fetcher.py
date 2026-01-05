@@ -46,7 +46,10 @@ class GitHubFetcher:
         min_contributors: int | None = None
     ) -> list[Repository]:
         """Fetch repositories with recent activity for a language."""
-        query = f"language:{language} stars:>={min_stars}"
+        # Only add stars filter if min_stars > 0 (stars:>=0 breaks GitHub search API)
+        query = f"language:{language}"
+        if min_stars > 0:
+            query += f" stars:>={min_stars}"
         repos = self.github.search_repositories(
             query=query,
             sort="updated",  # Prioritize recently active repos

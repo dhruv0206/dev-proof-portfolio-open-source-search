@@ -14,7 +14,7 @@ class SearchQuery(BaseModel):
     # Optional Manual Filters (Override AI detection)
     language: str | None = None
     labels: list[str] | None = None
-    sort_by: Literal["stars", "recency", "relevance"] | None = None
+    sort_by: Literal["newest", "recently_discussed", "relevance", "stars"] | None = None
     days_ago: float | None = None
 
 class ParsedQuery(BaseModel):
@@ -26,7 +26,7 @@ class ParsedQuery(BaseModel):
     max_stars: int | None = None
     labels: list[str] | None = None
     difficulty: Literal["beginner", "intermediate", "advanced"] | None = None
-    sort_by: Literal["stars", "recency", "relevance"] = "relevance"
+    sort_by: Literal["newest", "recently_discussed", "relevance", "stars"] = "relevance"
     days_ago: float | None = None  # Filter issues updated within X days
     unassigned_only: bool = False  # Only show unassigned issues
     topics: list[str] | None = None  # GitHub repo topics filter

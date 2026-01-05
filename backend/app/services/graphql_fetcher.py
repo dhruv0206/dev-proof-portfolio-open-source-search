@@ -251,9 +251,12 @@ class GraphQLFetcher:
         query_parts = [
             "is:issue",
             "is:open",
-            f"stars:>={min_stars}",
             "sort:updated-desc"
         ]
+        
+        # Only add stars filter if min_stars > 0 (stars:>=0 breaks GraphQL search!)
+        if min_stars > 0:
+            query_parts.append(f"stars:>={min_stars}")
         
         if label:
             query_parts.append(f'label:"{label}"')
