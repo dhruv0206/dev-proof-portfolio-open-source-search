@@ -123,16 +123,35 @@ class GraphQLFetcher:
         # Generate JWT
         jwt_token = self._generate_jwt()
         
-        # Get installations
-        response = requests.get(
-            "https://api.github.com/app/installations",
-            headers={
-                "Authorization": f"Bearer {jwt_token}",
-                "Accept": "application/vnd.github+json"
-            }
-        )
-        response.raise_for_status()
-        installations = response.json()
+        # Get installations with retry
+        for attempt in range(3):
+            try:
+                response = requests.get(
+                    "https://api.github.com/app/installations",
+                    headers={
+                        "Authorization": f"Bearer {jwt_token}",
+                        "Accept": "application/vnd.github+json"
+                    },
+                    timeout=10
+                )
+                
+                if response.status_code == 401:
+                    logger.error(f"401 Unauthorized: Check if App ID ({self.app_id}) and private key are correct")
+                    logger.error(f"Response: {response.text}")
+                    # Regenerate JWT in case of clock skew
+                    if attempt < 2:
+                        time.sleep(1)
+                        jwt_token = self._generate_jwt()
+                        continue
+                
+                response.raise_for_status()
+                installations = response.json()
+                break
+            except requests.RequestException as e:
+                logger.warning(f"Installation request attempt {attempt + 1} failed: {e}")
+                if attempt == 2:
+                    raise
+                time.sleep(1)
         
         if not installations:
             raise ValueError("No installations found. Install the app on your account first.")
@@ -145,8 +164,14 @@ class GraphQLFetcher:
             headers={
                 "Authorization": f"Bearer {jwt_token}",
                 "Accept": "application/vnd.github+json"
-            }
+            },
+            timeout=10
         )
+        
+        if response.status_code == 401:
+            logger.error(f"401 on access token request. JWT may have expired during processing.")
+            logger.error(f"Response: {response.text}")
+            
         response.raise_for_status()
         token_data = response.json()
         
@@ -209,6 +234,7 @@ class GraphQLFetcher:
         min_stars: int = 100,
         updated_within_hours: int | None = None,
         updated_within_days: int | None = None,
+        created_within_hours: int | None = None,
         max_issues: int = 100
     ) -> list[IssueMetadata]:
         """
@@ -216,12 +242,17 @@ class GraphQLFetcher:
         
         Much more efficient than REST - fetches 100 issues per request
         with full repository data included.
+        
+        Args:
+            created_within_hours: If set, only fetch issues CREATED within this many hours
+            updated_within_hours: If set, only fetch issues UPDATED within this many hours
         """
         # Build search query
         query_parts = [
             "is:issue",
             "is:open",
-            f"stars:>={min_stars}"
+            f"stars:>={min_stars}",
+            "sort:updated-desc"
         ]
         
         if label:
@@ -230,9 +261,13 @@ class GraphQLFetcher:
         if language:
             query_parts.append(f"language:{language}")
         
-        if updated_within_hours:
+        # Created filter takes priority (for fetching truly NEW issues)
+        if created_within_hours:
+            since = datetime.now(timezone.utc) - timedelta(hours=created_within_hours)
+            query_parts.append(f"created:>{since.strftime('%Y-%m-%dT%H:%M:%SZ')}")
+        elif updated_within_hours:
             since = datetime.now(timezone.utc) - timedelta(hours=updated_within_hours)
-            query_parts.append(f"updated:>{since.strftime('%Y-%m-%d')}")
+            query_parts.append(f"updated:>{since.strftime('%Y-%m-%dT%H:%M:%SZ')}")
         elif updated_within_days:
             since = datetime.now(timezone.utc) - timedelta(days=updated_within_days)
             query_parts.append(f"updated:>{since.strftime('%Y-%m-%d')}")

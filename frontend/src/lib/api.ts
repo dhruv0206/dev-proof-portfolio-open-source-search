@@ -57,7 +57,7 @@ export interface SearchParams {
   // Manual overrides
   language?: string | null;
   labels?: string[] | null;
-  sort_by?: 'relevance' | 'stars' | 'recency' | null;
+  sort_by?: 'newest' | 'recently_discussed' | 'relevance' | 'stars' | null;
   days_ago?: number | null;
 }
 
@@ -108,13 +108,26 @@ export interface RecentResponse {
   total: number;
 }
 
-export async function getRecentIssues(limit: number = 20): Promise<RecentResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/search/recent?limit=${limit}`);
+export async function getRecentIssues(
+  limit: number = 20, 
+  sortBy: 'newest' | 'recently_discussed' | 'relevance' | 'stars' = 'newest'
+): Promise<RecentResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/search/recent?limit=${limit}&sort_by=${sortBy}`);
   
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.detail || 'Failed to fetch recent issues');
   }
   
+  return response.json();
+}
+
+export interface LastUpdatedResponse {
+  last_updated: string | null;
+  timestamp: number | null;
+}
+
+export async function getLastUpdated(): Promise<LastUpdatedResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/search/last-updated`);
   return response.json();
 }

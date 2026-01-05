@@ -53,7 +53,13 @@ def main():
         "--recent-hours",
         type=float,
         default=None,
-        help="Only issues updated in last N hours (overrides --recent-days)"
+        help="Only issues UPDATED in last N hours (overrides --recent-days)"
+    )
+    parser.add_argument(
+        "--created-hours",
+        type=float,
+        default=None,
+        help="Only issues CREATED in last N hours (for truly new issues, overrides --recent-*)"
     )
     parser.add_argument(
         "--label",
@@ -114,8 +120,9 @@ def main():
                     language=lang,
                     label=label,
                     min_stars=args.min_stars,
-                    updated_within_hours=args.recent_hours,
-                    updated_within_days=args.recent_days if not args.recent_hours else None,
+                    created_within_hours=args.created_hours,
+                    updated_within_hours=args.recent_hours if not args.created_hours else None,
+                    updated_within_days=args.recent_days if not args.recent_hours and not args.created_hours else None,
                     max_issues=args.max_issues
                 )
                 

@@ -18,7 +18,7 @@ interface PaginationState {
 export interface SearchOptions {
   language?: string | null;
   labels?: string[] | null;
-  sortBy?: "relevance" | "stars" | "recency" | null;
+  sortBy?: "newest" | "recently_discussed" | "relevance" | "stars" | null;
   daysAgo?: number | null;
 }
 

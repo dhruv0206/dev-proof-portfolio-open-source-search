@@ -23,19 +23,22 @@ export default function Home() {
 
   // Filter State
   const [language, setLanguage] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<"relevance" | "stars" | "recency">("recency");
+  const [sortBy, setSortBy] = useState<"newest" | "recently_discussed" | "relevance" | "stars">("newest");
   const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
   const [daysAgo, setDaysAgo] = useState<number | null>(null);
 
   const [allRecentIssues, setAllRecentIssues] = useState<SearchResult[]>([]);
   const [recentLoading, setRecentLoading] = useState(true);
   const [recentPage, setRecentPage] = useState(1);
+  const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
-  // Load recent issues on page mount
+  // Load recent issues and last updated time on page mount or when sort changes
   useEffect(() => {
     async function loadRecent() {
+      setRecentLoading(true);
       try {
-        const response = await getRecentIssues(50); // Fetch more for pagination
+        // Pass current sort filter to recent issues API
+        const response = await getRecentIssues(50, sortBy);
         setAllRecentIssues(response.results);
       } catch (err) {
         console.error('Failed to load recent issues:', err);
@@ -43,8 +46,25 @@ export default function Home() {
         setRecentLoading(false);
       }
     }
-    loadRecent();
-  }, []);
+
+    async function loadLastUpdated() {
+      try {
+        const { getLastUpdated } = await import('@/lib/api');
+        const response = await getLastUpdated();
+        if (response.last_updated) {
+          setLastUpdated(response.last_updated);
+        }
+      } catch (err) {
+        console.error('Failed to load last updated:', err);
+      }
+    }
+
+    // Only reload recent issues when NOT in search mode
+    if (!hasSearched) {
+      loadRecent();
+    }
+    loadLastUpdated();
+  }, [sortBy, hasSearched]);
 
   // Sync UI state with AI-parsed query
   useEffect(() => {
@@ -52,8 +72,15 @@ export default function Home() {
       // Sync Language
       if (parsedQuery.language) setLanguage(parsedQuery.language);
 
-      // Sync Sort
-      if (parsedQuery.sort_by) setSortBy(parsedQuery.sort_by);
+      // Sync Sort (map legacy 'recency' to 'recently_discussed')
+      if (parsedQuery.sort_by) {
+        const sortMap: Record<string, "newest" | "recently_discussed" | "relevance" | "stars"> = {
+          "recency": "recently_discussed",
+          "relevance": "relevance",
+          "stars": "stars"
+        };
+        setSortBy(sortMap[parsedQuery.sort_by] || "newest");
+      }
 
       // Sync Time
       if (parsedQuery.days_ago) setDaysAgo(parsedQuery.days_ago);
@@ -101,7 +128,7 @@ export default function Home() {
     // Perform search with default/empty filters
     await search(query, {
       language: null,
-      sortBy: "recency",
+      sortBy: "newest",
       labels: undefined,
       daysAgo: null
     });
@@ -120,7 +147,7 @@ export default function Home() {
     }
   };
 
-  const handleSortChange = (sort: "relevance" | "stars" | "recency") => {
+  const handleSortChange = (sort: "newest" | "recently_discussed" | "relevance" | "stars") => {
     setSortBy(sort);
     if (hasSearched) {
       search(currentQuery, {
@@ -249,6 +276,11 @@ export default function Home() {
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
                 Fresh issues from popular repositories
+                {lastUpdated && (
+                  <span className="ml-2 text-xs opacity-70">
+                    • Updated {new Date(lastUpdated).toLocaleString()}
+                  </span>
+                )}
               </p>
             </div>
           )}

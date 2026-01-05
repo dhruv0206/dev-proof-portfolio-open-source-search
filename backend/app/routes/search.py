@@ -54,15 +54,22 @@ async def search(query: SearchQuery) -> dict:
 
 
 @router.get("/recent")
-async def get_recent_issues(limit: int = 20) -> dict:
+async def get_recent_issues(limit: int = 20, sort_by: str = "newest") -> dict:
     """
     Get recent contribution opportunities for homepage display.
     
-    Returns issues from the last 30 days, ranked by combined score
-    (recency + popularity + relevance to contributions).
+    Args:
+        limit: Number of results to return
+        sort_by: 
+            - "newest" (newly created issues - DEFAULT)
+            - "recently_discussed" (recently updated/commented)
+            - "relevance" (combined score)
+            - "stars" (popularity)
+    
+    Returns issues from the last 30 days.
     """
     try:
-        results = search_engine.get_recent_issues(limit=limit)
+        results = search_engine.get_recent_issues(limit=limit, sort_by=sort_by)
         
         return {
             "results": [r.model_dump() for r in results],
@@ -72,6 +79,38 @@ async def get_recent_issues(limit: int = 20) -> dict:
     except Exception as e:
         logger.error(f"Recent issues error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+@router.get("/last-updated")
+async def get_last_updated() -> dict:
+    """Get the timestamp of the most recently ingested issue."""
+    try:
+        from datetime import datetime
+        
+        # Query multiple results and find the max ingested_at
+        # (Pinecone doesn't support sorting by metadata)
+        results = search_engine.pinecone.index.query(
+            vector=[0.0] * 768,  # Dummy vector
+            top_k=100,  # Get many to find the newest
+            include_metadata=True,
+            filter={"ingested_at": {"$gt": 0}}
+        )
+        
+        if results.matches:
+            # Find max ingested_at
+            max_ts = max(m.metadata.get("ingested_at", 0) for m in results.matches)
+            if max_ts > 0:
+                dt = datetime.fromtimestamp(max_ts)
+                return {
+                    "last_updated": dt.isoformat(),
+                    "timestamp": max_ts
+                }
+        
+        return {"last_updated": None, "timestamp": None}
+        
+    except Exception as e:
+        logger.error(f"Last updated error: {e}")
+        return {"last_updated": None, "error": str(e)}
 
 
 @router.get("/health")

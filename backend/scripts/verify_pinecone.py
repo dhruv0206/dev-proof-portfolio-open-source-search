@@ -1,42 +1,42 @@
-"""Verify Pinecone data by fetching recent records."""
 
-import logging
+import os
+import sys
+from dotenv import load_dotenv
+
+# Add backend to path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from app.services.pinecone_client import PineconeClient
-from datetime import datetime
+from app.services.embedder import EmbeddingService
+from app.config import get_settings
+import logging
 
+# Setup logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def main():
+if __name__ == "__main__":
+    load_dotenv()
+    
     client = PineconeClient()
-    stats = client.get_index_stats()
-    logger.info(f"Index Stats: {stats}")
-    
-    # We can't truly "sort" by metadata in pure search without vector, 
-    # but we can query with a dummy vector and filter for recently ingested items.
-    # However, standard query requires a vector.
-    
-    # Generate a real query embedding for "Python"
-    from app.services.embedder import EmbeddingService
     embedder = EmbeddingService()
-    query_vec = embedder.generate_query_embedding("Python")
     
-    logger.info("Fetching recent issues (query: 'Python')...")
-    results = client.search(
-        query_embedding=query_vec,
+    # Specific query for the kitkat issue
+    search_text = "visual Activity Diagram for merge Command"
+    print(f"Searching for: '{search_text}'...")
+    
+    query_vec = embedder.generate_query_embedding(search_text)
+    
+    results = client.index.query(
+        vector=query_vec,
         top_k=5,
-        filter_dict={"ingested_at": {"$gt": 0}}
+        include_metadata=True
     )
     
-    for match in results:
+    print("\nResults:")
+    for match in results["matches"]:
         meta = match["metadata"]
-        ingested_ts = meta.get("ingested_at", 0)
-        ingested_dt = datetime.fromtimestamp(ingested_ts).isoformat() if ingested_ts else "N/A"
-        
         print(f"\nID: {match['id']}")
         print(f"Title: {meta.get('title')}")
-        print(f"Ingested At: {ingested_dt} (TS: {ingested_ts})")
+        print(f"Repo: {meta.get('repo_full_name')}")
         print("-" * 50)
-
-if __name__ == "__main__":
-    main()

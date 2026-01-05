@@ -9,11 +9,11 @@ import { ChevronDownIcon, StarIcon, ClockIcon, TagIcon } from "@heroicons/react/
 
 interface FilterBarProps {
     language: string | null;
-    sortBy: "relevance" | "stars" | "recency";
+    sortBy: "newest" | "recently_discussed" | "relevance" | "stars";
     selectedLabel: string | null;
     daysAgo: number | null;
     onLanguageChange: (lang: string | null) => void;
-    onSortChange: (sort: "relevance" | "stars" | "recency") => void;
+    onSortChange: (sort: "newest" | "recently_discussed" | "relevance" | "stars") => void;
     onLabelChange: (label: string | null) => void;
     onTimeChange: (days: number | null) => void;
 }
@@ -132,16 +132,23 @@ export function FilterBar({
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="h-9 px-3 text-sm font-medium">
-                        Sort: <span className="ml-1 text-primary capitalize">{sortBy}</span>
+                        Sort: <span className="ml-1 text-primary">{
+                            sortBy === "newest" ? "Newest" :
+                                sortBy === "recently_discussed" ? "Recently Discussed" :
+                                    sortBy === "relevance" ? "Relevance" : "Stars"
+                        }</span>
                         <ChevronDownIcon className="ml-2 h-4 w-4 opacity-50" />
                     </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="start" className="w-[180px]">
+                <DropdownMenuContent align="start" className="w-[200px]">
+                    <DropdownMenuItem onClick={() => onSortChange("newest")}>
+                        <ClockIcon className="mr-2 h-4 w-4" /> Newest (Created)
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => onSortChange("recently_discussed")}>
+                        <ClockIcon className="mr-2 h-4 w-4" /> Recently Discussed
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onSortChange("relevance")}>
                         Relevance (AI)
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => onSortChange("recency")}>
-                        <ClockIcon className="mr-2 h-4 w-4" /> Recency
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => onSortChange("stars")}>
                         <StarIcon className="mr-2 h-4 w-4" /> Stars

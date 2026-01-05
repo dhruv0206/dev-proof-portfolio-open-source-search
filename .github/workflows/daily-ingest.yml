@@ -83,9 +83,9 @@ jobs:
             --recent-hours 24 \
             --any-label
 
-      # 3. Daily Cycles (Every 2h): Recent Issues (2.5h)
+      # 3. Daily Cycles (Every 2h): Newest + Recently Discussed
       # Runs at 00, 02, 08, 10, ... 22 (Skipping 04, 06 handled above)
-      - name: "Scheduled: Recent Issues (2.5h)"
+      - name: "Scheduled: Newest + Active Issues (2.5h)"
         if: github.event_name == 'schedule' && github.event.schedule != '0 4 * * *' && github.event.schedule != '0 6 * * *'
         working-directory: ./backend
         env:
@@ -96,7 +96,14 @@ jobs:
           PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
           PINECONE_INDEX_NAME: ${{ secrets.PINECONE_INDEX_NAME }}
         run: |
-          echo "⚡ Fetching issues updated in last 2.5 hours..."
+          echo "🆕 Fetching NEWLY CREATED issues (last 2.5 hours)..."
+          python -m scripts.ingest_graphql \
+            --min-stars 0 \
+            --max-issues 100 \
+            --created-hours 2.5 \
+            --any-label
+          
+          echo "🔥 Fetching RECENTLY DISCUSSED issues (last 2.5 hours)..."
           python -m scripts.ingest_graphql \
             --min-stars 0 \
             --max-issues 200 \

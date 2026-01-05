@@ -72,23 +72,39 @@ class SearchEngine:
         
         return results, parsed
     
-    def get_recent_issues(self, limit: int = 20) -> list[SearchResult]:
-        """Get recent issues for default homepage display."""
+    def get_recent_issues(self, limit: int = 20, sort_by: str = "newest") -> list[SearchResult]:
+        """Get recent issues for default homepage display.
+        
+        Args:
+            limit: Number of results to return
+            sort_by: 
+                - "newest" (newly created issues - by created_at) - DEFAULT
+                - "recently_discussed" (recently updated - by updated_at)
+                - "relevance" (combined score)
+                - "stars" (popularity)
+        """
         # Use a generic query embedding for "open source contributions"
         query_embedding = self.embedder.generate_query_embedding(
             "beginner friendly open source contributions help wanted"
         )
         
-        # Filter to recent issues (last 30 days)
-        cutoff_ts = int((datetime.now(timezone.utc) - timedelta(days=30)).timestamp())
+        # Choose filter based on sort type
+        if sort_by == "newest":
+            # For "newest", filter by created_at (last 24 hours for truly new issues)
+            cutoff_ts = int((datetime.now(timezone.utc) - timedelta(hours=24)).timestamp())
+            filter_dict = {"created_at_ts": {"$gte": cutoff_ts}}
+        else:
+            # For other sorts, filter by updated_at (last 30 days)
+            cutoff_ts = int((datetime.now(timezone.utc) - timedelta(days=30)).timestamp())
+            filter_dict = {"updated_at_ts": {"$gte": cutoff_ts}}
         
         raw_results = self.pinecone.search(
             query_embedding=query_embedding,
             top_k=100,
-            filter_dict={"updated_at_ts": {"$gte": cutoff_ts}}
+            filter_dict=filter_dict
         )
         
-        # Process with combined scoring (no parsed query - use default sorting)
+        # Process results
         results = []
         now = datetime.now(timezone.utc)
         
@@ -96,7 +112,7 @@ class SearchEngine:
             metadata = match["metadata"]
             result = self._create_result(match)
             
-            # Calculate combined score for sorting
+            # Calculate combined score for display
             result.score = self._calculate_combined_score(
                 semantic_score=match["score"],
                 stars=metadata["repo_stars"],
@@ -105,8 +121,19 @@ class SearchEngine:
             )
             results.append(result)
         
-        # Sort by combined score (recency + stars + relevance)
-        results.sort(key=lambda x: x.score, reverse=True)
+        # Sort based on user preference
+        if sort_by == "newest":
+            # Newly created issues first (by created_at timestamp)
+            results.sort(key=lambda x: x.created_at, reverse=True)
+        elif sort_by == "recently_discussed":
+            # Recently updated/commented issues first (by updated_at timestamp)
+            results.sort(key=lambda x: x.updated_at, reverse=True)
+        elif sort_by == "stars":
+            # Sort by stars (popularity)
+            results.sort(key=lambda x: x.repo_stars, reverse=True)
+        else:
+            # Default: combined score (relevance)
+            results.sort(key=lambda x: x.score, reverse=True)
         
         return results[:limit]
     
