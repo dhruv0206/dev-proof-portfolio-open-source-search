@@ -2,9 +2,11 @@ name: Data Ingestion (GraphQL)
 
 on:
   schedule:
-    # Every 2 hours: fetch last 2 hours of issues
+    # Every 2 hours: fetch last 2.5 hours of issues
     - cron: '0 */2 * * *'
-    # Nightly at 6 AM UTC: full refresh
+    # Nightly at 4 AM UTC: Fresh (7d) + Popular (5000+ stars)
+    - cron: '0 4 * * *'
+    # Nightly at 6 AM UTC: Today's issues (24h)
     - cron: '0 6 * * *'
   workflow_dispatch:
     inputs:

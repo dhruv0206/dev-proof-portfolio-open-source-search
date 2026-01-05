@@ -50,8 +50,8 @@ AI-powered search engine to discover open source contribution opportunities on G
 ### 1. Clone & Setup
 
 ```bash
-git clone https://github.com/yourusername/github-contributions-search.git
-cd github-contributions-search
+git clone https://github.com/dhruv0206/opensource-issues-finder.git
+cd opensource-issues-finder
 ```
 
 ### 2. Backend Setup
@@ -92,8 +92,9 @@ python -m scripts.ingest_graphql --min-stars 200 --recent-hours 24
 
 | Flag | Default | Description |
 |------|---------|-------------|
-| `--min-stars` | 200 | Minimum repo stars (0 for catch-all) |
-| `--recent-hours` | - | Fetch issues updated in last N hours |
+| `--min-stars` | 200 | Minimum repo stars (0 for all repos) |
+| `--recent-hours` | - | Fetch issues **updated** in last N hours |
+| `--created-hours` | - | Fetch issues **created** in last N hours (truly new issues) |
 | `--recent-days` | - | Fetch issues updated in last N days |
 | `--max-issues` | 100 | Max issues to ingest per language |
 | `--any-label` | - | If set, ignores label filters (fetches everything) |
@@ -124,7 +125,8 @@ The AI query parser understands these intents:
 | **By Language** | "Python", "JavaScript", "Rust", etc. | Language filter |
 | **By Topic** | "machine learning", "CLI", "web" | Matches repo topics |
 | **Sort by Stars** | "most stars", "most popular" | Sorts by repo stars |
-| **Sort by Date** | "newest", "most recent" | Sorts by updated_at |
+| **Sort by Newest** | "newest", "newly created" | Sorts by created_at (default) |
+| **Sort by Activity** | "recently discussed", "most active" | Sorts by updated_at |
 
 ### 4. Start Backend
 
@@ -214,8 +216,10 @@ Content-Type: application/json
 
 ### Get Recent Issues
 ```http
-GET /api/search/recent?limit=20
+GET /api/search/recent?limit=20&sort_by=newest
 ```
+
+**Sort Options:** `newest` (default), `recently_discussed`, `relevance`, `stars`
 
 ### Health Check
 ```http
