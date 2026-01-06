@@ -110,9 +110,19 @@ export interface RecentResponse {
 
 export async function getRecentIssues(
   limit: number = 20, 
-  sortBy: 'newest' | 'recently_discussed' | 'relevance' | 'stars' = 'newest'
+  sortBy: 'newest' | 'recently_discussed' | 'relevance' | 'stars' = 'newest',
+  language?: string | null,
+  label?: string | null,
+  daysAgo?: number | null
 ): Promise<RecentResponse> {
-  const response = await fetch(`${API_BASE_URL}/api/search/recent?limit=${limit}&sort_by=${sortBy}`);
+  const params = new URLSearchParams();
+  params.append('limit', limit.toString());
+  params.append('sort_by', sortBy);
+  if (language) params.append('language', language);
+  if (label) params.append('label', label);
+  if (daysAgo) params.append('days_ago', daysAgo.toString());
+  
+  const response = await fetch(`${API_BASE_URL}/api/search/recent?${params.toString()}`);
   
   if (!response.ok) {
     const error = await response.json();

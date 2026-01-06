@@ -2,6 +2,8 @@ name: Data Ingestion (GraphQL)
 
 on:
   schedule:
+    # Nightly at 2 AM UTC: Cleanup (remove closed + stale issues)
+    - cron: '0 2 * * *'
     # Every 2 hours: fetch last 2.5 hours of issues
     - cron: '0 */2 * * *'
     # Nightly at 4 AM UTC: Fresh (7d) + Popular (5000+ stars)
@@ -40,6 +42,22 @@ jobs:
         run: pip install -r requirements.txt
 
       # ============ SCHEDULED RUNS ============
+
+      # 0. Nightly Cleanup (2 AM UTC): Remove closed + stale issues
+      - name: "Scheduled: Cleanup (2 AM)"
+        if: github.event_name == 'schedule' && github.event.schedule == '0 2 * * *'
+        working-directory: ./backend
+        env:
+          GH_APP_ID: ${{ secrets.GH_APP_ID }}
+          GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          PINECONE_API_KEY: ${{ secrets.PINECONE_API_KEY }}
+          PINECONE_INDEX_NAME: ${{ secrets.PINECONE_INDEX_NAME }}
+        run: |
+          echo "🧹 Cleaning up closed issues (last 24h) + stale issues (>20 days)..."
+          python -m scripts.cleanup_pinecone \
+            --closed-hours 24 \
+            --stale-days 20
 
       # 1. Nightly Phase 1 (4 AM UTC): Fresh (7d) + Popular
       - name: "Scheduled: Fresh & Popular (4 AM)"

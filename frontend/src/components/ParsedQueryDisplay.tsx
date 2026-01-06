@@ -28,7 +28,13 @@ export function ParsedQueryDisplay({ parsedQuery, onClear }: ParsedQueryDisplayP
         filters.push({ label: 'Updated', value: `Last ${parsedQuery.days_ago} days` });
     }
     if (parsedQuery.sort_by && parsedQuery.sort_by !== 'relevance') {
-        filters.push({ label: 'Sort', value: `By ${parsedQuery.sort_by}` });
+        const sortDisplayMap: Record<string, string> = {
+            'recency': 'Recently Discussed',
+            'recently_discussed': 'Recently Discussed',
+            'newest': 'Newest',
+            'stars': 'Most Stars'
+        };
+        filters.push({ label: 'Sort', value: sortDisplayMap[parsedQuery.sort_by] || parsedQuery.sort_by });
     }
     if (parsedQuery.labels && parsedQuery.labels.length > 0) {
         filters.push({ label: 'Labels', value: parsedQuery.labels.join(', ') });

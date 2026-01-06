@@ -119,7 +119,8 @@ export function IssueCard({ issue, index }: IssueCardProps) {
                             <ChatBubbleLeftIcon className="h-4 w-4" />
                             {issue.comments_count} comments
                         </span>
-                        <span>Updated {formatDate(issue.updated_at)}</span>
+                        <span>Created: {formatDate(issue.created_at)}</span>
+                        <span>Updated: {formatDate(issue.updated_at)}</span>
                         <span className="ml-auto">
                             Match: {(issue.score * 100).toFixed(0)}%
                         </span>

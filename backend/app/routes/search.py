@@ -54,7 +54,13 @@ async def search(query: SearchQuery) -> dict:
 
 
 @router.get("/recent")
-async def get_recent_issues(limit: int = 20, sort_by: str = "newest") -> dict:
+async def get_recent_issues(
+    limit: int = 20, 
+    sort_by: str = "newest",
+    language: str | None = None,
+    label: str | None = None,
+    days_ago: int | None = None
+) -> dict:
     """
     Get recent contribution opportunities for homepage display.
     
@@ -65,11 +71,21 @@ async def get_recent_issues(limit: int = 20, sort_by: str = "newest") -> dict:
             - "recently_discussed" (recently updated/commented)
             - "relevance" (combined score)
             - "stars" (popularity)
+        language: Filter by programming language (e.g., "Python", "JavaScript")
+        label: Filter by issue label (e.g., "good first issue", "help wanted")
+        days_ago: Filter by issues updated within N days
     
-    Returns issues from the last 30 days.
+    Returns issues from the last 30 days (or 24h for "newest" sort).
     """
     try:
-        results = search_engine.get_recent_issues(limit=limit, sort_by=sort_by)
+        labels = [label] if label else None
+        results = search_engine.get_recent_issues(
+            limit=limit, 
+            sort_by=sort_by,
+            language=language,
+            labels=labels,
+            days_ago=days_ago
+        )
         
         return {
             "results": [r.model_dump() for r in results],

@@ -32,13 +32,13 @@ export default function Home() {
   const [recentPage, setRecentPage] = useState(1);
   const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
-  // Load recent issues and last updated time on page mount or when sort changes
+  // Load recent issues and last updated time on page mount or when filters change
   useEffect(() => {
     async function loadRecent() {
       setRecentLoading(true);
       try {
-        // Pass current sort filter to recent issues API
-        const response = await getRecentIssues(50, sortBy);
+        // Pass all filters to recent issues API
+        const response = await getRecentIssues(50, sortBy, language, selectedLabel, daysAgo);
         setAllRecentIssues(response.results);
       } catch (err) {
         console.error('Failed to load recent issues:', err);
@@ -64,7 +64,7 @@ export default function Home() {
       loadRecent();
     }
     loadLastUpdated();
-  }, [sortBy, hasSearched]);
+  }, [sortBy, language, selectedLabel, daysAgo, hasSearched]);
 
   // Sync UI state with AI-parsed query
   useEffect(() => {
@@ -77,7 +77,8 @@ export default function Home() {
         const sortMap: Record<string, "newest" | "recently_discussed" | "relevance" | "stars"> = {
           "recency": "recently_discussed",
           "relevance": "relevance",
-          "stars": "stars"
+          "stars": "stars",
+          "newest": "newest"
         };
         setSortBy(sortMap[parsedQuery.sort_by] || "newest");
       }
@@ -187,10 +188,11 @@ export default function Home() {
     clearResults();
     setHasSearched(false);
     setRecentPage(1);
-    // Optional: Reset filters on clear?
-    // setLanguage(null);
-    // setSortBy("relevance");
-    // setSelectedLabel(null);
+    // Reset all filters to defaults
+    setLanguage(null);
+    setSortBy("newest");
+    setSelectedLabel(null);
+    setDaysAgo(null);
   };
 
   const handleRecentPageChange = (page: number) => {
@@ -278,7 +280,11 @@ export default function Home() {
                 Fresh issues from popular repositories
                 {lastUpdated && (
                   <span className="ml-2 text-xs opacity-70">
-                    • Updated {new Date(lastUpdated).toLocaleString()}
+                    • Updated {new Date(lastUpdated).toLocaleString(undefined, {
+                      dateStyle: 'short',
+                      timeStyle: 'medium',
+                      timeZoneName: 'short'
+                    })}
                   </span>
                 )}
               </p>

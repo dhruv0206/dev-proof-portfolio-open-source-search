@@ -374,3 +374,53 @@ class GraphQLFetcher:
         except Exception as e:
             logger.warning(f"Failed to get rate limit: {e}")
             return {"limit": 5000, "remaining": 5000, "reset_at": None}
+    
+    def search_closed_issues(self, hours: float = 24) -> list[dict]:
+        """
+        Search for recently closed issues to clean up from Pinecone.
+        
+        Args:
+            hours: Find issues closed within the last N hours
+            
+        Returns:
+            List of dicts with id, repo, number, title for each closed issue
+        """
+        since = datetime.now(timezone.utc) - timedelta(hours=hours)
+        since_str = since.strftime('%Y-%m-%dT%H:%M:%SZ')
+        
+        languages = ["Python", "JavaScript", "TypeScript", "Java", "C#", "Go", "Rust", "C++", "PHP", "Ruby"]
+        closed_issues = []
+        
+        for language in languages:
+            query_str = f"is:issue is:closed updated:>{since_str} language:{language}"
+            logger.info(f"Searching for closed issues: {query_str}")
+            
+            try:
+                result = self._execute_query(
+                    SEARCH_ISSUES_QUERY,
+                    {"query": query_str, "cursor": None}
+                )
+                
+                nodes = result.get("data", {}).get("search", {}).get("nodes", [])
+                
+                for node in nodes:
+                    if not node:
+                        continue
+                    repo = node.get("repository", {})
+                    repo_full_name = repo.get("nameWithOwner", "")
+                    issue_number = node.get("number", 0)
+                    
+                    if repo_full_name and issue_number:
+                        closed_issues.append({
+                            "id": f"{repo_full_name}#{issue_number}",
+                            "repo": repo_full_name,
+                            "number": issue_number,
+                            "title": node.get("title", ""),
+                            "state": node.get("state", "CLOSED")
+                        })
+                        
+            except Exception as e:
+                logger.error(f"Error searching closed issues for {language}: {e}")
+        
+        logger.info(f"Found {len(closed_issues)} closed issues in last {hours} hours")
+        return closed_issues

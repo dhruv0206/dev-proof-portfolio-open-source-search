@@ -28,7 +28,7 @@ You must respond with a JSON object containing these fields:
 - topics: array of strings or null - GitHub repo topics/categories (e.g., "machine-learning", "web", "cli", "api", "blockchain")
 
 User intent keywords to recognize:
-- "recent", "latest", "new", "fresh" → days_ago: 7
+- "recent", "latest", "new", "fresh" → days_ago: 7, sort_by: "recency"
 - "popular", "trending", "famous" → min_stars: 1000+
 - "beginner", "easy", "starter", "first contribution" → difficulty: beginner, labels: ["good first issue"]
 - "unassigned", "unclaimed", "nobody working on" → unassigned_only: true

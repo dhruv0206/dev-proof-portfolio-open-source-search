@@ -72,7 +72,14 @@ class SearchEngine:
         
         return results, parsed
     
-    def get_recent_issues(self, limit: int = 20, sort_by: str = "newest") -> list[SearchResult]:
+    def get_recent_issues(
+        self, 
+        limit: int = 20, 
+        sort_by: str = "newest",
+        language: str | None = None,
+        labels: list[str] | None = None,
+        days_ago: int | None = None
+    ) -> list[SearchResult]:
         """Get recent issues for default homepage display.
         
         Args:
@@ -82,25 +89,38 @@ class SearchEngine:
                 - "recently_discussed" (recently updated - by updated_at)
                 - "relevance" (combined score)
                 - "stars" (popularity)
+            language: Filter by programming language
+            labels: Filter by issue labels
+            days_ago: Filter by issues updated within N days
         """
         # Use a generic query embedding for "open source contributions"
         query_embedding = self.embedder.generate_query_embedding(
             "beginner friendly open source contributions help wanted"
         )
         
-        # Choose filter based on sort type
-        if sort_by == "newest":
+        # Build filter dict
+        filter_dict = {}
+        
+        # Time filter based on sort type or explicit days_ago
+        if days_ago:
+            cutoff_ts = int((datetime.now(timezone.utc) - timedelta(days=days_ago)).timestamp())
+            filter_dict["updated_at_ts"] = {"$gte": cutoff_ts}
+        elif sort_by == "newest":
             # For "newest", filter by created_at (last 24 hours for truly new issues)
             cutoff_ts = int((datetime.now(timezone.utc) - timedelta(hours=24)).timestamp())
-            filter_dict = {"created_at_ts": {"$gte": cutoff_ts}}
+            filter_dict["created_at_ts"] = {"$gte": cutoff_ts}
         else:
             # For other sorts, filter by updated_at (last 30 days)
             cutoff_ts = int((datetime.now(timezone.utc) - timedelta(days=30)).timestamp())
-            filter_dict = {"updated_at_ts": {"$gte": cutoff_ts}}
+            filter_dict["updated_at_ts"] = {"$gte": cutoff_ts}
+        
+        # Language filter
+        if language:
+            filter_dict["language"] = language
         
         raw_results = self.pinecone.search(
             query_embedding=query_embedding,
-            top_k=100,
+            top_k=200,  # Fetch more to account for filtering
             filter_dict=filter_dict
         )
         
@@ -110,6 +130,13 @@ class SearchEngine:
         
         for match in raw_results:
             metadata = match["metadata"]
+            
+            # Label filter (done in Python since Pinecone doesn't support array contains)
+            if labels:
+                issue_labels = metadata.get("labels", [])
+                if not any(lbl.lower() in [l.lower() for l in issue_labels] for lbl in labels):
+                    continue
+            
             result = self._create_result(match)
             
             # Calculate combined score for display
