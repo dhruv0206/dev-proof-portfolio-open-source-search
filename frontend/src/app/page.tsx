@@ -281,9 +281,10 @@ export default function Home() {
                 {lastUpdated && (
                   <span className="ml-2 text-xs opacity-70">
                     • Updated {new Date(lastUpdated).toLocaleString(undefined, {
-                      dateStyle: 'short',
-                      timeStyle: 'medium',
-                      timeZoneName: 'short'
+                      month: 'short',
+                      day: 'numeric',
+                      hour: 'numeric',
+                      minute: '2-digit'
                     })}
                   </span>
                 )}
