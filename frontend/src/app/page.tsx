@@ -22,9 +22,9 @@ export default function Home() {
   const [hasSearched, setHasSearched] = useState(false);
 
   // Filter State
-  const [language, setLanguage] = useState<string | null>(null);
+  const [languages, setLanguages] = useState<string[]>([]);
   const [sortBy, setSortBy] = useState<"newest" | "recently_discussed" | "relevance" | "stars">("newest");
-  const [selectedLabel, setSelectedLabel] = useState<string | null>(null);
+  const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
   const [daysAgo, setDaysAgo] = useState<number | null>(null);
 
   const [allRecentIssues, setAllRecentIssues] = useState<SearchResult[]>([]);
@@ -38,7 +38,7 @@ export default function Home() {
       setRecentLoading(true);
       try {
         // Pass all filters to recent issues API
-        const response = await getRecentIssues(50, sortBy, language, selectedLabel, daysAgo);
+        const response = await getRecentIssues(50, sortBy, languages, selectedLabels, daysAgo);
         setAllRecentIssues(response.results);
       } catch (err) {
         console.error('Failed to load recent issues:', err);
@@ -64,13 +64,13 @@ export default function Home() {
       loadRecent();
     }
     loadLastUpdated();
-  }, [sortBy, language, selectedLabel, daysAgo, hasSearched]);
+  }, [sortBy, languages, selectedLabels, daysAgo, hasSearched]);
 
   // Sync UI state with AI-parsed query
   useEffect(() => {
     if (parsedQuery) {
       // Sync Language
-      if (parsedQuery.language) setLanguage(parsedQuery.language);
+      if (parsedQuery.language) setLanguages([parsedQuery.language]);
 
       // Sync Sort (map legacy 'recency' to 'recently_discussed')
       if (parsedQuery.sort_by) {
@@ -86,13 +86,9 @@ export default function Home() {
       // Sync Time
       if (parsedQuery.days_ago) setDaysAgo(parsedQuery.days_ago);
 
-      // Sync Labels (simple match for now)
+      // Sync Labels
       if (parsedQuery.labels && parsedQuery.labels.length > 0) {
-        // Check if any of the parsed labels match our predefined labels
-        // This is a basic heuristic since dropdown is single-select
-        const knownLabels = ["good first issue", "help wanted", "documentation", "enhancement", "bug", "beginner"];
-        const matched = parsedQuery.labels.find(l => knownLabels.includes(l.toLowerCase()));
-        if (matched) setSelectedLabel(matched);
+        setSelectedLabels(parsedQuery.labels);
       }
     }
   }, [parsedQuery]);
@@ -120,9 +116,9 @@ export default function Home() {
 
   const handleSearch = async (query: string) => {
     // Reset filters on new search
-    setLanguage(null);
+    setLanguages([]);
     setSortBy("relevance");
-    setSelectedLabel(null);
+    setSelectedLabels([]);
     setDaysAgo(null);
     setHasSearched(true);
 
@@ -136,13 +132,13 @@ export default function Home() {
   };
 
   // Filter Handlers
-  const handleLanguageChange = (lang: string | null) => {
-    setLanguage(lang);
+  const handleLanguageChange = (langs: string[]) => {
+    setLanguages(langs);
     if (hasSearched) {
       search(currentQuery, {
-        language: lang,
+        language: langs.length === 1 ? langs[0] : null, // Search API still uses single language
         sortBy,
-        labels: selectedLabel ? [selectedLabel] : undefined,
+        labels: selectedLabels.length > 0 ? selectedLabels : undefined,
         daysAgo
       });
     }
@@ -152,21 +148,21 @@ export default function Home() {
     setSortBy(sort);
     if (hasSearched) {
       search(currentQuery, {
-        language,
+        language: languages.length === 1 ? languages[0] : null,
         sortBy: sort,
-        labels: selectedLabel ? [selectedLabel] : undefined,
+        labels: selectedLabels.length > 0 ? selectedLabels : undefined,
         daysAgo
       });
     }
   };
 
-  const handleLabelChange = (label: string | null) => {
-    setSelectedLabel(label);
+  const handleLabelChange = (labels: string[]) => {
+    setSelectedLabels(labels);
     if (hasSearched) {
       search(currentQuery, {
-        language,
+        language: languages.length === 1 ? languages[0] : null,
         sortBy,
-        labels: label ? [label] : undefined,
+        labels: labels.length > 0 ? labels : undefined,
         daysAgo
       });
     }
@@ -176,9 +172,9 @@ export default function Home() {
     setDaysAgo(days);
     if (hasSearched) {
       search(currentQuery, {
-        language,
+        language: languages.length === 1 ? languages[0] : null,
         sortBy,
-        labels: selectedLabel ? [selectedLabel] : undefined,
+        labels: selectedLabels.length > 0 ? selectedLabels : undefined,
         daysAgo: days
       });
     }
@@ -189,9 +185,9 @@ export default function Home() {
     setHasSearched(false);
     setRecentPage(1);
     // Reset all filters to defaults
-    setLanguage(null);
+    setLanguages([]);
     setSortBy("newest");
-    setSelectedLabel(null);
+    setSelectedLabels([]);
     setDaysAgo(null);
   };
 
@@ -239,9 +235,9 @@ export default function Home() {
 
           <div className="w-full flex justify-center">
             <FilterBar
-              language={language}
+              languages={languages}
               sortBy={sortBy}
-              selectedLabel={selectedLabel}
+              selectedLabels={selectedLabels}
               daysAgo={daysAgo}
               onLanguageChange={handleLanguageChange}
               onSortChange={handleSortChange}
@@ -277,10 +273,10 @@ export default function Home() {
                 🔥 Recent Contribution Opportunities
               </h2>
               <p className="text-sm text-muted-foreground mt-1">
-                Fresh issues from popular repositories
+                Updated every 2 hours
                 {lastUpdated && (
                   <span className="ml-2 text-xs opacity-70">
-                    • Updated {new Date(lastUpdated).toLocaleString(undefined, {
+                    • Last update: {new Date(lastUpdated).toLocaleString(undefined, {
                       month: 'short',
                       day: 'numeric',
                       hour: 'numeric',

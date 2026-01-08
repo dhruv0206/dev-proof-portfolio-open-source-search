@@ -111,15 +111,15 @@ export interface RecentResponse {
 export async function getRecentIssues(
   limit: number = 20, 
   sortBy: 'newest' | 'recently_discussed' | 'relevance' | 'stars' = 'newest',
-  language?: string | null,
-  label?: string | null,
+  languages?: string[],
+  labels?: string[],
   daysAgo?: number | null
 ): Promise<RecentResponse> {
   const params = new URLSearchParams();
   params.append('limit', limit.toString());
   params.append('sort_by', sortBy);
-  if (language) params.append('language', language);
-  if (label) params.append('label', label);
+  if (languages && languages.length > 0) params.append('languages', languages.join(','));
+  if (labels && labels.length > 0) params.append('labels', labels.join(','));
   if (daysAgo) params.append('days_ago', daysAgo.toString());
   
   const response = await fetch(`${API_BASE_URL}/api/search/recent?${params.toString()}`);
