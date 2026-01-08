@@ -76,7 +76,7 @@ class SearchEngine:
         self, 
         limit: int = 20, 
         sort_by: str = "newest",
-        language: str | None = None,
+        languages: list[str] | None = None,
         labels: list[str] | None = None,
         days_ago: int | None = None
     ) -> list[SearchResult]:
@@ -89,8 +89,8 @@ class SearchEngine:
                 - "recently_discussed" (recently updated - by updated_at)
                 - "relevance" (combined score)
                 - "stars" (popularity)
-            language: Filter by programming language
-            labels: Filter by issue labels
+            languages: Filter by programming languages (list)
+            labels: Filter by issue labels (list)
             days_ago: Filter by issues updated within N days
         """
         # Use a generic query embedding for "open source contributions"
@@ -99,7 +99,9 @@ class SearchEngine:
         )
         
         # Build filter dict
-        filter_dict = {}
+        filter_dict = {
+            "type": {"$ne": "stats"}  # Exclude administrative records
+        }
         
         # Time filter based on sort type or explicit days_ago
         if days_ago:
@@ -114,9 +116,12 @@ class SearchEngine:
             cutoff_ts = int((datetime.now(timezone.utc) - timedelta(days=30)).timestamp())
             filter_dict["updated_at_ts"] = {"$gte": cutoff_ts}
         
-        # Language filter
-        if language:
-            filter_dict["language"] = language
+        # Multi-language filter
+        if languages:
+            if len(languages) == 1:
+                filter_dict["language"] = {"$eq": languages[0]}
+            else:
+                filter_dict["language"] = {"$in": languages}
         
         raw_results = self.pinecone.search(
             query_embedding=query_embedding,
@@ -203,7 +208,10 @@ class SearchEngine:
     
     def _build_filter(self, parsed: ParsedQuery) -> dict | None:
         """Build Pinecone filter from parsed query."""
-        conditions = []
+        # Always exclude stats records
+        conditions = [{
+            "type": {"$ne": "stats"}
+        }]
         
         # Language filter
         if parsed.language:

@@ -75,6 +75,9 @@ query SearchIssues($query: String!, $cursor: String) {
           }
         }
       }
+    }
+  }
+}
 """
 
 # GraphQL query for batch checking issue states by repo and number
