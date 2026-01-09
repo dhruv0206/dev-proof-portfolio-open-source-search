@@ -146,3 +146,26 @@ async def health_check() -> dict:
             "status": "unhealthy",
             "error": str(e)
         }
+
+
+@router.get("/stats")
+async def get_stats() -> dict:
+    """Get index statistics for display on homepage."""
+    try:
+        stats = search_engine.pinecone.get_index_stats()
+        total_issues = stats.get("total_vector_count", 0)
+        
+        # Estimate unique repos (we'd need to query for this, but for now use cached/estimated)
+        # A more accurate count would require a separate query or metadata tracking
+        return {
+            "total_issues": total_issues,
+            "total_repos": None,  # Can be added later with proper tracking
+            "last_updated": None
+        }
+    except Exception as e:
+        logger.error(f"Stats error: {e}")
+        return {
+            "total_issues": 0,
+            "total_repos": None,
+            "error": str(e)
+        }

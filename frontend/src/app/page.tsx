@@ -14,6 +14,7 @@ import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
 const ITEMS_PER_PAGE = 10;
 
 import { FilterBar } from '@/components/FilterBar';
+import { StatsBar } from '@/components/StatsBar';
 
 // ... imports
 
@@ -290,9 +291,12 @@ export default function Home() {
           {/* Section Title */}
           {!hasSearched && !recentLoading && allRecentIssues.length > 0 && (
             <div className="mb-6">
-              <h2 className="text-xl font-semibold text-muted-foreground">
-                🔥 Recent Contribution Opportunities
-              </h2>
+              <div className="flex items-center justify-between gap-4 flex-wrap">
+                <h2 className="text-xl font-semibold text-muted-foreground">
+                  🔥 Recent Contribution Opportunities
+                </h2>
+                <StatsBar />
+              </div>
               <p className="text-sm text-muted-foreground mt-1">
                 Updated every 2 hours
                 {lastUpdated && (

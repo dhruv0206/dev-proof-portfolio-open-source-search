@@ -143,3 +143,14 @@ export async function getLastUpdated(): Promise<LastUpdatedResponse> {
   const response = await fetch(`${API_BASE_URL}/api/search/last-updated`);
   return response.json();
 }
+
+export interface StatsResponse {
+  total_issues: number;
+  total_repos: number | null;
+  last_updated: string | null;
+}
+
+export async function getStats(): Promise<StatsResponse> {
+  const response = await fetch(`${API_BASE_URL}/api/search/stats`);
+  return response.json();
+}
