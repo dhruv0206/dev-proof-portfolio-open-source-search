@@ -59,7 +59,8 @@ async def get_recent_issues(
     sort_by: str = "newest",
     languages: str | None = None,
     labels: str | None = None,
-    days_ago: int | None = None
+    days_ago: int | None = None,
+    unassigned_only: bool = False
 ) -> dict:
     """
     Get recent contribution opportunities for homepage display.
@@ -74,6 +75,7 @@ async def get_recent_issues(
         languages: Comma-separated list of languages (e.g., "Python,JavaScript")
         labels: Comma-separated list of labels (e.g., "good first issue,help wanted")
         days_ago: Filter by issues updated within N days
+        unassigned_only: Only show unassigned issues
     
     Returns issues from the last 30 days (or 24h for "newest" sort).
     """
@@ -87,7 +89,8 @@ async def get_recent_issues(
             sort_by=sort_by,
             languages=language_list,
             labels=label_list,
-            days_ago=days_ago
+            days_ago=days_ago,
+            unassigned_only=unassigned_only
         )
         
         return {

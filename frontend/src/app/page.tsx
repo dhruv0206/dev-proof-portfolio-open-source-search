@@ -40,7 +40,7 @@ export default function Home() {
       setRecentLoading(true);
       try {
         // Pass all filters to recent issues API
-        const response = await getRecentIssues(50, sortBy, languages, selectedLabels, daysAgo);
+        const response = await getRecentIssues(50, sortBy, languages, selectedLabels, daysAgo, unassignedOnly);
         setAllRecentIssues(response.results);
       } catch (err) {
         console.error('Failed to load recent issues:', err);
@@ -66,7 +66,7 @@ export default function Home() {
       loadRecent();
     }
     loadLastUpdated();
-  }, [sortBy, languages, selectedLabels, daysAgo, hasSearched]);
+  }, [sortBy, languages, selectedLabels, daysAgo, unassignedOnly, hasSearched]);
 
   // Sync UI state with AI-parsed query
   useEffect(() => {

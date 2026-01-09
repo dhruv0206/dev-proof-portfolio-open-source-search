@@ -81,7 +81,8 @@ class SearchEngine:
         sort_by: str = "newest",
         languages: list[str] | None = None,
         labels: list[str] | None = None,
-        days_ago: int | None = None
+        days_ago: int | None = None,
+        unassigned_only: bool = False
     ) -> list[SearchResult]:
         """Get recent issues for default homepage display.
         
@@ -95,6 +96,7 @@ class SearchEngine:
             languages: Filter by programming languages (list)
             labels: Filter by issue labels (list)
             days_ago: Filter by issues updated within N days
+            unassigned_only: Only show unassigned issues
         """
         # Use a generic query embedding for "open source contributions"
         query_embedding = self.embedder.generate_query_embedding(
@@ -105,6 +107,10 @@ class SearchEngine:
         filter_dict = {
             "type": {"$ne": "stats"}  # Exclude administrative records
         }
+        
+        # Unassigned filter
+        if unassigned_only:
+            filter_dict["is_assigned"] = {"$eq": False}
         
         # Time filter based on sort type or explicit days_ago
         if days_ago:

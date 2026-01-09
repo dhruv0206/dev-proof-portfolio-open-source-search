@@ -115,7 +115,8 @@ export async function getRecentIssues(
   sortBy: 'newest' | 'recently_discussed' | 'relevance' | 'stars' = 'newest',
   languages?: string[],
   labels?: string[],
-  daysAgo?: number | null
+  daysAgo?: number | null,
+  unassignedOnly?: boolean
 ): Promise<RecentResponse> {
   const params = new URLSearchParams();
   params.append('limit', limit.toString());
@@ -123,6 +124,7 @@ export async function getRecentIssues(
   if (languages && languages.length > 0) params.append('languages', languages.join(','));
   if (labels && labels.length > 0) params.append('labels', labels.join(','));
   if (daysAgo) params.append('days_ago', daysAgo.toString());
+  if (unassignedOnly) params.append('unassigned_only', 'true');
   
   const response = await fetch(`${API_BASE_URL}/api/search/recent?${params.toString()}`);
   
