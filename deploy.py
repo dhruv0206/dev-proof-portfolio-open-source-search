@@ -54,8 +54,7 @@ def main():
         "--image gcr.io/opesource-github-search/backend "
         "--platform managed "
         "--region us-central1 "
-        "--allow-unauthenticated "
-        "--to-latest"
+        "--allow-unauthenticated"
     )
 
     # ---------------------------------------------------------
