@@ -1,0 +1,9 @@
+# robots.txt for GitHub Contribution Finder
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://opensource-search.vercel.app/sitemap.xml
+
+# Crawl-delay (optional, be nice to crawlers)
+Crawl-delay: 1
