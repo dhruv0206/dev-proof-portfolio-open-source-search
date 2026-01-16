@@ -38,7 +38,8 @@ class Settings(BaseSettings):
         "Rust", 
         "C++", 
         "PHP", 
-        "Ruby"
+        "Ruby",
+        "Dart"
     ]
     repos_per_language: int = 100
     contribution_labels: list[str] = [

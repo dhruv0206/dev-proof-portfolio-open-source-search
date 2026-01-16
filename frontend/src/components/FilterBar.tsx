@@ -34,6 +34,7 @@ const LANGUAGES = [
     "C++",
     "PHP",
     "Ruby",
+    "Dart",
 ];
 
 const LABELS = [
