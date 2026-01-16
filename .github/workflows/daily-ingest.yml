@@ -41,7 +41,7 @@ jobs:
           cache: 'pip'
 
       - name: Install dependencies
-        working-directory: ./backend
+        working-directory: ./ai-engine
         run: pip install -r requirements.txt
 
       # ============ SCHEDULED RUNS ============
@@ -49,7 +49,7 @@ jobs:
       # 0. Nightly Cleanup (2 AM UTC): Remove closed + stale issues
       - name: "Scheduled: Cleanup (2 AM)"
         if: github.event_name == 'schedule' && github.event.schedule == '0 2 * * *'
-        working-directory: ./backend
+        working-directory: ./ai-engine
         env:
           GH_APP_ID: ${{ secrets.GH_APP_ID }}
           GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
@@ -64,7 +64,7 @@ jobs:
       # 1. Nightly Phase 1 (4 AM UTC): Fresh (7d) + Popular
       - name: "Scheduled: Fresh & Popular (4 AM)"
         if: github.event_name == 'schedule' && github.event.schedule == '0 4 * * *'
-        working-directory: ./backend
+        working-directory: ./ai-engine
         env:
           GH_APP_ID: ${{ secrets.GH_APP_ID }}
           GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
@@ -89,7 +89,7 @@ jobs:
       # 2. Nightly Phase 2 (6 AM UTC): Today's Issues (24h)
       - name: "Scheduled: Today's Issues (6 AM)"
         if: github.event_name == 'schedule' && github.event.schedule == '0 6 * * *'
-        working-directory: ./backend
+        working-directory: ./ai-engine
         env:
           GH_APP_ID: ${{ secrets.GH_APP_ID }}
           GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
@@ -109,7 +109,7 @@ jobs:
       # Runs at 00, 04, 08, 12, 16, 20
       - name: "Scheduled: Newest + Active Issues (4.5h)"
         if: github.event_name == 'schedule' && github.event.schedule == '0 */4 * * *'
-        working-directory: ./backend
+        working-directory: ./ai-engine
         env:
           GH_APP_ID: ${{ secrets.GH_APP_ID }}
           GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
@@ -136,7 +136,7 @@ jobs:
 
       - name: "Manual: Cleanup"
         if: github.event_name == 'workflow_dispatch' && contains(github.event.inputs.mode, 'Cleanup')
-        working-directory: ./backend
+        working-directory: ./ai-engine
         env:
           GH_APP_ID: ${{ secrets.GH_APP_ID }}
           GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
@@ -150,7 +150,7 @@ jobs:
 
       - name: "Manual: Last 2 Hours"
         if: github.event_name == 'workflow_dispatch' && contains(github.event.inputs.mode, 'Last 2 Hours')
-        working-directory: ./backend
+        working-directory: ./ai-engine
         env:
           GH_APP_ID: ${{ secrets.GH_APP_ID }}
           GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
@@ -168,7 +168,7 @@ jobs:
 
       - name: "Manual: Today's Issues"
         if: github.event_name == 'workflow_dispatch' && contains(github.event.inputs.mode, 'Todays')
-        working-directory: ./backend
+        working-directory: ./ai-engine
         env:
           GH_APP_ID: ${{ secrets.GH_APP_ID }}
           GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
@@ -186,7 +186,7 @@ jobs:
 
       - name: "Manual: Fresh Issues (7 days)"
         if: github.event_name == 'workflow_dispatch' && contains(github.event.inputs.mode, 'Fresh')
-        working-directory: ./backend
+        working-directory: ./ai-engine
         env:
           GH_APP_ID: ${{ secrets.GH_APP_ID }}
           GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
@@ -204,7 +204,7 @@ jobs:
 
       - name: "Manual: Popular (5000+ stars)"
         if: github.event_name == 'workflow_dispatch' && contains(github.event.inputs.mode, 'Popular')
-        working-directory: ./backend
+        working-directory: ./ai-engine
         env:
           GH_APP_ID: ${{ secrets.GH_APP_ID }}
           GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
@@ -221,7 +221,7 @@ jobs:
 
       - name: "Manual: All Labels"
         if: github.event_name == 'workflow_dispatch' && contains(github.event.inputs.mode, 'All Labels')
-        working-directory: ./backend
+        working-directory: ./ai-engine
         env:
           GH_APP_ID: ${{ secrets.GH_APP_ID }}
           GH_PRIVATE_KEY: ${{ secrets.GH_PRIVATE_KEY }}
