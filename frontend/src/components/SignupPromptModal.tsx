@@ -1,6 +1,7 @@
 'use client';
 
-import { SignInButton } from '@clerk/nextjs';
+// CLERK AUTH TEMPORARILY DISABLED - Uncomment when needed
+// import { SignInButton } from '@clerk/nextjs';
 import { Button } from '@/components/ui/button';
 import { LockClosedIcon, SparklesIcon } from '@heroicons/react/24/solid';
 
@@ -65,13 +66,17 @@ export function SignupPromptModal({ mode, onDismiss }: SignupPromptModalProps) {
                     </li>
                 </ul>
 
-                {/* Actions */}
+                {/* Actions - CLERK AUTH TEMPORARILY DISABLED */}
                 <div className="flex flex-col gap-3">
-                    <SignInButton mode="modal">
+                    {/* CLERK AUTH TEMPORARILY DISABLED - Uncomment when needed */}
+                    {/* <SignInButton mode="modal">
                         <Button className="w-full font-semibold py-5">
                             Sign in with GitHub
                         </Button>
-                    </SignInButton>
+                    </SignInButton> */}
+                    <Button className="w-full font-semibold py-5" disabled>
+                        Sign in with GitHub (Coming Soon)
+                    </Button>
 
                     {!isHard && onDismiss && (
                         <Button

@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
+// CLERK AUTH TEMPORARILY DISABLED - Uncomment when needed
+// import { SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 import { SunIcon, MoonIcon } from '@heroicons/react/24/outline';
 import { Button } from '@/components/ui/button';
 
@@ -106,8 +107,9 @@ export function Header() {
                     {/* Divider */}
                     <div className="w-px h-6 bg-border mx-1" />
 
+                    {/* CLERK AUTH TEMPORARILY DISABLED - Uncomment when needed */}
                     {/* Auth Buttons */}
-                    <SignedOut>
+                    {/* <SignedOut>
                         <SignInButton mode="modal">
                             <Button variant="outline" size="sm" className="gap-1.5">
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -126,7 +128,7 @@ export function Header() {
                                 }
                             }}
                         />
-                    </SignedIn>
+                    </SignedIn> */}
 
                     <Button
                         variant="outline"
@@ -145,4 +147,3 @@ export function Header() {
         </header>
     );
 }
-

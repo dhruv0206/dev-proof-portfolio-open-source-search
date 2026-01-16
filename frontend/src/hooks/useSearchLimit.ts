@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@clerk/nextjs';
+// CLERK AUTH TEMPORARILY DISABLED - Uncomment when needed
+// import { useAuth } from '@clerk/nextjs';
 
 const STORAGE_KEY = 'search_count';
 const SOFT_LIMIT = 2;  // After 2 searches, show blur + banner
@@ -10,7 +11,11 @@ const HARD_LIMIT = 4;  // After 4 searches, hard block
 export type LimitState = 'free' | 'soft' | 'hard';
 
 export function useSearchLimit() {
-  const { isSignedIn, isLoaded } = useAuth();
+  // CLERK AUTH TEMPORARILY DISABLED - Replace with actual auth when needed
+  // const { isSignedIn, isLoaded } = useAuth();
+  const isSignedIn = false; // Temporary: treat all users as signed in (no limits)
+  const isLoaded = true;
+  
   const [searchCount, setSearchCount] = useState(0);
   const [mounted, setMounted] = useState(false);
 

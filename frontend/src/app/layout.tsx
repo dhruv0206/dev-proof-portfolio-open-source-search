@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { ClerkProvider } from "@clerk/nextjs";
+// CLERK AUTH TEMPORARILY DISABLED - Uncomment when needed
+// import { ClerkProvider } from "@clerk/nextjs";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import "./globals.css";
@@ -70,21 +71,19 @@ export default function RootLayout({
   };
 
   return (
-    <ClerkProvider>
-      <html lang="en" suppressHydrationWarning>
-        <head>
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-          />
-        </head>
-        <body suppressHydrationWarning>
-          {children}
-          <Analytics />
-          <SpeedInsights />
-        </body>
-      </html>
-    </ClerkProvider>
+    // CLERK AUTH TEMPORARILY DISABLED - Wrap with <ClerkProvider> when needed
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </head>
+      <body suppressHydrationWarning>
+        {children}
+        <Analytics />
+        <SpeedInsights />
+      </body>
+    </html>
   );
 }
-

@@ -1,8 +1,14 @@
-import { clerkMiddleware } from '@clerk/nextjs/server'
+// CLERK AUTH TEMPORARILY DISABLED - Uncomment when needed
+// import { clerkMiddleware } from '@clerk/nextjs/server'
 
-// Clerk middleware - handles auth context
-// All routes are public by default, we handle limiting in the client
-export default clerkMiddleware()
+// // Clerk middleware - handles auth context
+// // All routes are public by default, we handle limiting in the client
+// export default clerkMiddleware()
+
+// Placeholder middleware - does nothing
+export function middleware() {
+  // No-op middleware
+}
 
 export const config = {
   matcher: [
