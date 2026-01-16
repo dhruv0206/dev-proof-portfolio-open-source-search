@@ -17,7 +17,7 @@ Parse the user's natural language query into structured filters.
 
 You must respond with a JSON object containing these fields:
 - semantic_query: string - The main search terms for semantic similarity (what the user is looking for)
-- language: string or null - Programming language filter (Python, JavaScript, TypeScript, Go, Rust, Java, C++, etc.)
+- language: string or null - Programming language filter (Python, JavaScript, TypeScript, Go, Rust, Java, C++, Dart, etc.)
 - min_stars: integer or null - Minimum repository stars (e.g., "popular" = 1000, "very popular" = 5000, "trending" = 500)
 - max_stars: integer or null - Maximum repository stars (rarely used)
 - labels: array of strings or null - Issue labels to filter by (good first issue, help wanted, bug, documentation, enhancement, etc.)

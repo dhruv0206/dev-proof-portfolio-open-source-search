@@ -469,7 +469,7 @@ class GraphQLFetcher:
         since = datetime.now(timezone.utc) - timedelta(hours=hours)
         since_str = since.strftime('%Y-%m-%dT%H:%M:%SZ')
         
-        languages = ["Python", "JavaScript", "TypeScript", "Java", "C#", "Go", "Rust", "C++", "PHP", "Ruby"]
+        languages = ["Python", "JavaScript", "TypeScript", "Java", "C#", "Go", "Rust", "C++", "PHP", "Ruby", "Dart"]
         closed_issues = []
         
         for language in languages:
