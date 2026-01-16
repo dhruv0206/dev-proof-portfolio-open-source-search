@@ -122,7 +122,7 @@ The AI query parser understands these intents:
 | **Beginner-Friendly** | "beginner", "easy", "starter", "first" | difficulty: beginner + good first issue label |
 | **Unassigned** | "unassigned", "unclaimed", "nobody working" | Only issues with no assignees |
 | **Help Wanted** | "help wanted", "needs help" | Filters by help wanted label |
-| **By Language** | "Python", "JavaScript", "Rust", etc. | Language filter |
+| **By Language** | "Python", "JavaScript", "TypeScript", "Go", "Rust", "Java", "C++", "Dart", etc. | Language filter |
 | **By Topic** | "machine learning", "CLI", "web" | Matches repo topics |
 | **Sort by Stars** | "most stars", "most popular" | Sorts by repo stars |
 | **Sort by Newest** | "newest", "newly created" | Sorts by created_at (default) |

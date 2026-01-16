@@ -40,13 +40,13 @@ def main():
     # ---------------------------------------------------------
     print("📦 [Backend] Starting deployment to Google Cloud Run...")
     
-    if not os.path.exists("backend/backend-cloudbuild.yaml"):
-        print("❌ Error: backend/backend-cloudbuild.yaml not found!")
+    if not os.path.exists("ai-engine/ai-engine-cloudbuild.yaml"):
+        print("❌ Error: ai-engine/ai-engine-cloudbuild.yaml not found!")
         sys.exit(1)
 
     print("   • Submitting build to Cloud Build...")
     # Using absolute path for config to be safe, or just assuming cwd is root (which strictly it should be)
-    run_command("gcloud builds submit --config backend/backend-cloudbuild.yaml .")
+    run_command("gcloud builds submit --config ai-engine/ai-engine-cloudbuild.yaml .")
 
     print("   • Deploying to Cloud Run service 'github-finder-backend'...")
     run_command(
@@ -62,13 +62,13 @@ def main():
     # ---------------------------------------------------------
     print("\n🎨 [Frontend] Starting deployment to Vercel...")
 
-    if not os.path.isdir("frontend"):
-        print("❌ Error: 'frontend' directory not found!")
+    if not os.path.isdir("web-platform"):
+        print("❌ Error: 'web-platform' directory not found!")
         sys.exit(1)
 
     # Vercel needs to run inside the frontend directory
     # On Windows "vercel" might be a cmd/ps1 shim, valid in shell=True
-    run_command("vercel --prod", cwd="frontend")
+    run_command("vercel --prod", cwd="web-platform")
 
     # ---------------------------------------------------------
     # Summary

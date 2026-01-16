@@ -1,5 +1,0 @@
-steps:
-- name: 'gcr.io/cloud-builders/docker'
-  args: ['build', '-t', 'gcr.io/opesource-github-search/backend', '-f', 'backend/Dockerfile', '.']
-images:
-- 'gcr.io/opesource-github-search/backend'

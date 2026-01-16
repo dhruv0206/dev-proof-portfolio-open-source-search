@@ -1,6 +1,4 @@
 import type { Metadata } from "next";
-// CLERK AUTH TEMPORARILY DISABLED - Uncomment when needed
-// import { ClerkProvider } from "@clerk/nextjs";
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import "./globals.css";
@@ -71,7 +69,6 @@ export default function RootLayout({
   };
 
   return (
-    // CLERK AUTH TEMPORARILY DISABLED - Wrap with <ClerkProvider> when needed
     <html lang="en" suppressHydrationWarning>
       <head>
         <script

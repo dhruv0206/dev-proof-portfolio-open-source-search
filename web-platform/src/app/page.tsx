@@ -1,8 +1,6 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-// CLERK AUTH TEMPORARILY DISABLED - Uncomment when needed
-// import { useAuth } from '@clerk/nextjs';
 import { Header } from '@/components/Header';
 import { SearchBar } from '@/components/SearchBar';
 import { SearchResults } from '@/components/SearchResults';
@@ -14,8 +12,7 @@ import { getRecentIssues, SearchResult } from '@/lib/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { ExclamationCircleIcon } from '@heroicons/react/24/outline';
-// CLERK AUTH TEMPORARILY DISABLED - Uncomment when needed
-// import { SignupPromptModal } from '@/components/SignupPromptModal';
+import { SignupPromptModal } from '@/components/SignupPromptModal';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -24,11 +21,7 @@ import { StatsBar } from '@/components/StatsBar';
 
 export default function Home() {
   const { results, parsedQuery, isLoading, error, pagination, search, goToPage, clearResults, currentQuery } = useSearch();
-  // CLERK AUTH TEMPORARILY DISABLED - Replace with actual auth when needed
-  // const { isSignedIn } = useAuth();
-  const isSignedIn = true; // Temporary: treat all users as signed in (no limits)
-
-  const { searchCount, incrementSearch, limitState, isAtSoftLimit, isAtHardLimit } = useSearchLimit();
+  const { searchCount, incrementSearch, limitState, isAtSoftLimit, isAtHardLimit, isSignedIn } = useSearchLimit();
   const [hasSearched, setHasSearched] = useState(false);
   const [showSignupModal, setShowSignupModal] = useState(false);
   const [softLimitDismissed, setSoftLimitDismissed] = useState(false);
@@ -128,16 +121,16 @@ export default function Home() {
   }, [allRecentIssues, recentPage]);
 
   const handleSearch = async (query: string) => {
-    // CLERK AUTH TEMPORARILY DISABLED - Check for hard limit before searching
-    // if (isAtHardLimit && !isSignedIn) {
-    //   setShowSignupModal(true);
-    //   return;
-    // }
+    // Check for hard limit before searching
+    if (isAtHardLimit && !isSignedIn) {
+      setShowSignupModal(true);
+      return;
+    }
 
-    // CLERK AUTH TEMPORARILY DISABLED - Increment search count for anonymous users
-    // if (!isSignedIn) {
-    //   incrementSearch();
-    // }
+    // Increment search count for anonymous users
+    if (!isSignedIn) {
+      incrementSearch();
+    }
 
     // Reset filters on new search
     setLanguages([]);
@@ -154,10 +147,10 @@ export default function Home() {
       daysAgo: null
     });
 
-    // CLERK AUTH TEMPORARILY DISABLED - Show soft limit modal after search completes
-    // if (limitState === 'soft' && !softLimitDismissed && !isSignedIn) {
-    //   setShowSignupModal(true);
-    // }
+    // Show soft limit modal after search completes
+    if (limitState === 'soft' && !softLimitDismissed && !isSignedIn) {
+      setShowSignupModal(true);
+    }
   };
 
   // Filter Handlers
@@ -343,20 +336,22 @@ export default function Home() {
           {/* Top Pagination */}
           <PaginationBlock />
 
-          {/* Results with blur overlay for limit states - CLERK AUTH TEMPORARILY DISABLED */}
+          {/* Results with blur overlay for limit states */}
           <div className="relative">
-            {/* CLERK AUTH TEMPORARILY DISABLED - Blur overlay for soft/hard limit */}
-            {/* {(isAtSoftLimit || isAtHardLimit) && !isSignedIn && hasSearched && (
-              <div className="absolute inset-0 z-10 pointer-events-none">
-                <div className="h-[450px]" />
-                <div className="backdrop-blur-md bg-background/60 h-full" />
+            {/* Blur overlay for soft/hard limit - blocks interaction */}
+            {(isAtSoftLimit || isAtHardLimit) && !isSignedIn && hasSearched && (
+              <div className="absolute inset-0 z-10">
+                <div className="h-[450px] pointer-events-none" /> {/* Show first 3 results clearly */}
+                <div className="backdrop-blur-md bg-background/60 h-full cursor-not-allowed" /> {/* Blocks clicks */}
               </div>
-            )} */}
-            <SearchResults results={displayResults} isLoading={showLoading} />
+            )}
+            <div className={(isAtSoftLimit || isAtHardLimit) && !isSignedIn && hasSearched ? "pointer-events-none" : ""}>
+              <SearchResults results={displayResults} isLoading={showLoading} />
+            </div>
           </div>
 
-          {/* CLERK AUTH TEMPORARILY DISABLED - Soft limit banner */}
-          {/* {isAtSoftLimit && !isAtHardLimit && !isSignedIn && hasSearched && !softLimitDismissed && (
+          {/* Soft limit banner */}
+          {isAtSoftLimit && !isAtHardLimit && !isSignedIn && hasSearched && !softLimitDismissed && (
             <div className="mt-6 p-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-xl flex items-center justify-between gap-4 flex-wrap">
               <div>
                 <p className="font-medium">🔐 Sign up for unlimited searches</p>
@@ -378,7 +373,7 @@ export default function Home() {
                 </Button>
               </div>
             </div>
-          )} */}
+          )}
 
           {/* Bottom Pagination */}
           <PaginationBlock />
@@ -463,8 +458,8 @@ export default function Home() {
         </div>
       </footer>
 
-      {/* CLERK AUTH TEMPORARILY DISABLED - Signup Modal */}
-      {/* {showSignupModal && (
+      {/* Signup Modal */}
+      {showSignupModal && (
         <SignupPromptModal
           mode={isAtHardLimit ? 'hard' : 'soft'}
           onDismiss={() => {
@@ -472,7 +467,7 @@ export default function Home() {
             setSoftLimitDismissed(true);
           }}
         />
-      )} */}
+      )}
     </main>
   );
 }
