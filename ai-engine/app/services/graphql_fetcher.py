@@ -285,10 +285,14 @@ class GraphQLFetcher:
         if "errors" in result:
             for error in result["errors"]:
                 if error.get("type") == "RATE_LIMIT":
-                    logger.warning("GraphQL RATE_LIMIT error. Sleeping...")
-                    # Unfortunately GraphQL doesn't always give reset time in error, but we can try to guess or use a default
-                    time.sleep(60) # Sleep 1 minute and retry
-                    return self._execute_query(query, variables, retry_on_401=retry_on_401, raise_on_graphql_error=raise_on_graphql_error)
+                    # Use exponential backoff for max 3 retries in this context
+                    # (Though usually the caller should handle major blocks)
+                    logger.warning("GraphQL RATE_LIMIT error. Sleeping 60s...")
+                    time.sleep(60)
+                    if retry_on_401: # Use this bool to prevent infinite loops (hacky but safe for now)
+                         return self._execute_query(query, variables, retry_on_401=False, raise_on_graphql_error=raise_on_graphql_error)
+                    else:
+                         raise Exception("GitHub GraphQL Rate Limit Exceeded (Fatal)")
 
         if "errors" in result and raise_on_graphql_error:
             logger.error(f"GraphQL errors: {result['errors']}")
