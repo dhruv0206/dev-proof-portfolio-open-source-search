@@ -51,7 +51,7 @@ def main():
     parser.add_argument(
         "--batch-size", 
         type=int, 
-        default=500,
+        default=50,  # Reduced from 500 to 50 to avoid rate limits
         help="Number of issues to check per batch before saving progress"
     )
     
@@ -106,12 +106,18 @@ def main():
     total_batches = (len(all_ids) + batch_size - 1) // batch_size
     logger.info(f"Processing {len(all_ids):,} issues in {total_batches} batches")
     
+    import time # Import sleep 
+    
     for batch_num in range(total_batches):
         start_idx = batch_num * batch_size
         end_idx = min(start_idx + batch_size, len(all_ids))
         batch_ids = all_ids[start_idx:end_idx]
         
         logger.info(f"\nProcessing batch {batch_num + 1}/{total_batches} ({len(batch_ids)} issues)")
+        
+        # Add sleep to prevent firing requests too fast
+        if batch_num > 0:
+            time.sleep(2) # 2 second pause between batches
         
         # Check this batch
         states = fetcher.batch_check_issue_states(batch_ids)
