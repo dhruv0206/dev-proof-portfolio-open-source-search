@@ -107,3 +107,98 @@ async def get_user_stats(
         "recentActivity": recent_activity,
         "activeIssues": active_issues_data
     }
+
+
+@router.get("/profile/{username}")
+async def get_public_profile(
+    username: str,
+    db: Session = Depends(get_db)
+):
+    """
+    Get public profile data by GitHub username.
+    
+    This is a PUBLIC endpoint - no authentication required.
+    Returns only verified contributions and public stats.
+    """
+    from sqlalchemy import text
+    
+    # 1. Lookup user by GitHub username
+    user_result = db.execute(
+        text('SELECT id, name, image, "githubUsername" FROM "user" WHERE "githubUsername" = :username'),
+        {"username": username}
+    ).fetchone()
+    
+    if not user_result:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_id = user_result[0]
+    user_name = user_result[1]
+    user_avatar = user_result[2]
+    github_username = user_result[3]
+    
+    # 2. Count verified PRs
+    verified_count = db.query(func.count(TrackedIssue.id)).filter(
+        TrackedIssue.user_id == user_id,
+        TrackedIssue.status == IssueStatus.VERIFIED.value
+    ).scalar() or 0
+    
+    # 3. Count unique repositories
+    repo_count = db.query(func.count(func.distinct(
+        TrackedIssue.repo_owner + '/' + TrackedIssue.repo_name
+    ))).filter(
+        TrackedIssue.user_id == user_id,
+        TrackedIssue.status == IssueStatus.VERIFIED.value
+    ).scalar() or 0
+    
+    # 4. Get all verified contributions with details
+    verified_issues = db.query(TrackedIssue).filter(
+        TrackedIssue.user_id == user_id,
+        TrackedIssue.status == IssueStatus.VERIFIED.value
+    ).order_by(TrackedIssue.verified_at.desc()).all()
+    
+    # 5. Calculate total lines of code (from VerifiedContribution if exists)
+    total_lines_result = db.execute(
+        text("""
+            SELECT COALESCE(SUM(lines_added), 0), COALESCE(SUM(lines_removed), 0)
+            FROM verified_contributions
+            WHERE user_id = :user_id
+        """),
+        {"user_id": user_id}
+    ).fetchone()
+    
+    total_lines_added = total_lines_result[0] if total_lines_result else 0
+    total_lines_removed = total_lines_result[1] if total_lines_result else 0
+    
+    # 6. Get unique languages (from tracked issues - we might need to add this field later)
+    # For now, return empty list - we can enhance this later
+    languages = []
+    
+    # Build contributions list
+    contributions = []
+    for issue in verified_issues:
+        contributions.append({
+            "id": str(issue.id),
+            "title": issue.issue_title or f"PR #{issue.issue_number}",
+            "repoOwner": issue.repo_owner,
+            "repoName": issue.repo_name,
+            "repoFullName": f"{issue.repo_owner}/{issue.repo_name}",
+            "prUrl": issue.pr_url,
+            "issueUrl": issue.issue_url,
+            "mergedAt": issue.verified_at.isoformat() if issue.verified_at else None,
+        })
+    
+    return {
+        "profile": {
+            "name": user_name,
+            "username": github_username,
+            "avatarUrl": user_avatar,
+        },
+        "stats": {
+            "verifiedPRs": verified_count,
+            "repositories": repo_count,
+            "linesAdded": total_lines_added,
+            "linesRemoved": total_lines_removed,
+        },
+        "languages": languages,
+        "contributions": contributions,
+    }
