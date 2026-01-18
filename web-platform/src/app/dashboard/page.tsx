@@ -1,8 +1,8 @@
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { DashboardContent } from '@/components/dashboard/DashboardContent';
+import { AuthRequiredModal } from '@/components/shared/AuthRequiredModal';
 
 export default async function DashboardPage() {
     const session = await auth.api.getSession({
@@ -10,7 +10,14 @@ export default async function DashboardPage() {
     });
 
     if (!session?.user) {
-        redirect('/');
+        return (
+            <DashboardLayout>
+                <AuthRequiredModal
+                    title="Sign in to access Dashboard"
+                    message="Track your contributions, view stats, and manage your open source journey."
+                />
+            </DashboardLayout>
+        );
     }
 
     return (

@@ -1,8 +1,8 @@
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { TrackedIssuesDashboard } from '@/components/issues/TrackedIssuesDashboard';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { AuthRequiredModal } from '@/components/shared/AuthRequiredModal';
 
 export default async function MyIssuesPage() {
     const session = await auth.api.getSession({
@@ -10,7 +10,14 @@ export default async function MyIssuesPage() {
     });
 
     if (!session?.user) {
-        redirect('/');
+        return (
+            <DashboardLayout>
+                <AuthRequiredModal
+                    title="Sign in to track issues"
+                    message="Track issues you're working on and submit PRs for verification."
+                />
+            </DashboardLayout>
+        );
     }
 
     return (

@@ -1,8 +1,8 @@
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { ProfileContent } from '@/components/profile/ProfileContent';
+import { AuthRequiredModal } from '@/components/shared/AuthRequiredModal';
 import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
 import Link from 'next/link';
@@ -32,7 +32,14 @@ export default async function ProfilePage() {
     });
 
     if (!session?.user) {
-        redirect('/');
+        return (
+            <DashboardLayout>
+                <AuthRequiredModal
+                    title="Sign in to view your profile"
+                    message="Build and share your verified developer portfolio."
+                />
+            </DashboardLayout>
+        );
     }
 
     // Get the user's GitHub username from database
