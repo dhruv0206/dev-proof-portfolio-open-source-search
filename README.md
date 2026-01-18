@@ -4,7 +4,7 @@
 
 Discover contribution opportunities with AI-powered search. Track your work. Build a verified developer portfolio.
 
-[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-opensource--search.vercel.app-blue)](https://opensource-search.vercel.app)
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-dev--proof--portfolio.vercel.app-blue)](https://dev-proof-portfolio.vercel.app)
 [![Discord](https://img.shields.io/badge/Discord-Join_Community-7289DA?logo=discord&logoColor=white)](https://discord.gg/dZRFt9kN)
 ![Powered by Gemini](https://img.shields.io/badge/AI-Gemini%202.0-4285F4?logo=google&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Frontend-Next.js%2016-black)
@@ -27,7 +27,7 @@ DevProof helps developers:
 
 ### 🔍 AI-Powered Search (The Core)
 
-> **[🚀 Try the AI Search Now →](https://opensource-search.vercel.app/finder)**
+> **[🚀 Try the AI Search Now →](https://dev-proof-portfolio.vercel.app/finder)**
 
 Find the perfect issue in seconds using natural language:
 
@@ -250,4 +250,4 @@ MIT License — Use freely for personal and commercial projects.
 
 **Built with ❤️ to help developers break into open source.**
 
-[Try it now →](https://opensource-search.vercel.app)
+[Try it now →](https://dev-proof-portfolio.vercel.app)

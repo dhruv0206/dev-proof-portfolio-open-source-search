@@ -3,7 +3,7 @@ import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import "./globals.css";
 
-const siteUrl = "https://opensource-search.vercel.app";
+const siteUrl = "https://dev-proof-portfolio.vercel.app";
 
 export const metadata: Metadata = {
   title: {
@@ -54,7 +54,7 @@ export default function RootLayout({
     "@type": "WebApplication",
     "name": "DevProof",
     "description": "AI-powered platform to discover open source issues, verify your contributions, and build a verified developer portfolio",
-    "url": "https://opensource-search.vercel.app",
+    "url": "https://dev-proof-portfolio.vercel.app",
     "applicationCategory": "DeveloperApplication",
     "operatingSystem": "Web",
     "offers": {

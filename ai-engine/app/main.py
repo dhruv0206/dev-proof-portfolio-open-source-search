@@ -44,7 +44,7 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:3001",
-        "https://opensource-search.vercel.app",
+        "https://dev-proof-portfolio.vercel.app",
         "https://contribfinder.com",
     ],
     allow_credentials=True,

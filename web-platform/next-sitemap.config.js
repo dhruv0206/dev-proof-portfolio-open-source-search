@@ -1,6 +1,6 @@
 /** @type {import('next-sitemap').IConfig} */
 module.exports = {
-    siteUrl: 'https://opensource-search.vercel.app',
+    siteUrl: 'https://dev-proof-portfolio.vercel.app',
     generateRobotsTxt: true,
     changefreq: 'daily',
     priority: 0.7,
