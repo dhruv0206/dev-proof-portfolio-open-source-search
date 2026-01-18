@@ -96,17 +96,19 @@ def main():
     logger.info("Step 2: Checking issue states on GitHub...")
     logger.info("=" * 60)
     
-    closed_ids = []
-    not_found_ids = []
-    open_ids = []
-    error_ids = []
-    
     # Process in batches for memory efficiency
     batch_size = args.batch_size
     total_batches = (len(all_ids) + batch_size - 1) // batch_size
     logger.info(f"Processing {len(all_ids):,} issues in {total_batches} batches")
+    logger.info("⚡ Deleting after each batch (incremental cleanup)")
     
     import time # Import sleep 
+    
+    total_deleted = 0
+    total_closed = 0
+    total_not_found = 0
+    total_open = 0
+    total_errors = 0
     
     for batch_num in range(total_batches):
         start_idx = batch_num * batch_size
@@ -122,54 +124,55 @@ def main():
         # Check this batch
         states = fetcher.batch_check_issue_states(batch_ids)
         
-        # Categorize results
+        # Categorize results for this batch
+        batch_closed = []
+        batch_not_found = []
+        batch_open = 0
+        batch_errors = 0
+        
         for issue_id, state in states.items():
             if state == "CLOSED":
-                closed_ids.append(issue_id)
+                batch_closed.append(issue_id)
             elif state == "NOT_FOUND":
-                not_found_ids.append(issue_id)
+                batch_not_found.append(issue_id)
             elif state == "OPEN":
-                open_ids.append(issue_id)
+                batch_open += 1
             else:
-                error_ids.append(issue_id)
+                batch_errors += 1
+        
+        # Update totals
+        total_closed += len(batch_closed)
+        total_not_found += len(batch_not_found)
+        total_open += batch_open
+        total_errors += batch_errors
+        
+        # Delete this batch's closed/not-found issues immediately
+        batch_to_delete = batch_closed + batch_not_found
+        if batch_to_delete and not args.dry_run:
+            deleted = pinecone.delete_by_ids(batch_to_delete)
+            total_deleted += deleted
+            logger.info(f"Batch {batch_num + 1}: deleted {deleted} (closed: {len(batch_closed)}, not_found: {len(batch_not_found)})")
+        elif batch_to_delete and args.dry_run:
+            logger.info(f"Batch {batch_num + 1}: would delete {len(batch_to_delete)} (dry-run)")
         
         # Progress summary
-        logger.info(f"Batch {batch_num + 1} complete: {len(closed_ids)} closed, {len(not_found_ids)} not found, {len(open_ids)} open")
+        logger.info(f"Running totals: {total_closed} closed, {total_not_found} not found, {total_open} open, {total_deleted} deleted")
     
     # Step 4: Summary
     logger.info("\n" + "=" * 60)
     logger.info("SUMMARY")
     logger.info("=" * 60)
-    logger.info(f"✅ OPEN issues (keep):      {len(open_ids):,}")
-    logger.info(f"❌ CLOSED issues (delete):  {len(closed_ids):,}")
-    logger.info(f"🔍 NOT FOUND (delete):      {len(not_found_ids):,}")
-    logger.info(f"⚠️  ERRORS (skip):           {len(error_ids):,}")
+    logger.info(f"✅ OPEN issues (kept):      {total_open:,}")
+    logger.info(f"❌ CLOSED issues (deleted): {total_closed:,}")
+    logger.info(f"🔍 NOT FOUND (deleted):     {total_not_found:,}")
+    logger.info(f"⚠️  ERRORS (skipped):        {total_errors:,}")
+    logger.info(f"🗑️  Total deleted:           {total_deleted:,}")
     
-    # Combine IDs to delete
-    ids_to_delete = closed_ids + not_found_ids
-    logger.info(f"\n📌 Total to delete: {len(ids_to_delete):,}")
-    
-    # Step 5: Delete from Pinecone
-    if ids_to_delete and not args.dry_run:
-        logger.info("\n" + "=" * 60)
-        logger.info("Step 3: Deleting closed/missing issues from Pinecone...")
-        logger.info("=" * 60)
-        
-        deleted = pinecone.delete_by_ids(ids_to_delete)
-        logger.info(f"🗑️  Deleted {deleted:,} issues from Pinecone")
-        
-        # Verify
+    # Verify final index size
+    if total_deleted > 0:
         new_stats = pinecone.get_index_stats()
         new_total = new_stats.get("total_vector_count", 0)
         logger.info(f"📊 New index size: {new_total:,} (was {total_vectors:,})")
-    elif args.dry_run:
-        logger.info("\n🔍 DRY RUN - Would have deleted these issues:")
-        for issue_id in ids_to_delete[:20]:
-            logger.info(f"  - {issue_id}")
-        if len(ids_to_delete) > 20:
-            logger.info(f"  ... and {len(ids_to_delete) - 20} more")
-    else:
-        logger.info("\n✨ No issues to delete!")
     
     # Final rate limit check
     logger.info("\n" + "=" * 60)
