@@ -73,7 +73,7 @@ class TrackedIssuesListResponse(BaseModel):
 
 
 # Routes
-@router.post("/track")
+@router.post("/start-working")
 def track_issue(request: TrackIssueRequest, db: Session = Depends(get_db)):
     """Start tracking an issue for a user."""
     # Check if already tracking

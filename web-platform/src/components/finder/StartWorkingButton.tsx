@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
 import { PlayCircle, CheckCircle, Loader2 } from 'lucide-react';
+import { API_BASE_URL } from '@/lib/api';
 
 interface StartWorkingButtonProps {
     issueUrl: string;
@@ -50,7 +51,7 @@ export function StartWorkingButton({
         setError(null);
 
         try {
-            const response = await fetch('http://localhost:8000/api/issues/track', {
+            const response = await fetch(`${API_BASE_URL}/api/issues/start-working`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
