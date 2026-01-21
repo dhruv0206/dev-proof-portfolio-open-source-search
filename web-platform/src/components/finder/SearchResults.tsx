@@ -49,9 +49,11 @@ export function SearchResults({ results, isLoading, userId }: SearchResultsProps
             <p className="text-sm text-muted-foreground mb-4">
                 Found {results.length} contribution opportunities
             </p>
-            {results.map((issue, index) => (
-                <IssueCard key={issue.issue_id} issue={issue} index={index} userId={userId} />
-            ))}
+            <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
+                {results.map((issue, index) => (
+                    <IssueCard key={issue.issue_id} issue={issue} index={index} userId={userId} />
+                ))}
+            </div>
         </motion.div>
     );
 }

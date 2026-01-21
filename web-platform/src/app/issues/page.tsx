@@ -22,7 +22,7 @@ export default async function MyIssuesPage() {
 
     return (
         <DashboardLayout>
-            <main className="container mx-auto px-8 py-8">
+            <main className="w-full px-8 py-8">
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold mb-2">My Issues</h1>
                     <p className="text-muted-foreground">

@@ -268,7 +268,7 @@ export function OpenSourceFinder({ showSidebarTrigger = false }: OpenSourceFinde
         <div className="w-full">
             {/* Search Layout */}
             <section className="pt-8 pb-8 px-4">
-                <div className="max-w-4xl mx-auto flex flex-col items-center">
+                <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
                     <div className="w-full mb-6">
                         <SearchBar onSearch={handleSearch} isLoading={isLoading} />
                     </div>
@@ -294,7 +294,7 @@ export function OpenSourceFinder({ showSidebarTrigger = false }: OpenSourceFinde
 
             {/* Results Section */}
             <section className="px-4 pb-16">
-                <div className="max-w-4xl mx-auto">
+                <div className="w-full max-w-8xl mx-auto">
                     {/* Error Message */}
                     {error && (
                         <Alert variant="destructive" className="mb-6">

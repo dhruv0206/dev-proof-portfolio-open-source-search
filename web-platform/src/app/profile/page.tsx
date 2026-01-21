@@ -44,7 +44,7 @@ export default async function ProfilePage() {
 
     return (
         <DashboardLayout>
-            <main className="container mx-auto px-8 py-8">
+            <main className="w-full px-8 py-8">
                 {/* Header with public link */}
                 <div className="flex items-center justify-between mb-8">
                     <div>

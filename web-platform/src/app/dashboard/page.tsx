@@ -22,10 +22,10 @@ export default async function DashboardPage() {
 
     return (
         <DashboardLayout>
-            <main className="container mx-auto px-8 py-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold mb-2">Dashboard</h1>
-                    <p className="text-muted-foreground">
+            <main className="w-full px-8 py-8">
+                <div className="mb-10 text-center">
+                    <h1 className="text-4xl font-bold mb-3">Dashboard</h1>
+                    <p className="text-muted-foreground text-lg">
                         Your open source contribution overview and progress.
                     </p>
                 </div>

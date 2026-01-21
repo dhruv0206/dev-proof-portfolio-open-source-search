@@ -397,93 +397,98 @@ export function TrackedIssuesDashboard({ userId }: TrackedIssuesDashboardProps) 
                 )}
             </Card>
 
-            {issues.map((issue) => {
-                const config = statusConfig[issue.status] || statusConfig.in_progress;
-                const StatusIcon = config.icon;
+            {/* Issues Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                {issues.map((issue) => {
+                    const config = statusConfig[issue.status] || statusConfig.in_progress;
+                    const StatusIcon = config.icon;
 
-                return (
-                    <Card key={issue.id} className="bg-card">
-                        <CardContent className="p-6">
-                            <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                                {/* Issue Info */}
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                                        <span>{issue.repo_owner}/{issue.repo_name}</span>
-                                    </div>
+                    return (
+                        <Card key={issue.id} className="bg-card h-full flex flex-col">
+                            <CardContent className="p-6 flex-1 flex flex-col">
+                                <div className="flex flex-col gap-4 flex-1">
+                                    {/* Issue Info */}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                                            <span>{issue.repo_owner}/{issue.repo_name}</span>
+                                        </div>
 
-                                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2">
-                                        <span className="text-primary">#{issue.issue_number}</span>
-                                        <span className="truncate">
-                                            {issue.issue_title || 'Untitled Issue'}
-                                        </span>
-                                        <a
-                                            href={issue.issue_url}
-                                            target="_blank"
-                                            rel="noopener noreferrer"
-                                            className="text-muted-foreground hover:text-primary transition-colors"
-                                        >
-                                            <ExternalLink className="h-4 w-4" />
-                                        </a>
-                                    </h3>
-
-                                    <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                                        <span>
-                                            Started: {new Date(issue.started_at).toLocaleDateString()}
-                                        </span>
-                                        {issue.verified_at && (
-                                            <span>
-                                                • Verified: {new Date(issue.verified_at).toLocaleDateString()}
+                                        <h3 className="text-lg font-semibold mb-2 flex items-center gap-2 flex-wrap">
+                                            <span className="text-primary">#{issue.issue_number}</span>
+                                            <span className="truncate max-w-[300px]" title={issue.issue_title || ''}>
+                                                {issue.issue_title || 'Untitled Issue'}
                                             </span>
-                                        )}
+                                            <a
+                                                href={issue.issue_url}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-muted-foreground hover:text-primary transition-colors"
+                                            >
+                                                <ExternalLink className="h-4 w-4" />
+                                            </a>
+                                        </h3>
+
+                                        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
+                                            <span>
+                                                Started: {new Date(issue.started_at).toLocaleDateString()}
+                                            </span>
+                                            {issue.verified_at && (
+                                                <span>
+                                                    • Verified: {new Date(issue.verified_at).toLocaleDateString()}
+                                                </span>
+                                            )}
+                                        </div>
+                                    </div>
+
+                                    {/* Status & Actions - pushed to bottom or flexible */}
+                                    <div className="flex flex-wrap items-center justify-between gap-4 mt-auto pt-4 border-t border-border">
+                                        <Badge
+                                            variant="outline"
+                                            className={`flex items-center gap-1`}
+                                        >
+                                            <StatusIcon className="h-3 w-3" />
+                                            {config.label}
+                                        </Badge>
+
+                                        <div className="flex items-center gap-2">
+                                            {issue.status === 'in_progress' && (
+                                                <VerifyPRButton
+                                                    issueId={issue.id}
+                                                    userId={userId}
+                                                    currentStatus={issue.status}
+                                                    prUrl={issue.pr_url || undefined}
+                                                    onVerify={() => fetchIssues()}
+                                                />
+                                            )}
+
+                                            {issue.status === 'pr_submitted' && (
+                                                <VerifyPRButton
+                                                    issueId={issue.id}
+                                                    userId={userId}
+                                                    currentStatus={issue.status}
+                                                    prUrl={issue.pr_url || undefined}
+                                                    onVerify={() => fetchIssues()}
+                                                />
+                                            )}
+
+                                            {issue.status !== 'verified' && (
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    onClick={() => handleAbandon(issue.id)}
+                                                    className="text-muted-foreground hover:text-destructive"
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-
-                                {/* Status & Actions */}
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <Badge
-                                        variant="outline"
-                                        className={`flex items-center gap-1`}
-                                    >
-                                        <StatusIcon className="h-3 w-3" />
-                                        {config.label}
-                                    </Badge>
-
-                                    {issue.status === 'in_progress' && (
-                                        <VerifyPRButton
-                                            issueId={issue.id}
-                                            userId={userId}
-                                            currentStatus={issue.status}
-                                            prUrl={issue.pr_url || undefined}
-                                            onVerify={() => fetchIssues()}
-                                        />
-                                    )}
-
-                                    {issue.status === 'pr_submitted' && (
-                                        <VerifyPRButton
-                                            issueId={issue.id}
-                                            userId={userId}
-                                            currentStatus={issue.status}
-                                            prUrl={issue.pr_url || undefined}
-                                            onVerify={() => fetchIssues()}
-                                        />
-                                    )}
-
-                                    {issue.status !== 'verified' && (
-                                        <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            onClick={() => handleAbandon(issue.id)}
-                                            className="text-muted-foreground hover:text-destructive"
-                                        >
-                                            <Trash2 className="h-4 w-4" />
-                                        </Button>
-                                    )}
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                );
-            })}
+                            </CardContent>
+                        </Card>
+                    );
+                })}
+            </div>
 
             {/* Pagination */}
             {totalPages > 1 && (

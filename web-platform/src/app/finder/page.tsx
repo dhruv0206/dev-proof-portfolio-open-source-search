@@ -15,7 +15,7 @@ export default async function FinderPage() {
 
     return (
         <DashboardLayout>
-            <main className="container mx-auto px-4 py-8">
+            <main className="w-full px-8 py-8">
                 <div className="mb-6 text-center">
                     <h1 className="text-3xl font-bold mb-2">Open Source Finder</h1>
                     <p className="text-muted-foreground">
