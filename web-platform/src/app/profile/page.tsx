@@ -6,25 +6,7 @@ import { AuthRequiredModal } from '@/components/shared/AuthRequiredModal';
 import { Button } from '@/components/ui/button';
 import { ExternalLink } from 'lucide-react';
 import Link from 'next/link';
-import { Pool } from 'pg';
 
-// Database pool for querying
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-});
-
-async function getGitHubUsername(userId: string): Promise<string | null> {
-    try {
-        const result = await pool.query(
-            'SELECT "githubUsername" FROM "user" WHERE id = $1',
-            [userId]
-        );
-        return result.rows[0]?.githubUsername || null;
-    } catch (error) {
-        console.error('Failed to fetch GitHub username:', error);
-        return null;
-    }
-}
 
 export default async function ProfilePage() {
     const session = await auth.api.getSession({
@@ -42,8 +24,8 @@ export default async function ProfilePage() {
         );
     }
 
-    // Get the user's GitHub username from database
-    const githubUsername = await getGitHubUsername(session.user.id);
+    // Get the user's GitHub username from session (mapped to 'name' in auth.ts)
+    const githubUsername = session.user.name;
 
     if (!githubUsername) {
         return (

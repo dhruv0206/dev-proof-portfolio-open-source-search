@@ -1,10 +1,8 @@
 import { betterAuth } from "better-auth";
-import { Pool } from "pg";
+import { pool } from "@/lib/db";
 
-// Create pool instance for both Better Auth and custom queries
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
+// Use shared pool instance
+
 
 export const auth = betterAuth({
   database: pool,
