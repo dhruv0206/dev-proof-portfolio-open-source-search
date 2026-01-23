@@ -145,3 +145,15 @@ Be kind, respectful, and inclusive. We're all here to learn and build together.
 ---
 
 Thank you for contributing! Every PR, issue, and suggestion makes this project better. 🙏
+
+## 📄 License & Contribution Terms
+
+This project is licensed under the **Business Source License 1.1**.
+
+By contributing to this repository, you agree that:
+
+- Your contributions will be licensed under the same license as the project
+- The project owner may use, modify, relicense, and commercialize your contributions
+- Submitting a pull request does not grant you ownership or future control over the project
+
+If you do not agree with these terms, please do not submit a contribution.
