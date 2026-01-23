@@ -244,7 +244,16 @@ This project helps developers find contribution opportunities — help us improv
 
 ## 📝 License
 
-MIT License — Use freely for personal and commercial projects.
+### License Notice
+
+This project was originally released under the **MIT License**.
+
+- All code committed before **2026-01-23** is licensed under MIT.
+- All code committed on or after **2026-01-23** is licensed under the
+  **Business Source License 1.1**.
+
+See the `LICENSE` file for full terms.
+
 
 ---
 
