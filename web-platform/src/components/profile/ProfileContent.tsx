@@ -16,6 +16,7 @@ import {
     Copy,
     Check
 } from 'lucide-react';
+import { VerifiedProjectCard } from '@/components/profile/VerifiedProjectCard';
 
 interface ProfileData {
     profile: {
@@ -39,6 +40,21 @@ interface ProfileData {
         prUrl: string | null;
         issueUrl: string;
         mergedAt: string | null;
+    }>;
+    verifiedProjects: Array<{
+        name: string;
+        repoUrl: string;
+        authorship: number;
+        stack: {
+            languages: string[];
+            frameworks: string[];
+            libs: string[];
+        };
+        verifiedFeatures: Array<{
+            feature: string;
+            status: "VERIFIED" | "Wrapper" | "Unverified";
+            evidence_file?: string;
+        }>;
     }>;
 }
 
@@ -175,7 +191,7 @@ export function ProfileContent({ username }: ProfileContentProps) {
         );
     }
 
-    const { profile, stats, contributions } = data;
+    const { profile, stats, contributions, verifiedProjects } = data;
 
     return (
         <div className="space-y-8">
@@ -274,6 +290,28 @@ export function ProfileContent({ username }: ProfileContentProps) {
                         <p className="text-xs text-muted-foreground">Lines Removed</p>
                     </CardContent>
                 </Card>
+            </div>
+
+            {/* Verified Projects Section */}
+            <div>
+                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-green-500" />
+                    Verified Projects
+                </h2>
+
+                {(!verifiedProjects || verifiedProjects.length === 0) ? (
+                    <Card className="mb-8 border-dashed">
+                        <CardContent className="p-6 text-center text-muted-foreground">
+                            No full projects verified yet.
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="space-y-4 mb-8">
+                        {verifiedProjects.map((project, idx) => (
+                            <VerifiedProjectCard key={idx} project={project} />
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* Contributions List */}

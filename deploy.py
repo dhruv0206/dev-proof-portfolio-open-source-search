@@ -46,7 +46,35 @@ def main():
 
     print("   • Submitting build to Cloud Build...")
     # Using absolute path for config to be safe, or just assuming cwd is root (which strictly it should be)
-    run_command("gcloud builds submit --config ai-engine/ai-engine-cloudbuild.yaml .")
+    print("   • Submitting build to Cloud Build with Secrets...")
+    
+    # 1. Fetch Cloud Build Token from Secret Manager (So we don't hardcode it)
+    try:
+        # We run gcloud to get the secret value. 
+        # Note: This requires the current gcloud user to have 'Secret Manager Secret Accessor' role
+        token_cmd = 'gcloud secrets versions access latest --secret="BRAIN_GITHUB_TOKEN"'
+        
+        # On Windows, we need to handle the executable output carefully. 
+        # Using subprocess.check_output to grab the value.
+        token = subprocess.check_output(token_cmd, shell=True).decode("utf-8").strip()
+        
+    except Exception as e:
+        print("⚠️ Warning: Could not fetch BRAIN_GITHUB_TOKEN from GCP Secrets.")
+        print(f"   Reason: {e}")
+        # Only for MVP/User Session: Prompt or Fail? 
+        # Let's assume user might not have set it up yet and this is a "first run" test.
+        # But wait, build will fail without it.
+        print("   Build WILL FAIL if the private repo is needed. proceeding to try...")
+        token = ""
+
+    # 2. Run Build with Substitution
+    # Using format string carefully
+    build_cmd = f'gcloud builds submit --config ai-engine/ai-engine-cloudbuild.yaml --substitutions=_GITHUB_TOKEN="{token}" .'
+    
+    # Mask the token in logs
+    print(f"   $ {build_cmd.replace(token, '*****')}")
+    
+    subprocess.run(build_cmd, shell=True, check=True)
 
     print("   • Deploying to Cloud Run service 'github-finder-backend'...")
     run_command(
