@@ -82,7 +82,7 @@ class ParsedQuery(BaseModel):
 
 async def parse_search_query(query: str) -> ParsedQuery:
     """Use Gemini to parse natural language search query."""
-    model = genai.GenerativeModel("gemini-2.0-flash")
+    model = genai.GenerativeModel("gemini-3-pro-preview")
     
     prompt = f"""Parse this GitHub issue search query and extract structured information.
     
@@ -125,7 +125,7 @@ Return JSON only, no markdown:"""
 ```python
 async def summarize_issue(title: str, body: str, max_length: int = 200) -> str:
     """Generate a concise summary of a GitHub issue."""
-    model = genai.GenerativeModel("gemini-2.0-flash")
+    model = genai.GenerativeModel("gemini-3-pro-preview")
     
     prompt = f"""Summarize this GitHub issue in {max_length} characters or less.
     
@@ -142,7 +142,7 @@ Provide a clear, actionable summary that helps developers understand what needs 
 ```python
 async def suggest_labels(title: str, body: str) -> list[str]:
     """Suggest appropriate GitHub labels for an issue."""
-    model = genai.GenerativeModel("gemini-2.0-flash")
+    model = genai.GenerativeModel("gemini-3-pro-preview")
     
     prompt = f"""Suggest appropriate GitHub issue labels for this issue.
     
@@ -165,10 +165,10 @@ Return as JSON array of strings:"""
 ### Model Selection
 ```python
 # For fast responses
-model = genai.GenerativeModel("gemini-2.0-flash")
+model = genai.GenerativeModel("gemini-3-pro-preview")
 
 # For complex reasoning
-model = genai.GenerativeModel("gemini-2.0-pro")
+model = genai.GenerativeModel("gemini-3-pro-preview")
 ```
 
 ### Generation Config
@@ -181,7 +181,7 @@ generation_config = {
 }
 
 model = genai.GenerativeModel(
-    "gemini-2.0-flash",
+    "gemini-3-pro-preview",
     generation_config=generation_config
 )
 ```
@@ -196,7 +196,7 @@ safety_settings = {
 }
 
 model = genai.GenerativeModel(
-    "gemini-2.0-flash",
+    "gemini-3-pro-preview",
     safety_settings=safety_settings
 )
 ```

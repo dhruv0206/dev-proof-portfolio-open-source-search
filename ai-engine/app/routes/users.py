@@ -109,6 +109,85 @@ async def get_user_stats(
     }
 
 
+@router.get("/me/projects")
+async def get_my_projects(
+    x_user_id: str = Header(..., alias="X-User-Id"),
+    db: Session = Depends(get_db)
+):
+    """Get verified projects for the current user."""
+    user_id = x_user_id
+    from app.models.project import Project, ProjectAudit, TechTag, TagCategory
+
+    db_projects = db.query(Project).filter(
+        Project.user_id == user_id,
+        Project.is_verified == True
+    ).order_by(Project.authorship_percent.desc()).all()
+
+    verified_projects_data = []
+    for proj in db_projects:
+        stack = {"languages": [], "frameworks": [], "libs": []}
+        for tag in proj.tags:
+            if tag.category == TagCategory.LANGUAGE:
+                stack["languages"].append(tag.name)
+            elif tag.category == TagCategory.FRAMEWORK:
+                stack["frameworks"].append(tag.name)
+            elif tag.category == TagCategory.LIBRARY:
+                stack["libs"].append(tag.name)
+
+        verified_feats = []
+        if proj.audit and proj.audit.audit_report:
+            report_claims = proj.audit.audit_report.get("claims", [])
+            for c in report_claims:
+                status = c.get("status", "UNVERIFIED")
+                display_status = "Unverified"
+                if status == "VERIFIED": display_status = "VERIFIED"
+                elif status == "WRAPPER": display_status = "Wrapper"
+                
+                verified_feats.append({
+                    "feature": c.get("feature", "Unknown"),
+                    "status": display_status,
+                    "tier": c.get("tier", "Unknown"),
+                    "feature_type": c.get("feature_type", "Unknown"),
+                    "tier_reasoning": c.get("tier_reasoning", "No details available."),
+                    "evidence_file": c.get("evidence_file") or c.get("evidence", {}).get("file")
+                })
+
+        # Recommendations Logic
+        recommendations = []
+        tier = "BASIC"
+        score = 0
+        
+        if proj.audit:
+            score = proj.audit.tds_score or 0
+            tier = proj.audit.complexity_tier or "BASIC"
+            
+            # Generate Hints (Don't reveal exploit, just guide)
+            has_deep_tech = any(f.get("tier") == "TIER_3_DEEP" for f in verified_feats)
+            has_tests = any("test" in f.get("feature", "").lower() for f in verified_feats)
+            
+            if score < 30:
+                recommendations.append("Consider implementing custom business logic rather than just UI.")
+            if not has_deep_tech:
+                recommendations.append("Project lacks 'Deep Tech' (e.g. WebSockets, Auth, custom Algorithms).")
+            if not has_tests:
+                recommendations.append("No testing framework detected. Unit tests boost trust significantly.")
+            if score > 80:
+                recommendations.append("Elite status achieved. Maintain this standard.")
+
+        verified_projects_data.append({
+            "name": proj.repo_name,
+            "repoUrl": proj.repo_url,
+            "authorship": proj.authorship_percent,
+            "stack": stack,
+            "verifiedFeatures": verified_feats,
+            "score": score,
+            "tier": tier,
+            "recommendations": recommendations
+        })
+        
+    return {"projects": verified_projects_data}
+
+
 @router.get("/profile/{username}")
 async def get_public_profile(
     username: str,
@@ -173,6 +252,63 @@ async def get_public_profile(
     # For now, return empty list - we can enhance this later
     languages = []
     
+    # 7. Get Verified Projects
+    from app.models.project import Project, ProjectAudit, TechTag, TagCategory # Lazy import to avoid circulars if any
+    
+    db_projects = db.query(Project).filter(
+        Project.user_id == user_id,
+        Project.is_verified == True
+    ).order_by(Project.authorship_percent.desc()).limit(10).all()
+    
+    verified_projects_data = []
+    for proj in db_projects:
+        # Organize tags
+        stack = {"languages": [], "frameworks": [], "libs": []}
+        for tag in proj.tags:
+            if tag.category == TagCategory.LANGUAGE:
+                stack["languages"].append(tag.name)
+            elif tag.category == TagCategory.FRAMEWORK:
+                stack["frameworks"].append(tag.name)
+            elif tag.category == TagCategory.LIBRARY:
+                stack["libs"].append(tag.name)
+        
+        # Verify Audit Report extraction
+        verified_feats = []
+        if proj.audit and proj.audit.audit_report:
+            report_claims = proj.audit.audit_report.get("claims", [])
+            for c in report_claims:
+                status = c.get("status", "UNVERIFIED")
+                # Map to frontend expected string
+                display_status = "Unverified"
+                if status == "VERIFIED": display_status = "VERIFIED"
+                elif status == "WRAPPER": display_status = "Wrapper"
+                
+                verified_feats.append({
+                    "feature": c.get("feature", "Unknown"),
+                    "status": display_status,
+                    "evidence_file": c.get("evidence", {}).get("file")
+                })
+
+        # Recommendations Logic
+        recommendations = []
+        tier = "BASIC"
+        score = 0
+        
+        if proj.audit:
+            score = proj.audit.tds_score or 0
+            tier = proj.audit.complexity_tier or "BASIC"
+
+        verified_projects_data.append({
+            "name": proj.repo_name,
+            "repoUrl": proj.repo_url,
+            "authorship": proj.authorship_percent,
+            "stack": stack,
+            "verifiedFeatures": verified_feats,
+            "score": score,
+            "tier": tier,
+            "recommendations": recommendations # Public may not see recs, but keeping consistent schema
+        })
+
     # Build contributions list
     contributions = []
     for issue in verified_issues:
@@ -201,4 +337,5 @@ async def get_public_profile(
         },
         "languages": languages,
         "contributions": contributions,
+        "verifiedProjects": verified_projects_data
     }

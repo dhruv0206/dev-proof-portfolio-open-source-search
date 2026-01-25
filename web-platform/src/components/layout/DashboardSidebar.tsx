@@ -11,7 +11,8 @@ import {
     ClipboardList,
     PanelLeftClose,
     PanelLeftOpen,
-    Menu
+    Menu,
+    Code
 } from 'lucide-react';
 import { useSession, signIn, signOut } from '@/lib/auth-client';
 import { useSidebar } from '@/components/layout/SidebarContext';
@@ -38,6 +39,11 @@ const menuItems = [
         name: 'Open Source Finder',
         icon: Search,
         href: '/finder',
+    },
+    {
+        name: 'Projects',
+        icon: Code,
+        href: '/projects',
     },
     {
         name: 'Profile',

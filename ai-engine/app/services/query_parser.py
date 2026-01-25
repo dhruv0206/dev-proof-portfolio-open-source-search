@@ -65,7 +65,7 @@ class QueryParser:
     def __init__(self):
         settings = get_settings()
         self.client = genai.Client(api_key=settings.gemini_api_key)
-        self.model = "gemini-2.0-flash"
+        self.model = "gemini-3-flash-preview"
         
     @retry(
         stop=stop_after_attempt(3),
