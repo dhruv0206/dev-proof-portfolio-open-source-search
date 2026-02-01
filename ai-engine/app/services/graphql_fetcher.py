@@ -48,7 +48,7 @@ query SearchIssues($query: String!, $cursor: String) {
             login
           }
         }
-        comments(first: 30) {
+        comments(last: 30) {
           totalCount
           nodes {
             body
