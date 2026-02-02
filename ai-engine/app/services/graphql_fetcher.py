@@ -151,7 +151,7 @@ class GraphQLFetcher:
         payload = {
             "iat": now - 60,  # Issued 60 seconds ago
             "exp": now + (10 * 60),  # Expires in 10 minutes
-            "iss": self.app_id
+            "iss": str(self.app_id)
         }
         return jwt.encode(payload, self.private_key, algorithm="RS256")
     
