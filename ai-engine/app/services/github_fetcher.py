@@ -43,7 +43,8 @@ class GitHubFetcher:
         language: str, 
         limit: int = 100,
         min_stars: int = 100,
-        min_contributors: int | None = None
+        min_contributors: int | None = None,
+        min_commits: int = 20
     ) -> list[Repository]:
         """Fetch repositories with recent activity for a language."""
         # Only add stars filter if min_stars > 0 (stars:>=0 breaks GitHub search API)
@@ -70,12 +71,35 @@ class GitHubFetcher:
                         continue
                 except GithubException as e:
                     logger.warning(f"Could not check contributors for {repo.full_name}: {e}")
+
+            # Filter by commits if specified
+            if min_commits > 0:
+                if not self._has_min_commits(repo, min_commits):
+                    logger.debug(f"  Skipping {repo.full_name}: fewer than {min_commits} commits")
+                    continue
             
             result.append(repo)
         
         logger.info(f"Fetched {len(result)} {language} repos (min {min_stars} stars" + 
-                   (f", min {min_contributors} contributors)" if min_contributors else ")"))
+                   (f", min {min_contributors} contributors" if min_contributors else "") +
+                   (f", min {min_commits} commits)" if min_commits > 0 else ")"))
         return result
+
+    def _has_min_commits(self, repo: Repository, min_commits: int) -> bool:
+        """Check if repo has at least N commits."""
+        try:
+            # We don't need total count, just check if we can iterate N times
+            # requesting just 1 page is usually enough if page size >= min_commits
+            commits = repo.get_commits()
+            count = 0
+            for _ in commits:
+                count += 1
+                if count >= min_commits:
+                    return True
+            return False
+        except GithubException as e:
+            logger.warning(f"Could not check commits for {repo.full_name}: {e}")
+            return False
     
     # Note: No retry decorator - we handle rate limits by skipping repos gracefully
     def get_contribution_issues(

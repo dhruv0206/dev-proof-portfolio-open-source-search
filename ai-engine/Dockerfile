@@ -13,7 +13,8 @@ ARG GITHUB_TOKEN
 ENV GITHUB_TOKEN=$GITHUB_TOKEN
 
 COPY ai-engine/requirements.txt .
-RUN pip install --user --no-cache-dir -r requirements.txt
+RUN git config --global url."https://${GITHUB_TOKEN}@github.com/".insteadOf "https://github.com/" && \
+    pip install --user --no-cache-dir -r requirements.txt
 
 FROM python:3.11-slim
 
