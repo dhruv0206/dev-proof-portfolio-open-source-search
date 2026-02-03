@@ -38,7 +38,7 @@ export function OpenSourceFinder({ showSidebarTrigger = false }: OpenSourceFinde
 
     // Filter State
     const [languages, setLanguages] = useState<string[]>([]);
-    const [sortBy, setSortBy] = useState<"newest" | "recently_discussed" | "relevance" | "stars">("recently_discussed");
+    const [sortBy, setSortBy] = useState<"newest" | "recently_discussed" | "relevance" | "stars">("newest");
     const [selectedLabels, setSelectedLabels] = useState<string[]>([]);
     const [daysAgo, setDaysAgo] = useState<number | null>(null);
     const [unassignedOnly, setUnassignedOnly] = useState(true);
@@ -235,7 +235,7 @@ export function OpenSourceFinder({ showSidebarTrigger = false }: OpenSourceFinde
         setRecentPage(1);
         // Reset all filters to defaults
         setLanguages([]);
-        setSortBy("recently_discussed");
+        setSortBy("newest");
         setSelectedLabels([]);
         setDaysAgo(null);
         setUnassignedOnly(false);
