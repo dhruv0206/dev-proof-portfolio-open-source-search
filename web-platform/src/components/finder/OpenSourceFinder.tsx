@@ -26,9 +26,10 @@ const ITEMS_PER_PAGE = 10;
 
 interface OpenSourceFinderProps {
     showSidebarTrigger?: boolean;
+    initialRecentIssues?: SearchResult[];
 }
 
-export function OpenSourceFinder({ showSidebarTrigger = false }: OpenSourceFinderProps) {
+export function OpenSourceFinder({ showSidebarTrigger = false, initialRecentIssues = [] }: OpenSourceFinderProps) {
     const { results, parsedQuery, isLoading, error, pagination, search, goToPage, clearResults, currentQuery } = useSearch();
     const { searchCount, incrementSearch, limitState, isAtSoftLimit, isAtHardLimit, isSignedIn } = useSearchLimit();
     const [hasSearched, setHasSearched] = useState(false);
@@ -43,8 +44,9 @@ export function OpenSourceFinder({ showSidebarTrigger = false }: OpenSourceFinde
     const [daysAgo, setDaysAgo] = useState<number | null>(null);
     const [unassignedOnly, setUnassignedOnly] = useState(true);
 
-    const [allRecentIssues, setAllRecentIssues] = useState<SearchResult[]>([]);
-    const [recentLoading, setRecentLoading] = useState(true);
+    // Initialize with props if available
+    const [allRecentIssues, setAllRecentIssues] = useState<SearchResult[]>(initialRecentIssues);
+    const [recentLoading, setRecentLoading] = useState(initialRecentIssues.length === 0);
     const [recentPage, setRecentPage] = useState(1);
     const [lastUpdated, setLastUpdated] = useState<string | null>(null);
 
@@ -77,7 +79,18 @@ export function OpenSourceFinder({ showSidebarTrigger = false }: OpenSourceFinde
 
         // Only reload recent issues when NOT in search mode
         if (!hasSearched) {
-            loadRecent();
+            // If we have initial data (from SSR) and no filters changed, skip first load
+            const isInitialLoad = initialRecentIssues.length > 0 && 
+                                  allRecentIssues === initialRecentIssues &&
+                                  sortBy === "newest" && 
+                                  languages.length === 0 && 
+                                  selectedLabels.length === 0 &&
+                                  daysAgo === null &&
+                                  unassignedOnly === true;
+
+            if (!isInitialLoad) {
+                loadRecent();
+            }
         }
         loadLastUpdated();
     }, [sortBy, languages, selectedLabels, daysAgo, unassignedOnly, hasSearched]);

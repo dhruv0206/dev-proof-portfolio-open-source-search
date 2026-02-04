@@ -4,27 +4,34 @@ import { redirect } from 'next/navigation';
 import { OpenSourceFinder } from '@/components/finder/OpenSourceFinder';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Footer } from '@/components/layout/Footer';
+import { getRecentIssues, SearchResult } from '@/lib/api';
 
 export default async function Home() {
   const session = await auth.api.getSession({
     headers: await headers(),
   });
 
-  // Redirect to dashboard if user has a session? No, user wants same layout. 
-  // User said: "after login the dashboard which shows I want to show even without login but if not logged in in that dashboard UI github search tab should be selected"
-  // This implies if LOGGED IN, maybe show Dashboard tab? Or stick to Finder on root?
-  // Let's stick to Finder on root for consistency, and user can switch to Dashboard.
-
-  // Wait, "if not logged in... github search tab should be selected".
-  // This implies if LOGGED IN, maybe "Dashboard" tab (Tracked Issues) is selected?
-  // The current code redirected logged-in users to /dashboard. 
-  // Let's keep the redirect if we want the default logged-in view to be Tracked Issues.
-  // BUT user said "I don't just want to mention it as open source search but like a platform".
-  // Let's keep the redirect logic for now: Logged In -> Dashboard (Tracked Issues). Guest -> Home (Search/Finder).
-  // But make Home use DashboardLayout.
-
   if (session?.user) {
     redirect('/dashboard');
+  }
+
+  // Pre-fetch recent issues for SSR/ISR
+  // Matches default filters in OpenSourceFinder component:
+  // sortBy="newest", unassignedOnly=true
+  let initialIssues: SearchResult[] = [];
+  try {
+    const response = await getRecentIssues(
+      50,         // limit
+      "newest",   // sortBy
+      undefined,  // languages
+      undefined,  // labels
+      null,       // daysAgo
+      true        // unassignedOnly
+    );
+    initialIssues = response.results;
+  } catch (err) {
+    console.error("Failed to pre-fetch recent issues for homepage:", err);
+    // We continue rendering with empty initialIssues, client will try to fetch or show empty state
   }
 
   return (
@@ -36,7 +43,7 @@ export default async function Home() {
             Search for new contribution opportunities.
           </p>
         </div>
-        <OpenSourceFinder />
+        <OpenSourceFinder initialRecentIssues={initialIssues} />
         <Footer />
       </main>
     </DashboardLayout>
