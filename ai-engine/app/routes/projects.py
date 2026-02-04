@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from functools import lru_cache
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from app.database import get_db
@@ -8,7 +9,10 @@ from devproof_ranking_algo import AuditService
 import uuid
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
-audit_service = AuditService()
+
+@lru_cache()
+def get_audit_service() -> AuditService:
+    return AuditService()
 
 class ImportRequest(BaseModel):
     repo_url: str
@@ -18,7 +22,11 @@ class ImportRequest(BaseModel):
     # github_username: str | None = None # REMOVED: We fetch this from DB for security
 
 @router.post("/scan")
-async def scan_project(req: ImportRequest, db: Session = Depends(get_db)):
+async def scan_project(
+    req: ImportRequest, 
+    db: Session = Depends(get_db),
+    audit_service: AuditService = Depends(get_audit_service)
+):
     """
     Step 1: Pre-Scan.
     Returns: Stack info + Authorship stats.
@@ -36,7 +44,10 @@ async def scan_project(req: ImportRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/extract-features")
-async def extract_features(req: ImportRequest):
+async def extract_features(
+    req: ImportRequest,
+    audit_service: AuditService = Depends(get_audit_service)
+):
     """
     Step 1.5: Extract claims from README.
     Returns: { "features": ["Claim 1", "Claim 2"] }
@@ -48,7 +59,11 @@ async def extract_features(req: ImportRequest):
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post("/import")
-async def import_project(req: ImportRequest, db: Session = Depends(get_db)):
+async def import_project(
+    req: ImportRequest, 
+    db: Session = Depends(get_db),
+    audit_service: AuditService = Depends(get_audit_service)
+):
     # 0. Security: Get the real GitHub, username of the applicant
     user = db.query(User).filter(User.id == req.user_id).first()
     if not user or not user.githubUsername:

@@ -1,6 +1,7 @@
 """Search API routes."""
 
-from fastapi import APIRouter, HTTPException
+from functools import lru_cache
+from fastapi import APIRouter, HTTPException, Depends
 import logging
 
 from app.models.query import SearchQuery, SearchResult, ParsedQuery, RecentResponse
@@ -9,12 +10,17 @@ from app.services.search_engine import SearchEngine
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/search", tags=["search"])
 
-# Initialize search engine
-search_engine = SearchEngine()
+@lru_cache()
+def get_search_engine() -> SearchEngine:
+    """Lazy load the search engine singleton."""
+    return SearchEngine()
 
 
 @router.post("")
-async def search(query: SearchQuery) -> dict:
+async def search(
+    query: SearchQuery,
+    search_engine: SearchEngine = Depends(get_search_engine)
+) -> dict:
     """
     Search for GitHub issues using natural language.
     
@@ -60,7 +66,8 @@ async def get_recent_issues(
     languages: str | None = None,
     labels: str | None = None,
     days_ago: float | None = None,
-    unassigned_only: bool = False
+    unassigned_only: bool = False,
+    search_engine: SearchEngine = Depends(get_search_engine)
 ) -> RecentResponse:
     """
     Get recent contribution opportunities for homepage display.
@@ -104,7 +111,9 @@ async def get_recent_issues(
 
 
 @router.get("/last-updated")
-async def get_last_updated() -> dict:
+async def get_last_updated(
+    search_engine: SearchEngine = Depends(get_search_engine)
+) -> dict:
     """Get the timestamp of the most recently updated issue."""
     try:
         from datetime import datetime
@@ -133,7 +142,9 @@ async def get_last_updated() -> dict:
 
 
 @router.get("/health")
-async def health_check() -> dict:
+async def health_check(
+    search_engine: SearchEngine = Depends(get_search_engine)
+) -> dict:
     """Check if search service is healthy."""
     try:
         stats = search_engine.pinecone.get_index_stats()
@@ -149,7 +160,9 @@ async def health_check() -> dict:
 
 
 @router.get("/stats")
-async def get_stats() -> dict:
+async def get_stats(
+    search_engine: SearchEngine = Depends(get_search_engine)
+) -> dict:
     """Get index statistics for display on homepage."""
     try:
         stats = search_engine.pinecone.get_index_stats()
