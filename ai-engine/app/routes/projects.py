@@ -5,6 +5,8 @@ from pydantic import BaseModel
 from app.database import get_db
 from app.models.project import Project, ProjectAudit, TechTag, TagCategory
 from app.models.user import User
+from app.models.audit_cache import AuditCache
+from app.services.cache_service import AuditCacheService, get_repo_head_sha
 from devproof_ranking_algo import AuditService
 import uuid
 
@@ -71,14 +73,37 @@ async def import_project(
     
     applicant_username = user.githubUsername
 
-    # 1. Run Audit (Sync for MVP, Async recommend for Prod)
-    try:
-        # ALWAYS pass the applicant's username.
-        # This forces the Brain to verify if 'applicant_username' worked on 'repo_url'.
-        # If I claim 'facebook/react', it will check 'dhruv0206' stats on 'react' -> 0% -> REJECT.
-        result = await audit_service.run_audit(req.repo_url, req.user_id, req.project_type, req.target_claims, applicant_username)
-    except Exception as e:
-        raise HTTPException(status_code=400, detail=str(e))
+    # 1. CHECK CACHE FIRST
+    # Get current commit SHA for this repo
+    commit_sha = get_repo_head_sha(audit_service.ingestor, req.repo_url)
+    
+    if commit_sha:
+        # Check if we have a cached result for this exact commit
+        cached_result = AuditCacheService.get_cached_audit(db, req.repo_url, commit_sha)
+        if cached_result:
+            # Use cached result - skip expensive AI audit
+            result = cached_result
+        else:
+            # No cache hit - run full audit
+            try:
+                result = await audit_service.run_audit(
+                    req.repo_url, req.user_id, req.project_type, 
+                    req.target_claims, applicant_username
+                )
+                # Cache the result for future requests
+                if result.get("status") == "VERIFIED":
+                    AuditCacheService.cache_audit_result(db, req.repo_url, commit_sha, result)
+            except Exception as e:
+                raise HTTPException(status_code=400, detail=str(e))
+    else:
+        # Couldn't get commit SHA - run audit without caching
+        try:
+            result = await audit_service.run_audit(
+                req.repo_url, req.user_id, req.project_type, 
+                req.target_claims, applicant_username
+            )
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=str(e))
         
     if result["status"] == "REJECTED":
          raise HTTPException(status_code=400, detail=f"Project Rejected: {result['reason']}")
