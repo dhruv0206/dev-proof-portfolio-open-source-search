@@ -17,7 +17,7 @@ class EmbeddingService:
     def __init__(self):
         settings = get_settings()
         self.client = genai.Client(api_key=settings.gemini_api_key)
-        self.model = "text-embedding-004"
+        self.model = settings.embedding_model
         self.dimension = settings.embedding_dimension
         
     @retry(
@@ -29,7 +29,10 @@ class EmbeddingService:
         result = self.client.models.embed_content(
             model=self.model,
             contents=text,
-            config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT")
+            config=types.EmbedContentConfig(
+                task_type="RETRIEVAL_DOCUMENT",
+                output_dimensionality=self.dimension
+            )
         )
         return result.embeddings[0].values
     
@@ -42,7 +45,10 @@ class EmbeddingService:
         result = self.client.models.embed_content(
             model=self.model,
             contents=query,
-            config=types.EmbedContentConfig(task_type="RETRIEVAL_QUERY")
+            config=types.EmbedContentConfig(
+                task_type="RETRIEVAL_QUERY",
+                output_dimensionality=self.dimension
+            )
         )
         return result.embeddings[0].values
     
@@ -59,7 +65,10 @@ class EmbeddingService:
             result = self.client.models.embed_content(
                 model=self.model,
                 contents=batch,
-                config=types.EmbedContentConfig(task_type="RETRIEVAL_DOCUMENT")
+                config=types.EmbedContentConfig(
+                    task_type="RETRIEVAL_DOCUMENT",
+                    output_dimensionality=self.dimension
+                )
             )
             all_embeddings.extend([e.values for e in result.embeddings])
             logger.info(f"Generated embeddings for batch {i//batch_size + 1}")

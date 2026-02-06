@@ -27,7 +27,7 @@ class Settings(BaseSettings):
     database_url: str | None = None
     
     # App settings
-    embedding_model: str = "models/text-embedding-004"
+    embedding_model: str = "models/gemini-embedding-001"
     embedding_dimension: int = 768
     
     # Ingestion settings

@@ -79,18 +79,21 @@ class QueryParser:
                 contents=f"{SYSTEM_PROMPT}\n\nUser query: {query}",
                 config=types.GenerateContentConfig(
                     temperature=0,
-                    max_output_tokens=500
+                    max_output_tokens=500,
+                    response_mime_type="application/json"
                 )
             )
             
             # Clean response text
             response_text = response.text.strip()
-            if response_text.startswith("```"):
-                # Remove markdown code blocks
-                response_text = response_text.split("```")[1]
-                if response_text.startswith("json"):
-                    response_text = response_text[4:]
-                    
+            # Handle potential markdown wrappers even with JSON mode
+            if response_text.startswith("```json"):
+                response_text = response_text[7:]
+            elif response_text.startswith("```"):
+                response_text = response_text[3:]
+            if response_text.endswith("```"):
+                response_text = response_text[:-3]
+            
             parsed = json.loads(response_text)
             
             return ParsedQuery(
