@@ -99,9 +99,15 @@ class SearchEngine:
             unassigned_only: Only show unassigned issues
         """
         # Use a generic query embedding for "open source contributions"
-        query_embedding = self.embedder.generate_query_embedding(
-            "beginner friendly open source contributions help wanted"
-        )
+        try:
+            query_embedding = self.embedder.generate_query_embedding(
+                "beginner friendly open source contributions help wanted"
+            )
+        except Exception as e:
+            logger.warning(f"Failed to generate generic embedding for recent issues: {e}. Falling back to zero-vector.")
+            # Fallback to zero vector - this disables semantic search part effectively
+            # (dot product will be 0) but allows metadata filtering to work
+            query_embedding = [0.0] * self.embedder.dimension
         
         # Build filter dict
         filter_dict = {
