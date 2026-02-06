@@ -146,7 +146,7 @@ export function VerifiedProjectCard({ project, currentUser }: { project: Project
                     {/* UI Column (The Folder: Collapsed Noise) */}
                     <div className="space-y-3 p-3 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-800">
                         <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center justify-between">
-                            UI / UX
+                            Essentials & UI
                             <Badge variant="secondary" className="text-[10px] h-4 px-1">{project.verifiedFeatures.filter(f => f.tier === "TIER_1_UI" && f.status !== "Unverified").length}</Badge>
                         </h4>
                         <div className="space-y-2">
