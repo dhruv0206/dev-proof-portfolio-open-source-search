@@ -109,9 +109,6 @@ export function LandingFooter() {
                     <p className="text-sm text-muted-foreground">
                         © {new Date().getFullYear()} DevProof. Built with 💜 for developers.
                     </p>
-                    <p className="text-sm text-muted-foreground">
-                        Made by <a href="https://github.com/dhruv0206" target="_blank" rel="noopener noreferrer" className="text-purple-400 hover:underline">Dhruv</a>
-                    </p>
                 </div>
             </div>
         </footer>
