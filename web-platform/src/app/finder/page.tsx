@@ -1,19 +1,15 @@
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
 import { OpenSourceFinder } from '@/components/finder/OpenSourceFinder';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Info } from "lucide-react";
 
 export default async function FinderPage() {
+    // Check session but don't require it - finder is public
     const session = await auth.api.getSession({
         headers: await headers(),
     });
-
-    if (!session?.user) {
-        redirect('/');
-    }
 
     return (
         <DashboardLayout>

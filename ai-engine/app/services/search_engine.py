@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime, timedelta, timezone
+from fastapi.concurrency import run_in_threadpool
 
 from app.models.query import SearchQuery, SearchResult, ParsedQuery
 from app.services.query_parser import QueryParser
@@ -23,7 +24,7 @@ class SearchEngine:
         self.embedder = EmbeddingService()
         self.pinecone = PineconeClient()
         
-    def search(self, query: SearchQuery) -> tuple[list[SearchResult], ParsedQuery]:
+    async def search(self, query: SearchQuery) -> tuple[list[SearchResult], ParsedQuery]:
         """
         Execute a search query.
         
@@ -55,7 +56,8 @@ class SearchEngine:
         logger.info(f"Final query config (after manual overrides): {parsed}")
         
         # 2. Generate query embedding
-        query_embedding = self.embedder.generate_query_embedding(
+        query_embedding = await run_in_threadpool(
+            self.embedder.generate_query_embedding,
             parsed.semantic_query
         )
         
@@ -63,8 +65,9 @@ class SearchEngine:
         pinecone_filter = self._build_filter(parsed)
         logger.info(f"Pinecone filter: {pinecone_filter}")
         
-        # 4. Search Pinecone - get more results for re-ranking
-        raw_results = self.pinecone.search(
+        # 4. Search Pinecone - get more results for re-reranking
+        raw_results = await run_in_threadpool(
+            self.pinecone.search,
             query_embedding=query_embedding,
             top_k=100,  # Get more for combined scoring
             filter_dict=pinecone_filter if pinecone_filter else None
@@ -75,7 +78,7 @@ class SearchEngine:
         
         return results, parsed
     
-    def get_recent_issues(
+    async def get_recent_issues(
         self, 
         limit: int = 20, 
         sort_by: str = "newest",
@@ -100,7 +103,8 @@ class SearchEngine:
         """
         # Use a generic query embedding for "open source contributions"
         try:
-            query_embedding = self.embedder.generate_query_embedding(
+            query_embedding = await run_in_threadpool(
+                self.embedder.generate_query_embedding,
                 "beginner friendly open source contributions help wanted"
             )
         except Exception as e:
@@ -138,7 +142,8 @@ class SearchEngine:
             else:
                 filter_dict["language"] = {"$in": languages}
         
-        raw_results = self.pinecone.search(
+        raw_results = await run_in_threadpool(
+            self.pinecone.search,
             query_embedding=query_embedding,
             top_k=200,  # Fetch more to account for filtering
             filter_dict=filter_dict

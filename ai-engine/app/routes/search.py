@@ -2,6 +2,7 @@
 
 from functools import lru_cache
 from fastapi import APIRouter, HTTPException, Depends
+from fastapi.concurrency import run_in_threadpool
 import logging
 
 from app.models.query import SearchQuery, SearchResult, ParsedQuery, RecentResponse
@@ -31,7 +32,7 @@ async def search(
     Returns matching issues ranked by combined score (relevance + recency + stars).
     """
     try:
-        all_results, parsed_query = search_engine.search(query)
+        all_results, parsed_query = await search_engine.search(query)
         
         # Calculate pagination
         total = len(all_results)
@@ -91,7 +92,7 @@ async def get_recent_issues(
         language_list = [l.strip() for l in languages.split(",")] if languages else None
         label_list = [l.strip() for l in labels.split(",")] if labels else None
 
-        results = search_engine.get_recent_issues(
+        results = await search_engine.get_recent_issues(
             limit=limit, 
             sort_by=sort_by,
             languages=language_list,
@@ -120,7 +121,7 @@ async def get_last_updated(
         
         # Use get_recent_issues to find the single newest issue by updated_at
         # This reuses the correct sorting logic defined in SearchEngine
-        results = search_engine.get_recent_issues(
+        results = await search_engine.get_recent_issues(
             limit=1,
             sort_by="recently_discussed"
         )
@@ -147,7 +148,7 @@ async def health_check(
 ) -> dict:
     """Check if search service is healthy."""
     try:
-        stats = search_engine.pinecone.get_index_stats()
+        stats = await run_in_threadpool(search_engine.pinecone.get_index_stats)
         return {
             "status": "healthy",
             "index_stats": stats
@@ -165,7 +166,7 @@ async def get_stats(
 ) -> dict:
     """Get index statistics for display on homepage."""
     try:
-        stats = search_engine.pinecone.get_index_stats()
+        stats = await run_in_threadpool(search_engine.pinecone.get_index_stats)
         total_issues = stats.get("total_vector_count", 0)
         
         # Estimate unique repos (we'd need to query for this, but for now use cached/estimated)
