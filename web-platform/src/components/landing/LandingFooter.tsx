@@ -18,11 +18,15 @@ const footerLinks = {
         { name: 'Privacy', href: '#' },
         { name: 'Terms', href: '#' },
     ],
+    feedback: [
+        { name: 'Email Founder', href: 'mailto:dhruv0128@gmail.com' },
+        { name: 'Twitter DM', href: 'https://x.com/Dhruv020699' }, // Assuming handle or placeholder
+    ],
 };
 
 const socialLinks = [
     { name: 'GitHub', href: 'https://github.com/dhruv0206/opensource-issues-finder', icon: Github },
-    { name: 'Twitter', href: '#', icon: Twitter },
+    { name: 'Twitter', href: 'https://x.com/Dhruv020699', icon: Twitter },
     { name: 'Discord', href: 'https://discord.gg/dZRFt9kN', icon: MessageCircle },
 ];
 
@@ -30,7 +34,7 @@ export function LandingFooter() {
     return (
         <footer className="border-t border-border bg-background/50 backdrop-blur-sm">
             <div className="container mx-auto px-4 py-12">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-8 mb-8">
                     {/* Brand */}
                     <div className="col-span-2 lg:col-span-1 border-b lg:border-0 pb-8 lg:pb-0 border-border">
                         <a href="/" className="flex items-center gap-2 mb-4 justify-center lg:justify-start">
@@ -96,6 +100,25 @@ export function LandingFooter() {
                             {footerLinks.legal.map((link) => (
                                 <li key={link.name}>
                                     <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                                        {link.name}
+                                    </a>
+                                </li>
+                            ))}
+                        </ul>
+                    </div>
+
+                    {/* Feedback */}
+                    <div>
+                        <h4 className="font-semibold mb-4">Feedback</h4>
+                        <ul className="space-y-2">
+                            {footerLinks.feedback.map((link) => (
+                                <li key={link.name}>
+                                    <a
+                                        href={link.href}
+                                        target={link.href.startsWith('http') ? '_blank' : undefined}
+                                        rel={link.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                                        className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                                    >
                                         {link.name}
                                     </a>
                                 </li>
