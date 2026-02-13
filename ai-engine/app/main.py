@@ -44,12 +44,15 @@ app.add_middleware(
     allow_origins=[
         "http://localhost:3000",
         "http://localhost:3001",
-        "https://dev-proof-portfolio.vercel.app",
+        "https://orenda.vision",
+        "https://www.orenda.vision",
         "https://contribfinder.com",
     ],
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+
 )
 
 # Include routers

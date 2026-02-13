@@ -104,7 +104,7 @@ def main():
     print("\n✅ DEPLOYMENT SUCCESSFUL!")
     print("   ----------------------------------------------------------------")
     print("   🔗 Backend:  https://github-finder-backend-18267677210.us-central1.run.app")
-    print("   🔗 Frontend: https://dev-proof-portfolio.vercel.app")
+    print("   🔗 Frontend: https://orenda.vision")
     print("   ----------------------------------------------------------------")
 
 if __name__ == "__main__":

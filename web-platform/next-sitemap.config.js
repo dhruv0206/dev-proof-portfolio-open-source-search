@@ -1,6 +1,6 @@
 /** @type {import('next-sitemap').IConfig} */
 module.exports = {
-    siteUrl: 'https://dev-proof-portfolio.vercel.app',
+    siteUrl: 'https://orenda.vision',
     generateRobotsTxt: true,
     changefreq: 'daily',
     priority: 0.7,

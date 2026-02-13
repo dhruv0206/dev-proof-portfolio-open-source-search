@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next'
 
 export default function robots(): MetadataRoute.Robots {
-    const baseUrl = 'https://dev-proof-portfolio.vercel.app'
+    const baseUrl = 'https://orenda.vision'
 
     return {
         rules: {
