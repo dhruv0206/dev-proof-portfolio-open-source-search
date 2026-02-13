@@ -2,7 +2,6 @@ import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { LandingPage } from '@/components/landing/LandingPage';
-import { getStats, getRecentIssues } from '@/lib/api';
 
 export default async function Home() {
   const session = await auth.api.getSession({
@@ -13,20 +12,8 @@ export default async function Home() {
     redirect('/dashboard');
   }
 
-  // Fetch stats server-side
-  // Fetch stats and recent issues server-side
-  let stats;
-  let recentIssues: import('@/lib/api').SearchResult[] = [];
-  try {
-    const [statsRes, recentRes] = await Promise.all([
-      getStats(),
-      getRecentIssues(3)
-    ]);
-    stats = statsRes;
-    recentIssues = recentRes.results;
-  } catch (error) {
-    console.error('Failed to pre-load landing data:', error);
-  }
+  // Fetch stats and recent issues client-side to improve initial load time
+  // by not blocking the server render on backend calls
 
-  return <LandingPage totalIssues={stats?.total_issues} recentIssues={recentIssues} />;
+  return <LandingPage />;
 }

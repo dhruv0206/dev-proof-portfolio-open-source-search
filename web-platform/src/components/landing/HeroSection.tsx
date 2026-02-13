@@ -91,7 +91,10 @@ export function HeroSection({ totalIssues: initialTotalIssues }: { totalIssues?:
                             {totalIssues !== null ? (
                                 <span>{totalIssues.toLocaleString()} issues indexed</span>
                             ) : (
-                                <span className="inline-block w-24 h-4 bg-muted/50 rounded animate-pulse" />
+                                <span className="flex items-center gap-1.5">
+                                    <span className="h-4 w-12 bg-emerald-500/20 rounded animate-pulse" />
+                                    <span className="opacity-80">issues indexed</span>
+                                </span>
                             )}
                         </motion.div>
 
