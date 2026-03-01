@@ -6,6 +6,12 @@ import { pool } from "@/lib/db";
 
 export const auth = betterAuth({
   database: pool,
+  baseURL: process.env.BETTER_AUTH_URL || "https://orenda.vision",
+  trustedOrigins: [
+    "https://orenda.vision",
+    "https://dev-proof-portfolio.vercel.app",
+    "http://localhost:3000",
+  ],
   emailAndPassword: {
     enabled: false, // GitHub only for now
   },

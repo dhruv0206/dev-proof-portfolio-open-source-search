@@ -15,8 +15,8 @@ export function Header() {
         signIn.social({ provider: 'github' });
     };
 
-    const handleSignOut = () => {
-        signOut();
+    const handleSignOut = async () => {
+        await signOut({ fetchOptions: { onSuccess: () => { window.location.href = '/'; } } });
     };
 
 
