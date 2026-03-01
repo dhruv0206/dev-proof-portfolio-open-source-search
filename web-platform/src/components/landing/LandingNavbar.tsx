@@ -39,7 +39,7 @@ export function LandingNavbar() {
     return (
         <>
             <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white text-center py-1.5 text-sm font-medium">
-                🚀 Pardon the rough edges — juggling updates & actively building a better experience. Committed to making devs&apos; lives easier, one commit at a time!
+                🚀 Pardon the rough edges — juggling updates & actively building a better experience. Verified portfolios, smarter search & more dropping soon — stick around!
             </div>
             <motion.header
                 initial={{ y: -100 }}

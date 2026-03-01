@@ -8,7 +8,7 @@ export function BetaBanner() {
             <div className="max-w-4xl mx-auto flex items-center justify-center gap-2 text-sm">
                 <Sparkles className="h-4 w-4 text-purple-500 animate-pulse" />
                 <span className="text-muted-foreground">
-                    🚀 Pardon the rough edges — juggling updates & <span className="text-foreground font-medium">actively building a better experience.</span> <span className="text-primary font-medium">Committed to making devs&apos; lives easier, one commit at a time!</span>
+                    🚀 Pardon the rough edges — juggling updates & <span className="text-foreground font-medium">actively building a better experience.</span> <span className="text-primary font-medium">Verified portfolios, smarter search & more dropping soon — stick around!</span>
                 </span>
             </div>
         </div>
