@@ -8,7 +8,7 @@ export const auth = betterAuth({
   database: pool,
   baseURL: process.env.BETTER_AUTH_URL || "https://orenda.vision",
   trustedOrigins: [
-    "https://www.orenda.vision",
+    "https://orenda.vision",
     "https://dev-proof-portfolio.vercel.app",
     "http://localhost:3000",
   ],
