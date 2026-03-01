@@ -37,135 +37,140 @@ export function LandingNavbar() {
     ];
 
     return (
-        <motion.header
-            initial={{ y: -100 }}
-            animate={{ y: 0 }}
-            transition={{ duration: 0.5 }}
-            className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
-                ? 'bg-background/80 backdrop-blur-md border-b border-border shadow-sm'
-                : 'bg-transparent'
-                }`}
-        >
-            <div className="container mx-auto px-4">
-                <div className="flex items-center justify-between h-16">
-                    {/* Logo */}
-                    <a href="/" className="flex items-center gap-2 group">
-                        <motion.div
-                            className="flex items-center text-xl font-bold"
-                            whileHover={{ scale: 1.02 }}
-                        >
-                            <span className="text-muted-foreground group-hover:text-emerald-500 transition-colors">&lt;</span>
-                            <img src="/logo_transparent.png" alt="DevProof" className="w-8 h-8 mx-1" />
-                            <span>DevProof</span>
-                            <span className="text-muted-foreground group-hover:text-emerald-500 transition-colors">/&gt;</span>
-                        </motion.div>
-                    </a>
-
-                    {/* Navigation */}
-                    <nav className="hidden md:flex items-center gap-6">
-                        {navItems.map((item) => (
-                            <a
-                                key={item.name}
-                                href={item.href}
-                                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+        <>
+            <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white text-center py-1.5 text-sm font-medium">
+                🚀 Coming up with amazing updates and a better UI — stay tuned!
+            </div>
+            <motion.header
+                initial={{ y: -100 }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.5 }}
+                className={`fixed top-[36px] left-0 right-0 z-50 transition-all duration-300 ${scrolled
+                    ? 'bg-background/80 backdrop-blur-md border-b border-border shadow-sm'
+                    : 'bg-transparent'
+                    }`}
+            >
+                <div className="container mx-auto px-4">
+                    <div className="flex items-center justify-between h-16">
+                        {/* Logo */}
+                        <a href="/" className="flex items-center gap-2 group">
+                            <motion.div
+                                className="flex items-center text-xl font-bold"
+                                whileHover={{ scale: 1.02 }}
                             >
-                                {item.name}
-                            </a>
-                        ))}
-                    </nav>
-
-                    {/* Actions */}
-                    <div className="flex items-center gap-2 md:gap-3">
-                        {/* GitHub Star - Hidden on very small screens */}
-                        <a
-                            href="https://github.com/dhruv0206/opensource-issues-finder"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="hidden sm:block"
-                        >
-                            <Button variant="outline" size="sm" className="gap-1.5 h-8 md:h-9">
-                                <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
-                                <span className="hidden lg:inline">Star on GitHub</span>
-                                <span className="lg:hidden">Star</span>
-                            </Button>
+                                <span className="text-muted-foreground group-hover:text-emerald-500 transition-colors">&lt;</span>
+                                <img src="/logo_transparent.png" alt="DevProof" className="w-8 h-8 mx-1" />
+                                <span>DevProof</span>
+                                <span className="text-muted-foreground group-hover:text-emerald-500 transition-colors">/&gt;</span>
+                            </motion.div>
                         </a>
 
-                        <ThemeToggle />
-
-                        {/* Auth - Minimal on mobile */}
-                        {isPending ? (
-                            <div className="w-20 md:w-24 h-8 md:h-9 rounded-md bg-muted animate-pulse" />
-                        ) : session ? (
-                            <Button variant="default" size="sm" className="h-8 md:h-9" asChild>
-                                <a href="/dashboard">Dashboard</a>
-                            </Button>
-                        ) : (
-                            <Button
-                                size="sm"
-                                className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border-0 h-8 md:h-9"
-                                onClick={handleSignIn}
-                                disabled={isSigningIn}
-                            >
-                                {isSigningIn ? (
-                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                                ) : (
-                                    <>
-                                        <span className="hidden sm:inline">Sign In</span>
-                                        <span className="sm:hidden text-xs">Login</span>
-                                    </>
-                                )}
-                            </Button>
-                        )}
-
-                        {/* Mobile Menu Toggle */}
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            className="md:hidden p-1 px-1.5"
-                            onClick={() => setIsMenuOpen(!isMenuOpen)}
-                        >
-                            {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                        </Button>
-                    </div>
-                </div>
-            </div>
-
-            {/* Mobile Menu Overlay */}
-            <AnimatePresence>
-                {isMenuOpen && (
-                    <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="md:hidden border-b border-border bg-background/95 backdrop-blur-md overflow-hidden"
-                    >
-                        <nav className="flex flex-col p-4 gap-4">
+                        {/* Navigation */}
+                        <nav className="hidden md:flex items-center gap-6">
                             {navItems.map((item) => (
                                 <a
                                     key={item.name}
                                     href={item.href}
-                                    onClick={() => setIsMenuOpen(false)}
-                                    className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                     {item.name}
                                 </a>
                             ))}
-                            <div className="pt-2 border-t border-border flex flex-col gap-3">
-                                <a
-                                    href="https://github.com/dhruv0206/opensource-issues-finder"
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="flex items-center gap-2 px-2 py-1 text-sm text-muted-foreground"
-                                >
-                                    <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-                                    Star on GitHub
-                                </a>
-                            </div>
                         </nav>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </motion.header>
+
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 md:gap-3">
+                            {/* GitHub Star - Hidden on very small screens */}
+                            <a
+                                href="https://github.com/dhruv0206/opensource-issues-finder"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="hidden sm:block"
+                            >
+                                <Button variant="outline" size="sm" className="gap-1.5 h-8 md:h-9">
+                                    <Star className="w-3.5 h-3.5 fill-yellow-400 text-yellow-400" />
+                                    <span className="hidden lg:inline">Star on GitHub</span>
+                                    <span className="lg:hidden">Star</span>
+                                </Button>
+                            </a>
+
+                            <ThemeToggle />
+
+                            {/* Auth - Minimal on mobile */}
+                            {isPending ? (
+                                <div className="w-20 md:w-24 h-8 md:h-9 rounded-md bg-muted animate-pulse" />
+                            ) : session ? (
+                                <Button variant="default" size="sm" className="h-8 md:h-9" asChild>
+                                    <a href="/dashboard">Dashboard</a>
+                                </Button>
+                            ) : (
+                                <Button
+                                    size="sm"
+                                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border-0 h-8 md:h-9"
+                                    onClick={handleSignIn}
+                                    disabled={isSigningIn}
+                                >
+                                    {isSigningIn ? (
+                                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <span className="hidden sm:inline">Sign In</span>
+                                            <span className="sm:hidden text-xs">Login</span>
+                                        </>
+                                    )}
+                                </Button>
+                            )}
+
+                            {/* Mobile Menu Toggle */}
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="md:hidden p-1 px-1.5"
+                                onClick={() => setIsMenuOpen(!isMenuOpen)}
+                            >
+                                {isMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Mobile Menu Overlay */}
+                <AnimatePresence>
+                    {isMenuOpen && (
+                        <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: 'auto' }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.3 }}
+                            className="md:hidden border-b border-border bg-background/95 backdrop-blur-md overflow-hidden"
+                        >
+                            <nav className="flex flex-col p-4 gap-4">
+                                {navItems.map((item) => (
+                                    <a
+                                        key={item.name}
+                                        href={item.href}
+                                        onClick={() => setIsMenuOpen(false)}
+                                        className="text-base font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-1"
+                                    >
+                                        {item.name}
+                                    </a>
+                                ))}
+                                <div className="pt-2 border-t border-border flex flex-col gap-3">
+                                    <a
+                                        href="https://github.com/dhruv0206/opensource-issues-finder"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="flex items-center gap-2 px-2 py-1 text-sm text-muted-foreground"
+                                    >
+                                        <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
+                                        Star on GitHub
+                                    </a>
+                                </div>
+                            </nav>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </motion.header>
+        </>
     );
 }
