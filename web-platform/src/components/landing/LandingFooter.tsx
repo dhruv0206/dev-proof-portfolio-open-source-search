@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Github, Twitter, MessageCircle } from 'lucide-react';
+import { Github, Twitter, MessageCircle, Linkedin } from 'lucide-react';
 
 const footerLinks = {
     product: [
@@ -26,6 +26,7 @@ const footerLinks = {
 
 const socialLinks = [
     { name: 'GitHub', href: 'https://github.com/dhruv0206/opensource-issues-finder', icon: Github },
+    { name: 'LinkedIn', href: 'https://www.linkedin.com/in/dhruv-patel-0206/', icon: Linkedin },
     { name: 'Twitter', href: 'https://x.com/Dhruv020699', icon: Twitter },
     { name: 'Discord', href: 'https://discord.gg/dZRFt9kN', icon: MessageCircle },
 ];

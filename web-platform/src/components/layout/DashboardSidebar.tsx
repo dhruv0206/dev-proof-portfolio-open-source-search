@@ -12,7 +12,8 @@ import {
     PanelLeftClose,
     PanelLeftOpen,
     Menu,
-    Code
+    Code,
+    Linkedin
 } from 'lucide-react';
 import { useSession, signIn, signOut } from '@/lib/auth-client';
 import { useSidebar } from '@/components/layout/SidebarContext';
@@ -201,7 +202,7 @@ function SidebarContent({
                 </TooltipProvider>
             </nav>
 
-            <div className="p-4 border-t border-border">
+            <div className="p-4 border-t border-border space-y-1">
                 {session ? (
                     collapsed ? (
                         <TooltipProvider>
@@ -256,6 +257,29 @@ function SidebarContent({
                             Sign in with GitHub
                         </Button>
                     )
+                )}
+
+                {/* LinkedIn */}
+                {collapsed ? (
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <a href="https://www.linkedin.com/in/dhruv-patel-0206/" target="_blank" rel="noopener noreferrer">
+                                    <Button variant="ghost" size="icon" className="w-full text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10">
+                                        <Linkedin className="h-5 w-5" />
+                                    </Button>
+                                </a>
+                            </TooltipTrigger>
+                            <TooltipContent side="right">Connect on LinkedIn</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+                ) : (
+                    <a href="https://www.linkedin.com/in/dhruv-patel-0206/" target="_blank" rel="noopener noreferrer">
+                        <Button variant="ghost" className="w-full justify-start gap-3 text-muted-foreground hover:text-blue-500 hover:bg-blue-500/10">
+                            <Linkedin className="h-5 w-5" />
+                            Connect on LinkedIn
+                        </Button>
+                    </a>
                 )}
             </div>
         </div>

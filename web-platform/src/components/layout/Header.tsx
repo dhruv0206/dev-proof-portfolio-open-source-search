@@ -24,7 +24,7 @@ export function Header() {
     return (
         <>
             <div className="fixed top-0 left-0 right-0 z-50 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white text-center py-1.5 text-sm font-medium">
-                🚀 Coming up with amazing updates and a better UI — stay tuned!
+                🚀 Pardon the rough edges — juggling updates & actively building a better experience. Committed to making devs&apos; lives easier, one commit at a time!
             </div>
             <header className="fixed top-[36px] left-0 right-0 z-50 bg-background/80 backdrop-blur-sm border-b border-border">
                 <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
