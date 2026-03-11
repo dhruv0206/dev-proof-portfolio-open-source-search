@@ -16,6 +16,4 @@ psycopg2-binary>=2.9.0
 requests>=2.28.0
 
 # Private Brain (Ranking Logic)
-# Production: git+https://github.com/dhruv0206/devproof-ranking-algo.git
-# Local dev:
--e D:/Projects/devproof_ranking_algo
+git+https://github.com/dhruv0206/devproof-ranking-algo.git

@@ -74,6 +74,7 @@ def main():
         f"--platform managed "
         f"--region {REGION} "
         f"--allow-unauthenticated "
+        f"--port 8000 "
         f'--set-secrets="GEMINI_API_KEY=GEMINI_API_KEY:latest,'
         f'PINECONE_API_KEY=PINECONE_API_KEY:latest,'
         f'DATABASE_URL=DATABASE_URL:latest,'
