@@ -129,7 +129,12 @@ async def import_project(
         project_id=project.id,
         tds_score=result["score"],
         complexity_tier=result["tier"],
-        audit_report=result["report"]
+        audit_report=result["report"],
+        # V2 fields
+        forensics_data=result.get("forensics_data"),
+        intent_signals=result.get("intent_signals"),
+        scoring_version=result.get("scoring_version", 1),
+        discipline=result.get("discipline"),
     )
     db.add(audit)
     
@@ -156,4 +161,12 @@ async def import_project(
 
     db.commit()
     
-    return {"status": "success", "project_id": str(project.id), "score": result["score"], "tier": result["tier"]}
+    return {
+        "status": "success",
+        "project_id": str(project.id),
+        "score": result["score"],
+        "tier": result["tier"],
+        "scoringVersion": result.get("scoring_version", 1),
+        "discipline": result.get("discipline"),
+        "scoreBreakdown": result.get("report", {}).get("score_breakdown", {}),
+    }

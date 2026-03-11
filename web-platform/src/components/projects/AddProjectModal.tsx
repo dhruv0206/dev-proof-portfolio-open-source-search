@@ -5,9 +5,10 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Loader2, Plus, CheckCircle2, AlertTriangle, ShieldCheck, Circle } from "lucide-react"
+import { Loader2, Plus, CheckCircle2, AlertTriangle, ShieldCheck, Circle, Trophy } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
+import { Progress } from "@/components/ui/progress"
 
 const PROGRESS_STEPS = [
     "Connecting to GitHub",
@@ -17,6 +18,19 @@ const PROGRESS_STEPS = [
     "Deep Mentor Audit",
     "Finalizing Score"
 ]
+
+interface AuditResult {
+    score: number
+    tier: string
+    scoringVersion?: number
+    discipline?: string
+    scoreBreakdown?: {
+        feature_score: number
+        architecture_score: number
+        intent_score: number
+        forensics_score: number
+    }
+}
 
 export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: string, defaultGithubUsername?: string }) {
     const [open, setOpen] = useState(false)
@@ -43,6 +57,9 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
     const [isAuditing, setIsAuditing] = useState(false)
     const [currentStep, setCurrentStep] = useState(0)
     const progressInterval = useRef<NodeJS.Timeout | null>(null)
+
+    // Audit Result State
+    const [auditResult, setAuditResult] = useState<AuditResult | null>(null)
 
     const router = useRouter()
 
@@ -175,15 +192,11 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
             const data = await res.json()
             if (!res.ok) throw new Error(data.detail)
 
-            // Success! Fast forward to end
+            // Success! Fast forward to end and show results
             if (progressInterval.current) clearInterval(progressInterval.current)
             setCurrentStep(PROGRESS_STEPS.length - 1) // Finalizing
-
-            setTimeout(() => {
-                setOpen(false)
-                handleReset()
-                window.location.reload()
-            }, 1000)
+            setAuditResult(data)
+            setIsAuditing(false)
 
         } catch (e: any) {
             if (progressInterval.current) clearInterval(progressInterval.current)
@@ -218,6 +231,7 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
         setConfirmedContribution(false)
         setIsAuditing(false)
         setCurrentStep(0)
+        setAuditResult(null)
         if (progressInterval.current) clearInterval(progressInterval.current)
     }
 
@@ -241,16 +255,65 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
                 <DialogHeader>
                     <DialogTitle>Import & Verify Project</DialogTitle>
                     <DialogDescription>
-                        {isAuditing ? "Deep Mentor Analysis Running..." :
-                            rejectionReason ? "Verification Failed" :
-                                isContributionDetected && !confirmedContribution ? "Contributor Verification" :
-                                    !scanned ? "Step 1: Enter your GitHub URL to start." :
-                                        !claimsReviewed ? "Step 2: Detect & Confirm Stack." :
-                                            "Step 3: Confirm features to verify."}
+                        {auditResult ? "Verification Complete" :
+                            isAuditing ? "Deep Mentor Analysis Running..." :
+                                rejectionReason ? "Verification Failed" :
+                                    isContributionDetected && !confirmedContribution ? "Contributor Verification" :
+                                        !scanned ? "Step 1: Enter your GitHub URL to start." :
+                                            !claimsReviewed ? "Step 2: Detect & Confirm Stack." :
+                                                "Step 3: Confirm features to verify."}
                     </DialogDescription>
                 </DialogHeader>
 
-                {isAuditing ? (
+                {auditResult ? (
+                    // RESULT VIEW
+                    <div className="py-6 space-y-6">
+                        <div className="flex flex-col items-center text-center space-y-3">
+                            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                                <Trophy className="w-8 h-8 text-green-600" />
+                            </div>
+                            <h3 className="font-bold text-lg">Project Verified!</h3>
+                            <div className="flex items-center gap-2">
+                                <span className="text-4xl font-bold">{auditResult.score.toFixed(0)}</span>
+                                <div className="text-left">
+                                    <Badge className={
+                                        auditResult.tier === "ELITE" ? "bg-purple-100 text-purple-700 border-purple-200" :
+                                        auditResult.tier === "ADVANCED" ? "bg-blue-100 text-blue-700 border-blue-200" :
+                                        auditResult.tier === "INTERMEDIATE" ? "bg-amber-100 text-amber-700 border-amber-200" :
+                                        "bg-slate-100 text-slate-700 border-slate-200"
+                                    }>
+                                        {auditResult.tier}
+                                    </Badge>
+                                    {auditResult.discipline && (
+                                        <p className="text-xs text-muted-foreground mt-1">{auditResult.discipline}</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* V2 Score Breakdown */}
+                        {auditResult.scoreBreakdown && (
+                            <div className="space-y-2 px-4">
+                                {[
+                                    { label: "Features", value: auditResult.scoreBreakdown.feature_score, max: 40, color: "bg-purple-500" },
+                                    { label: "Architecture", value: auditResult.scoreBreakdown.architecture_score, max: 15, color: "bg-blue-500" },
+                                    { label: "Intent & Standards", value: auditResult.scoreBreakdown.intent_score, max: 25, color: "bg-emerald-500" },
+                                    { label: "Forensics", value: auditResult.scoreBreakdown.forensics_score, max: 20, color: "bg-amber-500" },
+                                ].map(({ label, value, max, color }) => (
+                                    <div key={label} className="space-y-1">
+                                        <div className="flex justify-between text-xs">
+                                            <span className="text-muted-foreground">{label}</span>
+                                            <span className="font-mono font-bold">{value}/{max}</span>
+                                        </div>
+                                        <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                                            <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${Math.min((value / max) * 100, 100)}%` }} />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ) : isAuditing ? (
                     // PROGRESS VIEW
                     <div className="py-6 space-y-6">
                         <div className="space-y-4 px-4">
@@ -390,7 +453,15 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
                 )}
 
                 <DialogFooter>
-                    {isAuditing ? (
+                    {auditResult ? (
+                        <Button className="w-full" onClick={() => {
+                            setOpen(false)
+                            handleReset()
+                            window.location.reload()
+                        }}>
+                            View My Projects
+                        </Button>
+                    ) : isAuditing ? (
                         null
                     ) : rejectionReason ? (
                         <Button onClick={handleReset} variant="destructive" className="w-full">

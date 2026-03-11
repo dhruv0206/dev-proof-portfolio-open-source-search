@@ -1,11 +1,11 @@
 steps:
   # Build the container image
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['build', '--build-arg', 'GITHUB_TOKEN=$_GITHUB_TOKEN', '-t', 'gcr.io/opesource-github-search/backend', '-f', 'ai-engine/Dockerfile', '.']
+    args: ['build', '--build-arg', 'GITHUB_TOKEN=$_GITHUB_TOKEN', '-t', 'gcr.io/${PROJECT_ID}/backend', '-f', 'ai-engine/Dockerfile', '.']
 
   # Push the container image to Container Registry
   - name: 'gcr.io/cloud-builders/docker'
-    args: ['push', 'gcr.io/opesource-github-search/backend']
+    args: ['push', 'gcr.io/${PROJECT_ID}/backend']
 
 images:
-  - 'gcr.io/opesource-github-search/backend'
+  - 'gcr.io/${PROJECT_ID}/backend'

@@ -3,7 +3,7 @@
 import logging
 from google import genai
 from google.genai import types
-from tenacity import retry, stop_after_attempt, wait_exponential
+from tenacity import retry, stop_after_attempt, wait_exponential, before_sleep_log
 
 from app.config import get_settings
 from app.models.issue import IssueMetadata
@@ -22,7 +22,8 @@ class EmbeddingService:
         
     @retry(
         stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=30)
+        wait=wait_exponential(multiplier=1, min=2, max=30),
+        before_sleep=before_sleep_log(logger, logging.WARNING)
     )
     def generate_embedding(self, text: str) -> list[float]:
         """Generate embedding for a single text."""
@@ -38,7 +39,8 @@ class EmbeddingService:
     
     @retry(
         stop=stop_after_attempt(3),
-        wait=wait_exponential(multiplier=1, min=2, max=30)
+        wait=wait_exponential(multiplier=1, min=2, max=30),
+        before_sleep=before_sleep_log(logger, logging.WARNING)
     )
     def generate_query_embedding(self, query: str) -> list[float]:
         """Generate embedding for a search query."""

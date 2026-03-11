@@ -1,6 +1,6 @@
 """Audit Cache Model - Stores audit results keyed by repo+commit."""
 import uuid
-from sqlalchemy import Column, String, Float, JSON, DateTime, Index
+from sqlalchemy import Column, String, Float, Integer, JSON, DateTime, Index
 from sqlalchemy.dialects.postgresql import UUID
 from datetime import datetime, timezone
 
@@ -30,7 +30,13 @@ class AuditCache(Base):
     audit_report = Column(JSON, nullable=False)
     stack = Column(JSON, nullable=False)
     authorship = Column(Float, nullable=False)
-    
+
+    # V2 Fields
+    forensics_data = Column(JSON, nullable=True)
+    intent_signals = Column(JSON, nullable=True)
+    scoring_version = Column(Integer, default=1)
+    discipline = Column(String, nullable=True)
+
     # Metadata
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     

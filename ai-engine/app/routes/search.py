@@ -57,7 +57,10 @@ async def search(
         
     except Exception as e:
         logger.error(f"Search error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=503,
+            detail="Search service is temporarily unavailable. Please try again in a moment."
+        )
 
 
 @router.get("/recent", response_model=RecentResponse)
@@ -108,7 +111,10 @@ async def get_recent_issues(
         
     except Exception as e:
         logger.error(f"Recent issues error: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(
+            status_code=503,
+            detail="Search service is temporarily unavailable. Please try again in a moment."
+        )
 
 
 @router.get("/last-updated")

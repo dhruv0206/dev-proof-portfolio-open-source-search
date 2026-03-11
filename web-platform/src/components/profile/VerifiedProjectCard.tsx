@@ -1,7 +1,7 @@
 import { useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card"
-import { CheckCircle2, AlertCircle, TrendingUp, ShieldCheck, Zap, ChevronDown, ChevronUp } from "lucide-react"
+import { CheckCircle2, AlertCircle, TrendingUp, ShieldCheck, Zap, ChevronDown, ChevronUp, GitCommit, FlaskConical } from "lucide-react"
 import { Progress } from "@/components/ui/progress"
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion"
 
@@ -12,6 +12,24 @@ interface VerifiedFeature {
     tier?: "TIER_1_UI" | "TIER_2_LOGIC" | "TIER_3_DEEP"
     tier_reasoning?: string
     feature_type?: string
+}
+
+interface ScoreBreakdown {
+    feature_score: number
+    architecture_score: number
+    intent_score: number
+    forensics_score: number
+    scoring_version: number
+}
+
+interface ForensicsData {
+    insufficient_data: boolean
+    commit_count?: number
+    sessions?: { count: number; avg_duration_mins: number; per_week: number }
+    fix_ratio?: number
+    message_quality?: number
+    evolution_mix?: { add: number; refactor: number; delete: number }
+    time_spread_reasonable?: boolean
 }
 
 interface ProjectProps {
@@ -27,6 +45,11 @@ interface ProjectProps {
         libs: string[]
     }
     verifiedFeatures: VerifiedFeature[]
+    // V2 fields
+    scoringVersion?: number
+    discipline?: string
+    forensicsData?: ForensicsData
+    scoreBreakdown?: ScoreBreakdown
 }
 
 export function VerifiedProjectCard({ project, currentUser }: { project: ProjectProps, currentUser?: string }) {
@@ -111,6 +134,29 @@ export function VerifiedProjectCard({ project, currentUser }: { project: Project
             </CardHeader>
 
             <CardContent className="pt-4 space-y-6">
+                {/* V2: Score Breakdown + Discipline */}
+                {project.scoringVersion && project.scoringVersion >= 2 && project.scoreBreakdown && (
+                    <div className="space-y-3">
+                        {/* Discipline Badge */}
+                        {project.discipline && (
+                            <div className="flex items-center gap-2">
+                                <Badge variant="outline" className="text-xs font-medium">
+                                    <FlaskConical className="w-3 h-3 mr-1" />
+                                    {project.discipline}
+                                </Badge>
+                            </div>
+                        )}
+
+                        {/* Score Breakdown Bars */}
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <ScoreBar label="Features" value={project.scoreBreakdown.feature_score} max={40} color="bg-purple-500" />
+                            <ScoreBar label="Architecture" value={project.scoreBreakdown.architecture_score} max={15} color="bg-blue-500" />
+                            <ScoreBar label="Intent" value={project.scoreBreakdown.intent_score} max={25} color="bg-emerald-500" />
+                            <ScoreBar label="Forensics" value={project.scoreBreakdown.forensics_score} max={20} color="bg-amber-500" />
+                        </div>
+                    </div>
+                )}
+
                 {/* Clusters */}
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     {/* Deep Tech Column */}
@@ -168,6 +214,11 @@ export function VerifiedProjectCard({ project, currentUser }: { project: Project
                     </div>
                 </div>
 
+                {/* V2: Forensics Summary */}
+                {project.scoringVersion && project.scoringVersion >= 2 && project.forensicsData && (
+                    <ForensicsSummary data={project.forensicsData} />
+                )}
+
                 {/* Recommendations */}
                 {project.recommendations && project.recommendations.length > 0 && (
                     <Accordion type="single" collapsible className="w-full border rounded-lg px-4 bg-amber-50/50 dark:bg-amber-950/10 border-amber-200 dark:border-amber-900/50">
@@ -223,6 +274,56 @@ function FeatureList({ features, limit }: { features: VerifiedFeature[], limit?:
                 )}
             </button>
         </>
+    )
+}
+
+function ScoreBar({ label, value, max, color }: { label: string; value: number; max: number; color: string }) {
+    const pct = Math.min((value / max) * 100, 100)
+    return (
+        <div className="space-y-1">
+            <div className="flex items-center justify-between text-xs">
+                <span className="text-muted-foreground font-medium">{label}</span>
+                <span className="font-mono font-bold text-[11px]">{value}/{max}</span>
+            </div>
+            <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct}%` }} />
+            </div>
+        </div>
+    )
+}
+
+function ForensicsSummary({ data }: { data: ForensicsData }) {
+    if (data.insufficient_data) {
+        return (
+            <div className="flex items-center gap-2 text-xs text-muted-foreground italic px-1">
+                <GitCommit className="w-3.5 h-3.5" />
+                Commit history: Insufficient data for analysis
+            </div>
+        )
+    }
+
+    const stats: string[] = []
+    if (data.sessions) stats.push(`${data.sessions.count} sessions`)
+    if (data.fix_ratio != null) stats.push(`${(data.fix_ratio * 100).toFixed(0)}% fixes`)
+    if (data.message_quality != null) stats.push(`${data.message_quality}/10 msg quality`)
+    if (data.evolution_mix) {
+        stats.push(`Add ${data.evolution_mix.add}%`)
+        stats.push(`Refactor ${data.evolution_mix.refactor}%`)
+        stats.push(`Delete ${data.evolution_mix.delete}%`)
+    }
+
+    if (stats.length === 0) return null
+
+    return (
+        <div className="flex items-center gap-1.5 flex-wrap px-1">
+            <GitCommit className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+            <span className="text-xs font-medium text-muted-foreground">Commit Process:</span>
+            {stats.map((stat, i) => (
+                <Badge key={i} variant="secondary" className="text-[10px] h-5 px-1.5 font-mono">
+                    {stat}
+                </Badge>
+            ))}
+        </div>
     )
 }
 

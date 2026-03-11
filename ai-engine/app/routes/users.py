@@ -99,13 +99,33 @@ async def get_user_stats(
         for issue in active_issues
     ]
     
+    # Project audit stats
+    from app.models.project import Project, ProjectAudit
+
+    project_count = db.query(func.count(Project.id)).filter(
+        Project.user_id == user_id,
+        Project.is_verified == True
+    ).scalar() or 0
+
+    # Get best project score and average
+    project_scores = db.query(ProjectAudit.tds_score).join(Project).filter(
+        Project.user_id == user_id,
+        Project.is_verified == True
+    ).all()
+
+    best_score = max((s[0] for s in project_scores), default=0) if project_scores else 0
+    avg_score = round(sum(s[0] for s in project_scores) / len(project_scores), 1) if project_scores else 0
+
     return {
         "verifiedPRs": verified_count,
         "inProgress": in_progress_count,
         "prSubmitted": pr_submitted_count,
         "repositories": repo_count,
         "recentActivity": recent_activity,
-        "activeIssues": active_issues_data
+        "activeIssues": active_issues_data,
+        "projectCount": project_count,
+        "bestScore": best_score,
+        "avgScore": avg_score,
     }
 
 
@@ -174,7 +194,7 @@ async def get_my_projects(
             if score > 80:
                 recommendations.append("Elite status achieved. Maintain this standard.")
 
-        verified_projects_data.append({
+        project_data = {
             "name": proj.repo_name,
             "repoUrl": proj.repo_url,
             "authorship": proj.authorship_percent,
@@ -182,9 +202,20 @@ async def get_my_projects(
             "verifiedFeatures": verified_feats,
             "score": score,
             "tier": tier,
-            "recommendations": recommendations
-        })
-        
+            "recommendations": recommendations,
+        }
+        # V2 fields (included if present)
+        if proj.audit:
+            project_data["scoringVersion"] = getattr(proj.audit, 'scoring_version', 1) or 1
+            project_data["discipline"] = getattr(proj.audit, 'discipline', None)
+            project_data["intentSignals"] = getattr(proj.audit, 'intent_signals', None)
+            project_data["forensicsData"] = getattr(proj.audit, 'forensics_data', None)
+            # Score breakdown from audit report
+            if proj.audit.audit_report:
+                project_data["scoreBreakdown"] = proj.audit.audit_report.get("score_breakdown", {})
+
+        verified_projects_data.append(project_data)
+
     return {"projects": verified_projects_data}
 
 
@@ -282,11 +313,14 @@ async def get_public_profile(
                 display_status = "Unverified"
                 if status == "VERIFIED": display_status = "VERIFIED"
                 elif status == "WRAPPER": display_status = "Wrapper"
-                
+
                 verified_feats.append({
                     "feature": c.get("feature", "Unknown"),
                     "status": display_status,
-                    "evidence_file": c.get("evidence", {}).get("file")
+                    "tier": c.get("tier", "Unknown"),
+                    "feature_type": c.get("feature_type", "Unknown"),
+                    "tier_reasoning": c.get("tier_reasoning", "No details available."),
+                    "evidence_file": c.get("evidence_file") or c.get("evidence", {}).get("file")
                 })
 
         # Recommendations Logic
@@ -298,7 +332,7 @@ async def get_public_profile(
             score = proj.audit.tds_score or 0
             tier = proj.audit.complexity_tier or "BASIC"
 
-        verified_projects_data.append({
+        project_data = {
             "name": proj.repo_name,
             "repoUrl": proj.repo_url,
             "authorship": proj.authorship_percent,
@@ -306,8 +340,18 @@ async def get_public_profile(
             "verifiedFeatures": verified_feats,
             "score": score,
             "tier": tier,
-            "recommendations": recommendations # Public may not see recs, but keeping consistent schema
-        })
+            "recommendations": recommendations,
+        }
+        # V2 fields (included if present)
+        if proj.audit:
+            project_data["scoringVersion"] = getattr(proj.audit, 'scoring_version', 1) or 1
+            project_data["discipline"] = getattr(proj.audit, 'discipline', None)
+            project_data["intentSignals"] = getattr(proj.audit, 'intent_signals', None)
+            project_data["forensicsData"] = getattr(proj.audit, 'forensics_data', None)
+            if proj.audit.audit_report:
+                project_data["scoreBreakdown"] = proj.audit.audit_report.get("score_breakdown", {})
+
+        verified_projects_data.append(project_data)
 
     # Build contributions list
     contributions = []

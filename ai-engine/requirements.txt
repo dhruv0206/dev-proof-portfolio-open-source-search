@@ -16,5 +16,6 @@ psycopg2-binary>=2.9.0
 requests>=2.28.0
 
 # Private Brain (Ranking Logic)
-# Uses ${GITHUB_TOKEN} environment variable injected by Cloud Build
-git+https://github.com/dhruv0206/devproof-ranking-algo.git
+# Production: git+https://github.com/dhruv0206/devproof-ranking-algo.git
+# Local dev:
+-e D:/Projects/devproof_ranking_algo

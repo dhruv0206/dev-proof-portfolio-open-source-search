@@ -54,7 +54,31 @@ interface ProfileData {
             feature: string;
             status: "VERIFIED" | "Wrapper" | "Unverified";
             evidence_file?: string;
+            tier?: "TIER_1_UI" | "TIER_2_LOGIC" | "TIER_3_DEEP";
+            feature_type?: string;
         }>;
+        score?: number;
+        tier?: string;
+        recommendations?: string[];
+        // V2 fields
+        scoringVersion?: number;
+        discipline?: string;
+        forensicsData?: {
+            insufficient_data: boolean;
+            commit_count?: number;
+            sessions?: { count: number; avg_duration_mins: number; per_week: number };
+            fix_ratio?: number;
+            message_quality?: number;
+            evolution_mix?: { add: number; refactor: number; delete: number };
+            time_spread_reasonable?: boolean;
+        };
+        scoreBreakdown?: {
+            feature_score: number;
+            architecture_score: number;
+            intent_score: number;
+            forensics_score: number;
+            scoring_version: number;
+        };
     }>;
 }
 

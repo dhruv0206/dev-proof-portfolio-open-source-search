@@ -43,14 +43,20 @@ class ProjectAudit(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), unique=True)
-    
+
     # The Hidden Score
     tds_score = Column(Float, default=0.0) # Technical Depth Score
     complexity_tier = Column(String, nullable=True) # Basic, Intermediate...
-    
+
     # The Evidence Report (JSON from Gemini)
     audit_report = Column(JSON, nullable=True)
-    
+
+    # V2 Fields
+    forensics_data = Column(JSON, nullable=True)   # Commit forensics analysis
+    intent_signals = Column(JSON, nullable=True)   # Developer intent signals
+    scoring_version = Column(Integer, default=1)   # 1=legacy, 2=v2
+    discipline = Column(String, nullable=True)     # Detected discipline
+
     audited_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relations

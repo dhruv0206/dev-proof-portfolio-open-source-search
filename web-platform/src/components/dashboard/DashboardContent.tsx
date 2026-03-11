@@ -13,7 +13,10 @@ import {
     Clock,
     GitFork,
     ArrowRight,
-    AlertCircle
+    AlertCircle,
+    FolderCode,
+    Trophy,
+    TrendingUp
 } from 'lucide-react';
 
 interface DashboardStats {
@@ -21,6 +24,9 @@ interface DashboardStats {
     inProgress: number;
     prSubmitted: number;
     repositories: number;
+    projectCount: number;
+    bestScore: number;
+    avgScore: number;
     recentActivity: Array<{
         id: string;
         type: 'started' | 'submitted' | 'verified';
@@ -114,7 +120,31 @@ export function DashboardContent({ userId }: DashboardContentProps) {
     return (
         <div className="space-y-6">
 
-            {/* Stats Grid */}
+            {/* Project Score Stats */}
+            {stats.projectCount > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <StatsCard
+                        title="Verified Projects"
+                        value={stats.projectCount}
+                        icon={FolderCode}
+                        description="AI-audited projects"
+                    />
+                    <StatsCard
+                        title="Best TDS Score"
+                        value={stats.bestScore.toFixed(0)}
+                        icon={Trophy}
+                        description="Technical Depth Score"
+                    />
+                    <StatsCard
+                        title="Average Score"
+                        value={stats.avgScore.toFixed(0)}
+                        icon={TrendingUp}
+                        description="Across all projects"
+                    />
+                </div>
+            )}
+
+            {/* Contribution Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 <StatsCard
                     title="Verified PRs"

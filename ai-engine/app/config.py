@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     
     # Pinecone
     pinecone_api_key: str
-    pinecone_index_name: str = "github-contributions"
+    pinecone_index_name: str = "github-opensource-search"
     pinecone_environment: str | None = None
     
     # Database

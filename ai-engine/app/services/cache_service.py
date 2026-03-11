@@ -31,16 +31,25 @@ class AuditCacheService:
         ).first()
         
         if cache_entry:
-            return {
+            result = {
                 "status": "VERIFIED",
                 "score": cache_entry.tds_score,
                 "tier": cache_entry.complexity_tier,
                 "report": cache_entry.audit_report,
                 "stack": cache_entry.stack,
                 "authorship": cache_entry.authorship,
-                "cached": True  # Flag to indicate this was from cache
+                "cached": True,
             }
-        
+            # V2 fields (may be None for legacy cache entries)
+            if cache_entry.forensics_data is not None:
+                result["forensics_data"] = cache_entry.forensics_data
+            if cache_entry.intent_signals is not None:
+                result["intent_signals"] = cache_entry.intent_signals
+            if cache_entry.discipline is not None:
+                result["discipline"] = cache_entry.discipline
+            result["scoring_version"] = getattr(cache_entry, 'scoring_version', 1) or 1
+            return result
+
         return None
     
     @staticmethod
@@ -71,6 +80,11 @@ class AuditCacheService:
             existing.audit_report = result["report"]
             existing.stack = result["stack"]
             existing.authorship = result["authorship"]
+            # V2 fields
+            existing.forensics_data = result.get("forensics_data")
+            existing.intent_signals = result.get("intent_signals")
+            existing.scoring_version = result.get("scoring_version", 1)
+            existing.discipline = result.get("discipline")
         else:
             # Create new cache entry
             cache_entry = AuditCache(
@@ -80,7 +94,12 @@ class AuditCacheService:
                 complexity_tier=result["tier"],
                 audit_report=result["report"],
                 stack=result["stack"],
-                authorship=result["authorship"]
+                authorship=result["authorship"],
+                # V2 fields
+                forensics_data=result.get("forensics_data"),
+                intent_signals=result.get("intent_signals"),
+                scoring_version=result.get("scoring_version", 1),
+                discipline=result.get("discipline"),
             )
             db.add(cache_entry)
         
