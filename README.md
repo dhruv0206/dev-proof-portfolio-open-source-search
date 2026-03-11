@@ -232,7 +232,7 @@ Issues are ingested on a tiered schedule:
 
 ## 🤝 Contributing
 
-This project helps developers find contribution opportunities — help us improve it!
+DevProof is **source available** — the code is public and we welcome contributions!
 
 1. Fork the repo
 2. Create a feature branch (`git checkout -b feature/amazing`)
@@ -240,20 +240,20 @@ This project helps developers find contribution opportunities — help us improv
 4. Push (`git push origin feature/amazing`)
 5. Open a PR
 
+Have ideas or feedback? [Join our Discord](https://discord.gg/dZRFt9kN) or reach out on [LinkedIn](https://www.linkedin.com/in/dhruv-patel-0206).
+
 ---
 
 ## 📝 License
 
-### License Notice
+This project is licensed under the **Business Source License 1.1 (BSL)**.
 
-This project was originally released under the **MIT License**.
+- **Source available** — you can view, fork, and contribute to the code
+- **Non-production use** is freely permitted (learning, testing, development)
+- **Production use** requires a commercial license from the maintainer
+- On **2035-01-01**, the license converts to **MIT** (fully open source)
 
-- All code committed before **2026-01-23** is licensed under MIT.
-- All code committed on or after **2026-01-23** is licensed under the
-  **Business Source License 1.1**.
-
-See the `LICENSE` file for full terms.
-
+> ⚠️ DevProof is **not** open source. It is source available under BSL 1.1. See the [`LICENSE`](./LICENSE) file for full terms.
 
 ---
 
