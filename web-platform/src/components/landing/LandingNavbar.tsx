@@ -42,7 +42,7 @@ export function LandingNavbar() {
                 initial={{ y: -100 }}
                 animate={{ y: 0 }}
                 transition={{ duration: 0.5 }}
-                className={`fixed top-[36px] left-0 right-0 z-50 transition-all duration-300 ${scrolled
+                className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${scrolled
                     ? 'bg-background/80 backdrop-blur-md border-b border-border shadow-sm'
                     : 'bg-transparent'
                     }`}
