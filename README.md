@@ -4,7 +4,7 @@
 
 Discover contribution opportunities with AI-powered search. Track your work. Build a verified developer portfolio.
 
-[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-dev--proof--portfolio.vercel.app-blue)](https://dev-proof-portfolio.vercel.app)
+[![Live Demo](https://img.shields.io/badge/🌐_Live_Demo-dev--proof--portfolio.vercel.app-blue)](https://orenda.vision)
 [![Discord](https://img.shields.io/badge/Discord-Join_Community-7289DA?logo=discord&logoColor=white)](https://discord.gg/dZRFt9kN)
 ![Powered by Gemini](https://img.shields.io/badge/AI-Gemini%202.0-4285F4?logo=google&logoColor=white)
 ![Next.js](https://img.shields.io/badge/Frontend-Next.js%2016-black)
