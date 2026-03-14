@@ -22,11 +22,11 @@ export default async function DashboardPage() {
 
     return (
         <DashboardLayout>
-            <main className="w-full px-8 py-8">
-                <div className="mb-10 text-center">
-                    <h1 className="text-4xl font-bold mb-3">Dashboard</h1>
-                    <p className="text-muted-foreground text-lg">
-                        Your open source contribution overview and progress.
+            <main className="w-full px-6 lg:px-8 py-6">
+                <div className="mb-6">
+                    <h1 className="text-2xl font-bold">Dashboard</h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Your development overview and progress
                     </p>
                 </div>
 

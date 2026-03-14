@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find \"D:\\\\Projects\\\\github-contributions-search\\\\web-platform\\\\src\\\\components\" -type f -name \"*.tsx\" -exec basename {} \\\\; | sort)",
+      "Bash(cd D:/Projects/github-contributions-search/web-platform && npx next build 2>&1 | tail -40)",
+      "Bash(cd D:/Projects/github-contributions-search/web-platform && npx next build 2>&1 | tail -20)",
+      "WebFetch(domain:magicui.design)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(cd D:/Projects/github-contributions-search/web-platform && npx next build 2>&1 | tail -10)",
+      "WebFetch(domain:api.github.com)",
+      "Bash(gh api:*)",
+      "Bash(gh auth:*)",
+      "Bash(cd D:/Projects/github-contributions-search/web-platform && npx next build 2>&1 | grep -E \"\\(error|Error|✓|Route\\)\" | head -20)",
+      "Bash(cd D:/Projects/github-contributions-search/web-platform && npx next build 2>&1 | grep -E \"\\(error|Error|✓ Compiled|✓ Generating\\)\" | head -10)",
+      "Bash(ls -t \"c:/Users/dhruv/Pictures/Screenshots/\"* 2>/dev/null | head -10)",
+      "Bash(cd D:/Projects/github-contributions-search/web-platform && npx next build 2>&1 | grep -E \"\\(error|Error|✓ Compiled|✓ Generating\\)\" | head -5)",
+      "WebFetch(domain:app.skillsync.wiki)",
+      "WebSearch",
+      "WebFetch(domain:www.ycombinator.com)",
+      "WebFetch(domain:www.yctierlist.com)"
+    ]
+  }
+}

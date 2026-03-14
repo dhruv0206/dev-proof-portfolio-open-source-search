@@ -1,12 +1,11 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { BentoLabel } from '@/components/dashboard/BentoCard';
 import {
     GitPullRequest,
     PlayCircle,
     CheckCircle2,
-    Clock
 } from 'lucide-react';
 
 interface ActivityItem {
@@ -24,21 +23,24 @@ interface ActivityTimelineProps {
 const activityConfig = {
     started: {
         icon: PlayCircle,
-        label: 'Started working on',
+        label: 'Started',
         color: 'text-blue-500',
         bgColor: 'bg-blue-500/10',
+        dotColor: 'bg-blue-500',
     },
     submitted: {
         icon: GitPullRequest,
-        label: 'Submitted PR for',
-        color: 'text-yellow-500',
-        bgColor: 'bg-yellow-500/10',
+        label: 'PR Submitted',
+        color: 'text-amber-500',
+        bgColor: 'bg-amber-500/10',
+        dotColor: 'bg-amber-500',
     },
     verified: {
         icon: CheckCircle2,
-        label: 'PR verified for',
-        color: 'text-green-500',
-        bgColor: 'bg-green-500/10',
+        label: 'Verified',
+        color: 'text-emerald-500',
+        bgColor: 'bg-emerald-500/10',
+        dotColor: 'bg-emerald-500',
     },
 };
 
@@ -57,61 +59,48 @@ function formatRelativeTime(dateString: string): string {
 }
 
 export function ActivityTimeline({ activities }: ActivityTimelineProps) {
-    if (activities.length === 0) {
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                        <Clock className="h-5 w-5" />
-                        Recent Activity
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p className="text-muted-foreground text-sm">
-                        No activity yet. Start tracking an issue to see your progress here!
-                    </p>
-                </CardContent>
-            </Card>
-        );
-    }
-
     return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    Recent Activity
-                </CardTitle>
-            </CardHeader>
-            <CardContent>
-                <div className="space-y-4">
-                    {activities.map((activity, index) => {
-                        const config = activityConfig[activity.type];
-                        const Icon = config.icon;
+        <div>
+            <BentoLabel>Recent Activity</BentoLabel>
 
+            {activities.length === 0 ? (
+                <p className="text-sm text-muted-foreground mt-4">
+                    No activity yet. Start tracking an issue to see your progress here.
+                </p>
+            ) : (
+                <div className="mt-4 space-y-0">
+                    {activities.slice(0, 8).map((activity, index) => {
+                        const config = activityConfig[activity.type];
                         return (
-                            <div key={activity.id} className="flex gap-4">
-                                {/* Timeline line */}
-                                <div className="flex flex-col items-center">
-                                    <div className={`p-2 rounded-full ${config.bgColor}`}>
-                                        <Icon className={`h-4 w-4 ${config.color}`} />
-                                    </div>
+                            <div key={activity.id} className="flex gap-3 group">
+                                {/* Timeline column */}
+                                <div className="flex flex-col items-center w-5 shrink-0">
+                                    <div className={`w-2 h-2 rounded-full ${config.dotColor} mt-2 shrink-0`} />
                                     {index < activities.length - 1 && (
-                                        <div className="w-px h-full bg-border mt-2" />
+                                        <div className="w-px flex-1 bg-border" />
                                     )}
                                 </div>
 
                                 {/* Content */}
-                                <div className="flex-1 pb-4">
-                                    <p className="text-sm">
-                                        <span className="text-muted-foreground">{config.label}</span>{' '}
-                                        <span className="font-medium">{activity.issueTitle}</span>
-                                    </p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <Badge variant="outline" className="text-xs">
-                                            {activity.repoName}
-                                        </Badge>
-                                        <span className="text-xs text-muted-foreground">
+                                <div className="flex-1 pb-4 min-w-0">
+                                    <div className="flex items-start justify-between gap-2">
+                                        <div className="min-w-0">
+                                            <p className="text-sm truncate">
+                                                <span className={`font-medium ${config.color}`}>
+                                                    {config.label}
+                                                </span>
+                                                {' '}
+                                                <span className="text-muted-foreground">·</span>
+                                                {' '}
+                                                <span className="font-medium">{activity.issueTitle}</span>
+                                            </p>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="text-[11px] text-muted-foreground font-mono">
+                                                    {activity.repoName}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <span className="text-[10px] text-muted-foreground shrink-0 mt-0.5 font-mono">
                                             {formatRelativeTime(activity.timestamp)}
                                         </span>
                                     </div>
@@ -120,7 +109,7 @@ export function ActivityTimeline({ activities }: ActivityTimelineProps) {
                         );
                     })}
                 </div>
-            </CardContent>
-        </Card>
+            )}
+        </div>
     );
 }
