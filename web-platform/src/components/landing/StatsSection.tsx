@@ -50,7 +50,7 @@ export function StatsSection() {
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="glass rounded-2xl p-8 md:p-12"
+                    className="bg-card border border-border rounded-2xl p-8 md:p-12"
                 >
                     <div className="grid md:grid-cols-3 gap-8 md:gap-12">
                         {stats.map((stat, index) => (

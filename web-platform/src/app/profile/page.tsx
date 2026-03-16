@@ -46,9 +46,9 @@ export default async function ProfilePage() {
         <DashboardLayout>
             <main className="w-full px-8 py-8">
                 {/* Header with public link */}
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center justify-between mb-6">
                     <div>
-                        <h1 className="text-3xl font-bold mb-2">My Profile</h1>
+                        <h1 className="text-2xl font-semibold mb-1">My Profile</h1>
                         <p className="text-muted-foreground">
                             Your public developer portfolio
                         </p>

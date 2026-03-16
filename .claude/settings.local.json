@@ -17,7 +17,12 @@
       "WebFetch(domain:app.skillsync.wiki)",
       "WebSearch",
       "WebFetch(domain:www.ycombinator.com)",
-      "WebFetch(domain:www.yctierlist.com)"
+      "WebFetch(domain:www.yctierlist.com)",
+      "Bash(claude:*)",
+      "WebFetch(domain:github.com)",
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(cd:*)"
     ]
   }
 }

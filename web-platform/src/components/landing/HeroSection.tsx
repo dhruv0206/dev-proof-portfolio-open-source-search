@@ -68,7 +68,73 @@ export function HeroSection({ totalIssues: initialTotalIssues }: { totalIssues?:
     }, [displayText, isDeleting, currentSubtitle]);
 
     return (
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden grid-pattern">
+        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+            {/* Animated gradient mesh background */}
+            <div className="absolute inset-0 -z-10">
+                {/* Primary emerald orb — top center, drifts slowly */}
+                <div
+                    className="absolute w-[600px] h-[600px] rounded-full opacity-20 blur-[120px] animate-[drift_20s_ease-in-out_infinite]"
+                    style={{ background: 'radial-gradient(circle, #10b981 0%, transparent 70%)', top: '-10%', left: '30%' }}
+                />
+                {/* Secondary teal orb — right side, counter-drift */}
+                <div
+                    className="absolute w-[500px] h-[500px] rounded-full opacity-15 blur-[100px] animate-[drift-reverse_25s_ease-in-out_infinite]"
+                    style={{ background: 'radial-gradient(circle, #059669 0%, transparent 70%)', top: '20%', right: '-5%' }}
+                />
+                {/* Subtle blue accent — bottom left */}
+                <div
+                    className="absolute w-[400px] h-[400px] rounded-full opacity-10 blur-[100px] animate-[drift_30s_ease-in-out_infinite_reverse]"
+                    style={{ background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)', bottom: '0%', left: '-5%' }}
+                />
+                {/* Fine grid overlay for texture */}
+                <div
+                    className="absolute inset-0 opacity-[0.03]"
+                    style={{
+                        backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+                        backgroundSize: '60px 60px',
+                    }}
+                />
+            </div>
+
+            {/* Floating verification badges — decorative */}
+            <div className="absolute inset-0 -z-5 overflow-hidden pointer-events-none hidden lg:block">
+                <motion.div
+                    animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
+                    transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
+                    className="absolute top-[15%] left-[8%] px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono"
+                >
+                    ✓ PR merged
+                </motion.div>
+                <motion.div
+                    animate={{ y: [0, 15, 0], x: [0, -8, 0] }}
+                    transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
+                    className="absolute top-[25%] right-[5%] px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-mono"
+                >
+                    ELITE · 92
+                </motion.div>
+                <motion.div
+                    animate={{ y: [0, -12, 0], x: [0, -15, 0] }}
+                    transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
+                    className="absolute bottom-[20%] left-[12%] px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-mono"
+                >
+                    ✓ 14 features verified
+                </motion.div>
+                <motion.div
+                    animate={{ y: [0, 18, 0], x: [0, 12, 0] }}
+                    transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+                    className="absolute bottom-[30%] right-[10%] px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono"
+                >
+                    AST verified ✓
+                </motion.div>
+                <motion.div
+                    animate={{ y: [0, -15, 0] }}
+                    transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
+                    className="absolute top-[60%] left-[3%] px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono"
+                >
+                    +847 lines
+                </motion.div>
+            </div>
+
             <div className="container mx-auto px-4 pt-28 pb-12 md:py-20 relative z-10">
                 <div className="flex flex-col lg:grid lg:grid-cols-2 gap-12 items-center">
                     {/* Left Column - Text */}
@@ -82,7 +148,7 @@ export function HeroSection({ totalIssues: initialTotalIssues }: { totalIssues?:
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.2 }}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass text-sm mb-6"
+                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm mb-6"
                         >
                             <span className="relative flex h-2 w-2">
                                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>

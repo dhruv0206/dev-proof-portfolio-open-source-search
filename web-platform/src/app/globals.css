@@ -15,37 +15,37 @@
   --primary-foreground: #fafafa;
   --secondary: #f5f5f5;
   --secondary-foreground: #0a0a0a;
-  --muted: #f5f5f5;
-  --muted-foreground: #737373;
+  --muted: #f4f4f5;
+  --muted-foreground: #71717a;
   --accent: #f5f5f5;
   --accent-foreground: #0a0a0a;
   --destructive: #ef4444;
   --destructive-foreground: #fafafa;
-  --border: #e5e5e5;
-  --input: #e5e5e5;
+  --border: #e4e4e7;
+  --input: #e4e4e7;
   --ring: #0a0a0a;
 }
 
 .dark {
   /* Pure black and white neutral theme - Dark mode */
-  --background: #0a0a0a;
+  --background: #09090b;
   --foreground: #fafafa;
-  --card: #0a0a0a;
+  --card: #18181b;
   --card-foreground: #fafafa;
-  --popover: #0a0a0a;
+  --popover: #18181b;
   --popover-foreground: #fafafa;
   --primary: #fafafa;
   --primary-foreground: #0a0a0a;
-  --secondary: #171717;
+  --secondary: #27272a;
   --secondary-foreground: #fafafa;
-  --muted: #171717;
-  --muted-foreground: #a3a3a3;
-  --accent: #171717;
+  --muted: #27272a;
+  --muted-foreground: #a1a1aa;
+  --accent: #27272a;
   --accent-foreground: #fafafa;
   --destructive: #7f1d1d;
   --destructive-foreground: #fafafa;
-  --border: #262626;
-  --input: #262626;
+  --border: #3f3f46;
+  --input: #3f3f46;
   --ring: #d4d4d4;
 }
 
@@ -56,7 +56,8 @@ html {
 body {
   background-color: var(--background);
   color: var(--foreground);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: var(--font-geist-sans, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
+  font-size: 14px;
 }
 
 /* Line clamp utility */
@@ -135,38 +136,22 @@ body {
 /* Landing Page Accent Colors - Refined */
 :root {
   --accent-primary: #10b981;
-  /* Emerald - professional, dev-friendly */
-  --accent-secondary: #3b82f6;
-  /* Blue - trustworthy */
-  --accent-warm: #f59e0b;
-  /* Amber - for highlights */
   --accent-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
 }
 
-/* Glassmorphism */
-.glass {
-  background: rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+/* Hero animated gradient orb drift */
+@keyframes drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(30px, -20px) scale(1.05); }
+  50% { transform: translate(-20px, 15px) scale(0.95); }
+  75% { transform: translate(15px, 25px) scale(1.02); }
 }
 
-.dark .glass {
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-}
-
-/* Grid Background Pattern */
-.grid-pattern {
-  background-image:
-    linear-gradient(rgba(139, 92, 246, 0.03) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 92, 246, 0.03) 1px, transparent 1px);
-  background-size: 50px 50px;
-}
-
-.dark .grid-pattern {
-  background-image:
-    linear-gradient(rgba(139, 92, 246, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(139, 92, 246, 0.08) 1px, transparent 1px);
+@keyframes drift-reverse {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  25% { transform: translate(-25px, 15px) scale(0.97); }
+  50% { transform: translate(20px, -20px) scale(1.03); }
+  75% { transform: translate(-10px, -15px) scale(0.98); }
 }
 
 /* Gradient Text */
@@ -177,63 +162,3 @@ body {
   background-clip: text;
 }
 
-/* Glow Effects */
-.glow-purple {
-  box-shadow: 0 0 20px rgba(139, 92, 246, 0.3), 0 0 40px rgba(139, 92, 246, 0.1);
-}
-
-.glow-cyan {
-  box-shadow: 0 0 20px rgba(34, 211, 238, 0.3), 0 0 40px rgba(34, 211, 238, 0.1);
-}
-
-/* Animations */
-@keyframes float {
-
-  0%,
-  100% {
-    transform: translateY(0px);
-  }
-
-  50% {
-    transform: translateY(-10px);
-  }
-}
-
-@keyframes pulse-glow {
-
-  0%,
-  100% {
-    opacity: 0.5;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
-
-@keyframes gradient-shift {
-  0% {
-    background-position: 0% 50%;
-  }
-
-  50% {
-    background-position: 100% 50%;
-  }
-
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-.animate-float {
-  animation: float 6s ease-in-out infinite;
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
-
-.animate-gradient {
-  background-size: 200% 200%;
-  animation: gradient-shift 3s ease infinite;
-}

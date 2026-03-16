@@ -60,7 +60,7 @@ export function FeaturedPortfolios() {
                             viewport={{ once: true }}
                             transition={{ delay: index * 0.1 }}
                             whileHover={{ y: -5, scale: 1.02 }}
-                            className="glass rounded-2xl p-6 cursor-pointer group"
+                            className="bg-card border border-border rounded-2xl p-6 cursor-pointer group"
                         >
                             {/* Header */}
                             <div className="flex items-center gap-4 mb-5">
@@ -81,14 +81,14 @@ export function FeaturedPortfolios() {
 
                             {/* Stats */}
                             <div className="grid grid-cols-2 gap-3 mb-5">
-                                <div className="glass rounded-lg p-3 text-center">
+                                <div className="bg-card border border-border rounded-lg p-3 text-center">
                                     <div className="flex items-center justify-center gap-1.5 text-purple-400 mb-1">
                                         <GitPullRequest className="w-4 h-4" />
                                         <span className="font-bold">{dev.prs}</span>
                                     </div>
                                     <div className="text-xs text-muted-foreground">Verified PRs</div>
                                 </div>
-                                <div className="glass rounded-lg p-3 text-center">
+                                <div className="bg-card border border-border rounded-lg p-3 text-center">
                                     <div className="flex items-center justify-center gap-1.5 text-cyan-400 mb-1">
                                         <Code2 className="w-4 h-4" />
                                         <span className="font-bold">{dev.score}</span>

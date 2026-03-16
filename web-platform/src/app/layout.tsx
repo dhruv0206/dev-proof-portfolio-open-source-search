@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import { Analytics } from "@vercel/analytics/react";
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import "./globals.css";
@@ -69,12 +71,13 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className={`${GeistSans.className}`} suppressHydrationWarning>
       <head>
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <style>{`:root { --font-geist-mono: ${GeistMono.style.fontFamily}; }`}</style>
       </head>
       <body suppressHydrationWarning>
         {children}

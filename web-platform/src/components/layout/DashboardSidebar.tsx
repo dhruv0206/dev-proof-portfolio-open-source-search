@@ -171,9 +171,9 @@ function SidebarContent({
                                     <TooltipTrigger asChild>
                                         <Link href={item.href}>
                                             <Button
-                                                variant={isActive ? "secondary" : "ghost"}
+                                                variant="ghost"
                                                 size="icon"
-                                                className={cn("w-full h-10", isActive && 'bg-secondary')}
+                                                className={cn("w-full h-10", isActive && 'bg-emerald-500/10 text-emerald-500')}
                                             >
                                                 <Icon className="h-5 w-5" />
                                                 <span className="sr-only">{item.name}</span>
@@ -190,8 +190,8 @@ function SidebarContent({
                         return (
                             <Link key={item.href} href={item.href} onClick={onItemClick}>
                                 <Button
-                                    variant={isActive ? "secondary" : "ghost"}
-                                    className={cn("w-full justify-start gap-3", isActive && 'bg-secondary')}
+                                    variant="ghost"
+                                    className={cn("w-full justify-start gap-3", isActive && 'bg-emerald-500/10 text-emerald-500')}
                                 >
                                     <Icon className="h-5 w-5" />
                                     {item.name}

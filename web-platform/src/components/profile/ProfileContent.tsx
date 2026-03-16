@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,13 @@ import {
     Copy,
     Check
 } from 'lucide-react';
-import { VerifiedProjectCard } from '@/components/profile/VerifiedProjectCard';
+import { ProjectShowcaseCard } from '@/components/shared/ProjectShowcaseCard';
+import { ProjectDetailPanel } from '@/components/shared/ProjectDetailPanel';
+import type { ProjectProps } from '@/components/shared/ProjectShowcaseCard';
+import { ProfileScoreHero } from '@/components/profile/ProfileScoreHero';
+import { ContributionHeatmap } from '@/components/profile/ContributionHeatmap';
+import { TechStackSection } from '@/components/profile/TechStackSection';
+import { getBestProject, aggregateTechStack } from '@/lib/profileUtils';
 
 interface ProfileData {
     profile: {
@@ -106,6 +112,8 @@ export function ProfileContent({ username }: ProfileContentProps) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [copied, setCopied] = useState(false);
+    const [badgeCopied, setBadgeCopied] = useState(false);
+    const [selectedProject, setSelectedProject] = useState<ProjectProps | null>(null);
 
     useEffect(() => {
         async function fetchProfile() {
@@ -155,6 +163,35 @@ export function ProfileContent({ username }: ProfileContentProps) {
         }
     };
 
+    const handleCopyBadge = async () => {
+        const markdown = `[![DevProof Verified](https://orenda.vision/api/badge/${username})](https://orenda.vision/p/${username})`;
+        try {
+            await navigator.clipboard.writeText(markdown);
+            setBadgeCopied(true);
+            setTimeout(() => setBadgeCopied(false), 2000);
+        } catch {
+            const textArea = document.createElement('textarea');
+            textArea.value = markdown;
+            document.body.appendChild(textArea);
+            textArea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textArea);
+            setBadgeCopied(true);
+            setTimeout(() => setBadgeCopied(false), 2000);
+        }
+    };
+
+    const verifiedProjects = data?.verifiedProjects ?? [];
+    const contributions = data?.contributions ?? [];
+
+    const bestProject = useMemo(() => getBestProject(verifiedProjects), [verifiedProjects]);
+    const techStack = useMemo(() => aggregateTechStack(verifiedProjects), [verifiedProjects]);
+    const disciplines = useMemo(() => {
+        const set = new Set<string>();
+        verifiedProjects.forEach(p => { if (p.discipline) set.add(p.discipline); });
+        return Array.from(set);
+    }, [verifiedProjects]);
+
     if (loading) {
         return (
             <div className="space-y-8">
@@ -165,6 +202,13 @@ export function ProfileContent({ username }: ProfileContentProps) {
                         <Skeleton className="h-8 w-48" />
                         <Skeleton className="h-4 w-32" />
                     </div>
+                </div>
+
+                {/* Score Hero Skeleton */}
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    {[...Array(3)].map((_, i) => (
+                        <Skeleton key={i} className="h-[250px] rounded-xl" />
+                    ))}
                 </div>
 
                 {/* Stats Skeleton */}
@@ -179,9 +223,22 @@ export function ProfileContent({ username }: ProfileContentProps) {
                     ))}
                 </div>
 
-                {/* Contributions Skeleton */}
+                {/* Heatmap Skeleton */}
+                <Skeleton className="h-[160px] rounded-xl" />
+
+                {/* Tech Stack Skeleton */}
+                <div className="rounded-xl border border-border p-5">
+                    <Skeleton className="h-3 w-20 mb-3" />
+                    <div className="flex flex-wrap gap-2">
+                        {[...Array(8)].map((_, i) => (
+                            <Skeleton key={i} className="h-6 w-16 rounded-full" />
+                        ))}
+                    </div>
+                </div>
+
+                {/* Projects Skeleton */}
                 <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
+                    {[...Array(2)].map((_, i) => (
                         <Card key={i}>
                             <CardContent className="p-4">
                                 <Skeleton className="h-5 w-full mb-2" />
@@ -215,7 +272,7 @@ export function ProfileContent({ username }: ProfileContentProps) {
         );
     }
 
-    const { profile, stats, contributions, verifiedProjects } = data;
+    const { profile, stats } = data;
 
     return (
         <div className="space-y-8">
@@ -260,26 +317,53 @@ export function ProfileContent({ username }: ProfileContentProps) {
                     </div>
                 </div>
 
-                {/* Share Button */}
-                <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={handleShare}
-                    className="gap-2"
-                >
-                    {copied ? (
-                        <>
-                            <Check className="h-4 w-4" />
-                            Copied!
-                        </>
-                    ) : (
-                        <>
-                            <Share2 className="h-4 w-4" />
-                            Share Profile
-                        </>
-                    )}
-                </Button>
+                {/* Action Buttons */}
+                <div className="flex gap-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleShare}
+                        className="gap-2"
+                    >
+                        {copied ? (
+                            <>
+                                <Check className="h-4 w-4" />
+                                Copied!
+                            </>
+                        ) : (
+                            <>
+                                <Share2 className="h-4 w-4" />
+                                Share Profile
+                            </>
+                        )}
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleCopyBadge}
+                        className="gap-2"
+                    >
+                        {badgeCopied ? (
+                            <>
+                                <Check className="h-4 w-4" />
+                                Copied!
+                            </>
+                        ) : (
+                            <>
+                                <Copy className="h-4 w-4" />
+                                Copy Badge
+                            </>
+                        )}
+                    </Button>
+                </div>
             </div>
+
+            {/* Score Summary Hero */}
+            <ProfileScoreHero
+                bestProject={bestProject}
+                disciplines={disciplines}
+                projectCount={verifiedProjects.length}
+            />
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -316,6 +400,12 @@ export function ProfileContent({ username }: ProfileContentProps) {
                 </Card>
             </div>
 
+            {/* Contribution Heatmap */}
+            <ContributionHeatmap contributions={contributions} />
+
+            {/* Tech Stack */}
+            <TechStackSection techStack={techStack} />
+
             {/* Verified Projects Section */}
             <div>
                 <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
@@ -330,13 +420,24 @@ export function ProfileContent({ username }: ProfileContentProps) {
                         </CardContent>
                     </Card>
                 ) : (
-                    <div className="space-y-4 mb-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-8">
                         {verifiedProjects.map((project, idx) => (
-                            <VerifiedProjectCard key={idx} project={project} />
+                            <ProjectShowcaseCard
+                                key={idx}
+                                project={project}
+                                onSelect={setSelectedProject}
+                            />
                         ))}
                     </div>
                 )}
             </div>
+
+            {/* Project Detail Dialog */}
+            <ProjectDetailPanel
+                project={selectedProject}
+                open={selectedProject !== null}
+                onClose={() => setSelectedProject(null)}
+            />
 
             {/* Contributions List */}
             <div>

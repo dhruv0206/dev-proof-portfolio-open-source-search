@@ -53,7 +53,7 @@ export function LandingFooter() {
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     whileHover={{ scale: 1.1 }}
-                                    className="w-9 h-9 rounded-full glass flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
+                                    className="w-9 h-9 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors"
                                 >
                                     <social.icon className="w-4 h-4" />
                                 </motion.a>

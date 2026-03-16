@@ -23,8 +23,8 @@ export default async function MyIssuesPage() {
     return (
         <DashboardLayout>
             <main className="w-full px-8 py-8">
-                <div className="mb-8">
-                    <h1 className="text-3xl font-bold mb-2">My Issues</h1>
+                <div className="mb-6">
+                    <h1 className="text-2xl font-semibold mb-1">My Issues</h1>
                     <p className="text-muted-foreground">
                         Track issues you&apos;re working on and submit your PRs for verification.
                     </p>

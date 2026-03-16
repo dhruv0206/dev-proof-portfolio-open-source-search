@@ -24,10 +24,10 @@ export default async function ProjectsPage() {
     return (
         <DashboardLayout>
             <main className="w-full px-8 py-8">
-                <div className="flex justify-between items-center mb-10">
+                <div className="flex justify-between items-center mb-6">
                     <div>
-                        <h1 className="text-4xl font-bold mb-3">My Projects</h1>
-                        <p className="text-muted-foreground text-lg">
+                        <h1 className="text-2xl font-semibold mb-1">My Projects</h1>
+                        <p className="text-sm text-muted-foreground mt-1">
                             Manage your verified open source projects.
                         </p>
                     </div>

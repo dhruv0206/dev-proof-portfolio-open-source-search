@@ -43,6 +43,7 @@ htmlcov/
 # Internal strategy docs (not for public)
 RESEARCH.md
 USER_ACQUISITION_IDEAS.md
+research/
 
 # Internal scripts (not for open source)
 ai-engine/scripts/reaudit_v1_projects.py

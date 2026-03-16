@@ -24,7 +24,7 @@ export default async function DashboardPage() {
         <DashboardLayout>
             <main className="w-full px-6 lg:px-8 py-6">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-bold">Dashboard</h1>
+                    <h1 className="text-2xl font-semibold">Dashboard</h1>
                     <p className="text-sm text-muted-foreground mt-1">
                         Your development overview and progress
                     </p>
