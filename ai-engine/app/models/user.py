@@ -23,3 +23,4 @@ class User(Base):
     followers = Column(Integer)
     following = Column(Integer)
     hireable = Column(Boolean)
+    discoverable = Column(Boolean, default=False)  # Visible to hiring companies

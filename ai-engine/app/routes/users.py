@@ -5,8 +5,15 @@ from sqlalchemy import func
 from typing import Optional, List
 from datetime import datetime
 
+from pydantic import BaseModel
+
 from app.database import get_db
 from app.models.issues import TrackedIssue, VerifiedContribution, IssueStatus
+
+
+class UpdateSettingsRequest(BaseModel):
+    discoverable: Optional[bool] = None
+
 
 router = APIRouter(prefix="/api/users", tags=["users"])
 
@@ -219,6 +226,72 @@ async def get_my_projects(
     return {"projects": verified_projects_data}
 
 
+@router.get("/me/settings")
+async def get_user_settings(
+    x_user_id: str = Header(..., alias="X-User-Id"),
+    db: Session = Depends(get_db)
+):
+    """Get current user's profile and settings."""
+    from sqlalchemy import text
+
+    result = db.execute(
+        text('''SELECT id, name, email, image, "githubUsername", "githubId",
+                company, blog, location, bio, "twitterUsername",
+                "publicRepos", followers, following, hireable, discoverable
+                FROM "user" WHERE id = :user_id'''),
+        {"user_id": x_user_id}
+    ).fetchone()
+
+    if not result:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {
+        "id": result[0],
+        "name": result[1],
+        "email": result[2],
+        "image": result[3],
+        "githubUsername": result[4],
+        "githubId": result[5],
+        "company": result[6],
+        "blog": result[7],
+        "location": result[8],
+        "bio": result[9],
+        "twitterUsername": result[10],
+        "publicRepos": result[11],
+        "followers": result[12],
+        "following": result[13],
+        "hireable": result[14],
+        "discoverable": result[15] or False,
+    }
+
+
+@router.patch("/me/settings")
+async def update_user_settings(
+    body: UpdateSettingsRequest,
+    x_user_id: str = Header(..., alias="X-User-Id"),
+    db: Session = Depends(get_db)
+):
+    """Update user settings."""
+    from sqlalchemy import text
+
+    # Only update fields that were provided
+    updates = []
+    params = {"user_id": x_user_id}
+
+    if body.discoverable is not None:
+        updates.append('"discoverable" = :discoverable')
+        params["discoverable"] = body.discoverable
+
+    if not updates:
+        raise HTTPException(status_code=400, detail="No fields to update")
+
+    query = f'UPDATE "user" SET {", ".join(updates)} WHERE id = :user_id'
+    db.execute(text(query), params)
+    db.commit()
+
+    return {"success": True, "message": "Settings updated"}
+
+
 @router.get("/profile/{username}")
 async def get_public_profile(
     username: str,
@@ -234,17 +307,22 @@ async def get_public_profile(
     
     # 1. Lookup user by GitHub username
     user_result = db.execute(
-        text('SELECT id, name, image, "githubUsername" FROM "user" WHERE "githubUsername" = :username'),
+        text('SELECT id, name, image, "githubUsername", bio, location, company, blog, "twitterUsername" FROM "user" WHERE "githubUsername" = :username'),
         {"username": username}
     ).fetchone()
-    
+
     if not user_result:
         raise HTTPException(status_code=404, detail="User not found")
-    
+
     user_id = user_result[0]
     user_name = user_result[1]
     user_avatar = user_result[2]
     github_username = user_result[3]
+    user_bio = user_result[4]
+    user_location = user_result[5]
+    user_company = user_result[6]
+    user_blog = user_result[7]
+    user_twitter = user_result[8]
     
     # 2. Count verified PRs
     verified_count = db.query(func.count(TrackedIssue.id)).filter(
@@ -372,6 +450,11 @@ async def get_public_profile(
             "name": user_name,
             "username": github_username,
             "avatarUrl": user_avatar,
+            "bio": user_bio,
+            "location": user_location,
+            "company": user_company,
+            "blog": user_blog,
+            "twitter": user_twitter,
         },
         "stats": {
             "verifiedPRs": verified_count,

@@ -22,7 +22,8 @@
       "WebFetch(domain:github.com)",
       "Bash(find:*)",
       "Bash(grep:*)",
-      "Bash(cd:*)"
+      "Bash(cd:*)",
+      "Bash(source /d/Projects/github-contributions-search/.venv/Scripts/activate)"
     ]
   }
 }

@@ -1,7 +1,7 @@
 import { auth } from '@/lib/auth';
 import { headers } from 'next/headers';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
-import { ComingSoon } from '@/components/shared/ComingSoon';
+import { SettingsContent } from '@/components/settings/SettingsContent';
 import { AuthRequiredModal } from '@/components/shared/AuthRequiredModal';
 
 export default async function SettingsPage() {
@@ -14,7 +14,7 @@ export default async function SettingsPage() {
             <DashboardLayout>
                 <AuthRequiredModal
                     title="Sign in to access settings"
-                    message="Manage your account preferences and notification settings."
+                    message="Manage your account preferences."
                 />
             </DashboardLayout>
         );
@@ -22,10 +22,15 @@ export default async function SettingsPage() {
 
     return (
         <DashboardLayout>
-            <ComingSoon
-                title="Settings"
-                description="User preferences, notification settings, and account management features are currently under development."
-            />
+            <main className="w-full px-6 lg:px-8 py-6">
+                <div className="mb-6">
+                    <h1 className="text-2xl font-semibold">Settings</h1>
+                    <p className="text-sm text-muted-foreground mt-1">
+                        Manage your profile and preferences
+                    </p>
+                </div>
+                <SettingsContent userId={session.user.id} />
+            </main>
         </DashboardLayout>
     );
 }

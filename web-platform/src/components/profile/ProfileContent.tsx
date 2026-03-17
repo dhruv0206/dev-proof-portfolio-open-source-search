@@ -14,7 +14,10 @@ import {
     Calendar,
     AlertCircle,
     Copy,
-    Check
+    Check,
+    MapPin,
+    Building2,
+    Globe,
 } from 'lucide-react';
 import { ProjectShowcaseCard } from '@/components/shared/ProjectShowcaseCard';
 import { ProjectDetailPanel } from '@/components/shared/ProjectDetailPanel';
@@ -29,6 +32,11 @@ interface ProfileData {
         name: string | null;
         username: string;
         avatarUrl: string | null;
+        bio: string | null;
+        location: string | null;
+        company: string | null;
+        blog: string | null;
+        twitter: string | null;
     };
     stats: {
         verifiedPRs: number;
@@ -309,11 +317,53 @@ export function ProfileContent({ username }: ProfileContentProps) {
                     </a>
 
                     {/* Verified Badge */}
-                    <div className="mt-3">
+                    <div className="mt-3 flex flex-wrap gap-2">
                         <Badge className="bg-green-500/10 text-green-600 border-green-500/20">
                             <CheckCircle2 className="h-3 w-3 mr-1" />
                             Verified Developer
                         </Badge>
+                    </div>
+
+                    {/* Bio & Info */}
+                    {profile.bio && (
+                        <p className="text-sm text-muted-foreground mt-3 max-w-lg">
+                            {profile.bio}
+                        </p>
+                    )}
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2 text-sm text-muted-foreground">
+                        {profile.location && (
+                            <span className="flex items-center gap-1">
+                                <MapPin className="h-3 w-3" />
+                                {profile.location}
+                            </span>
+                        )}
+                        {profile.company && (
+                            <span className="flex items-center gap-1">
+                                <Building2 className="h-3 w-3" />
+                                {profile.company}
+                            </span>
+                        )}
+                        {profile.blog && (
+                            <a
+                                href={profile.blog.startsWith('http') ? profile.blog : `https://${profile.blog}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                            >
+                                <Globe className="h-3 w-3" />
+                                {profile.blog.replace(/^https?:\/\//, '')}
+                            </a>
+                        )}
+                        {profile.twitter && (
+                            <a
+                                href={`https://twitter.com/${profile.twitter}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                            >
+                                @{profile.twitter}
+                            </a>
+                        )}
                     </div>
                 </div>
 
