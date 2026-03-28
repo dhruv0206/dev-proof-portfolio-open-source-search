@@ -15,10 +15,10 @@ export function CTASection() {
                     className="max-w-2xl mx-auto text-center"
                 >
                     <h2 className="text-3xl sm:text-4xl font-bold mb-4">
-                        Score your first repo.
+                        Build your verified portfolio.
                     </h2>
                     <p className="text-muted-foreground mb-8">
-                        Free. No signup. Takes 60 seconds.
+                        Score your first repo — free, no signup, 60 seconds.
                     </p>
 
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>

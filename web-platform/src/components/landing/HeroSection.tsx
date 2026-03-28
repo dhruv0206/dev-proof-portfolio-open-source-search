@@ -101,14 +101,25 @@ export function HeroSection({ totalIssues: initialTotalIssues }: { totalIssues?:
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.15 }}
-                    className="text-4xl sm:text-5xl font-bold leading-[1.08] mb-8 tracking-tight text-center"
+                    className="text-4xl sm:text-5xl font-bold leading-[1.08] mb-4 tracking-tight text-center"
                 >
                     Prove What You Build.
                     <br />
                     <span className="bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-400 bg-clip-text text-transparent">
-                        Not What You Claim.
+                        Land The Job.
                     </span>
                 </motion.h1>
+
+                <motion.p
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="text-base text-muted-foreground mb-8 text-center max-w-lg"
+                >
+                    AI-verified portfolio that recruiters actually trust.
+                    <br className="hidden sm:block" />
+                    Score repos, prove your skills, stand out in every application.
+                </motion.p>
 
                 {/* Input */}
                 <motion.div

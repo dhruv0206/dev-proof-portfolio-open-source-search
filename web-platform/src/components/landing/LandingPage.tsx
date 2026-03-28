@@ -4,6 +4,7 @@ import { HeroSection } from './HeroSection';
 import { FeaturesGrid } from './FeaturesGrid';
 import { RecentlyScored } from './RecentlyScored';
 import { SearchPreview } from './SearchPreview';
+import { HiringSection } from './HiringSection';
 import { CTASection } from './CTASection';
 import { LandingFooter } from './LandingFooter';
 import { LandingNavbar } from './LandingNavbar';
@@ -19,6 +20,7 @@ export function LandingPage({ totalIssues, recentIssues }: { totalIssues?: numbe
             <div id="recent-scores">
                 <RecentlyScored />
             </div>
+            <HiringSection />
             <SearchPreview initialIssues={recentIssues} />
             <CTASection />
             <LandingFooter />
