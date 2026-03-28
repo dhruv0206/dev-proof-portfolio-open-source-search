@@ -58,7 +58,7 @@ export async function GET(
         });
 
         if (!res.ok) {
-            const svg = renderBadge('DevProof', 'not scored', '#737373');
+            const svg = renderBadge('DEVPROOF', 'not scored', '#737373');
             return new NextResponse(svg, { status: 200, headers: CACHE_HEADERS });
         }
 
@@ -67,10 +67,10 @@ export async function GET(
         const tier = (data.tier || 'BASIC').toUpperCase();
         const color = TIER_COLORS[tier] || TIER_COLORS.BASIC;
 
-        const svg = renderBadge('DevProof', `${tier} ${score}`, color);
+        const svg = renderBadge('DEVPROOF', `${tier} ${score}`, color);
         return new NextResponse(svg, { status: 200, headers: CACHE_HEADERS });
     } catch {
-        const svg = renderBadge('DevProof', 'error', '#737373');
+        const svg = renderBadge('DEVPROOF', 'error', '#737373');
         return new NextResponse(svg, { status: 200, headers: CACHE_HEADERS });
     }
 }

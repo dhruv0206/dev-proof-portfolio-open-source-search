@@ -70,7 +70,7 @@ export async function GET(
     );
 
     if (!res.ok) {
-      const svg = renderBadge("DevProof", "no data", "#737373");
+      const svg = renderBadge("DEVPROOF", "no data", "#737373");
       return new NextResponse(svg, { status: 200, headers: CACHE_HEADERS });
     }
 
@@ -96,10 +96,10 @@ export async function GET(
     const valueColor =
       data.verifiedProjects?.length > 0 ? color : "#737373";
 
-    const svg = renderBadge("DevProof", value, valueColor);
+    const svg = renderBadge("DEVPROOF", value, valueColor);
     return new NextResponse(svg, { status: 200, headers: CACHE_HEADERS });
   } catch {
-    const svg = renderBadge("DevProof", "no data", "#737373");
+    const svg = renderBadge("DEVPROOF", "no data", "#737373");
     return new NextResponse(svg, { status: 200, headers: CACHE_HEADERS });
   }
 }
