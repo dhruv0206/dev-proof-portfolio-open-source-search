@@ -2,7 +2,8 @@
 
 import { ScoreRadial } from '@/components/shared/ScoreRadial';
 import { ScoreBreakdownChart } from '@/components/shared/ScoreBreakdownChart';
-import { ExternalLink, Github, ArrowRight, Share2, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { ExternalLink, Github, ArrowRight, Share2, CheckCircle2, XCircle, Clock, Copy, Check } from 'lucide-react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { signIn } from '@/lib/auth-client';
 import { motion } from 'framer-motion';
@@ -54,6 +55,40 @@ function ClaimStatusIcon({ status }: { status: string }) {
     if (status === 'VERIFIED') return <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />;
     if (status === 'WRAPPER') return <Clock className="w-3.5 h-3.5 text-amber-400" />;
     return <XCircle className="w-3.5 h-3.5 text-zinc-500" />;
+}
+
+function BadgeEmbed({ owner, repo }: { owner: string; repo: string }) {
+    const [copied, setCopied] = useState(false);
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://orenda.vision';
+    const badgeMarkdown = `[![DevProof Score](${origin}/api/badge/score/${owner}/${repo})](${origin}/score/${owner}/${repo})`;
+
+    const handleCopy = () => {
+        navigator.clipboard.writeText(badgeMarkdown);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    return (
+        <div className="mt-6 text-center">
+            <p className="text-xs text-muted-foreground mb-2">Add this badge to your README:</p>
+            <div className="relative inline-flex items-center gap-2 bg-muted px-3 py-2 rounded-lg max-w-full">
+                <code className="text-xs text-muted-foreground font-mono break-all select-all">
+                    {badgeMarkdown}
+                </code>
+                <button
+                    onClick={handleCopy}
+                    className="shrink-0 p-1.5 rounded-md hover:bg-background transition-colors"
+                    title="Copy to clipboard"
+                >
+                    {copied ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                    ) : (
+                        <Copy className="w-3.5 h-3.5 text-muted-foreground" />
+                    )}
+                </button>
+            </div>
+        </div>
+    );
 }
 
 export function PublicScorePage({ data }: { data: ScoreData }) {
@@ -293,12 +328,7 @@ export function PublicScorePage({ data }: { data: ScoreData }) {
                 </motion.div>
 
                 {/* Badge embed */}
-                <div className="mt-6 text-center">
-                    <p className="text-xs text-muted-foreground mb-2">Add this badge to your README:</p>
-                    <code className="text-xs bg-muted px-3 py-1.5 rounded-md text-muted-foreground font-mono">
-                        {`[![DevProof Score](${typeof window !== 'undefined' ? window.location.origin : 'https://orenda.vision'}/api/badge/score/${data.owner}/${data.repo})](${typeof window !== 'undefined' ? window.location.origin : 'https://orenda.vision'}/score/${data.owner}/${data.repo})`}
-                    </code>
-                </div>
+                <BadgeEmbed owner={data.owner} repo={data.repo} />
             </div>
         </div>
     );

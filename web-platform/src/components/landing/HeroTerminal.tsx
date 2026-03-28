@@ -93,6 +93,18 @@ function TypingText({ children, duration = 50, onComplete, className }: {
     return <span className={className}>{displayed}</span>;
 }
 
+/* ── Elapsed timer ── */
+function ElapsedTimer() {
+    const [seconds, setSeconds] = useState(0);
+    useEffect(() => {
+        const interval = setInterval(() => setSeconds(s => s + 1), 1000);
+        return () => clearInterval(interval);
+    }, []);
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return <span className="text-zinc-600 font-mono">{mins}:{String(secs).padStart(2, '0')}</span>;
+}
+
 /* ── Animated line that fades in ── */
 function AnimLine({ children, className, delay = 0 }: {
     children: React.ReactNode; className?: string; delay?: number;
@@ -198,6 +210,7 @@ function LiveSequence({ state, scanResult, scoreResult, repoUrl }: {
             done: state === 'auditing' || state === 'complete',
             isStack: true,
         },
+        { label: 'Deep analysis (~60-90s)...', done: state === 'complete', isAuditStart: true },
         { label: 'Extracting features...', done: state === 'complete' },
         { label: 'Analyzing architecture...', done: state === 'complete' },
         { label: 'Checking intent signals...', done: state === 'complete' },
@@ -216,7 +229,7 @@ function LiveSequence({ state, scanResult, scoreResult, repoUrl }: {
                 const show = s.done || (i === 0 && state === 'scanning') || (i === 1 && (state === 'scanned' || state === 'auditing')) || (i >= 2 && state === 'auditing') || state === 'complete';
                 if (!show) return null;
                 return (
-                    <AnimLine key={i} className={s.done ? (s.isStack ? 'text-emerald-400' : 'text-emerald-400') : 'text-zinc-600'}>
+                    <AnimLine key={i} className={s.done ? 'text-emerald-400' : s.isAuditStart ? 'text-zinc-500' : 'text-zinc-600'}>
                         {s.done ? '  ✓ ' + s.label : (
                             <>{'  '}<motion.span animate={{ opacity: [0.2, 1, 0.2] }} transition={{ duration: 1, repeat: Infinity }}>⠋</motion.span>{' ' + s.label}</>
                         )}
@@ -245,6 +258,9 @@ function LiveSequence({ state, scanResult, scoreResult, repoUrl }: {
             {state !== 'complete' && (
                 <span className="block mt-1">
                     <span className="animate-pulse text-emerald-400">▌</span>
+                    {state === 'auditing' && (
+                        <span className="ml-3"><ElapsedTimer /></span>
+                    )}
                 </span>
             )}
         </>
