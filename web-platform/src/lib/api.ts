@@ -157,3 +157,93 @@ export async function getStats(): Promise<StatsResponse> {
   const response = await fetch(`${API_BASE_URL}/api/search/stats`);
   return response.json();
 }
+
+// ── Public Scoring API ──
+
+export interface PublicScanResult {
+  stack: { languages: string[]; frameworks: string[]; libs: string[] };
+  archetype?: string;
+  repo_name?: string;
+  description?: string;
+  stars?: number;
+  is_own_repo?: boolean;
+  authorship?: number;
+}
+
+export interface ScoreBreakdown {
+  feature_score?: number;
+  architecture_score?: number;
+  intent_score?: number;
+  forensics_score?: number;
+}
+
+export interface PublicScoreResult {
+  status: string;
+  owner: string;
+  repo: string;
+  repo_url: string;
+  score: number;
+  tier: string;
+  discipline?: string;
+  scoring_version?: number;
+  score_breakdown: ScoreBreakdown;
+  claims?: Array<{ feature: string; status: string; tier: string; tier_reasoning?: string; evidence_file?: string }>;
+  stack: { languages: string[]; frameworks: string[]; libs: string[] };
+  authorship?: number;
+  forensics_data?: Record<string, unknown>;
+  intent_signals?: Record<string, unknown>;
+  cached?: boolean;
+  reason?: string;
+}
+
+export interface RecentScore {
+  owner: string;
+  repo: string;
+  repo_url: string;
+  score: number;
+  tier: string;
+  discipline?: string;
+  stack: { languages: string[]; frameworks: string[]; libs: string[] };
+  scored_at?: string;
+}
+
+export async function scanPublic(repoUrl: string): Promise<PublicScanResult> {
+  const response = await fetch(`${API_BASE_URL}/api/projects/scan-public`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ repo_url: repoUrl }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Scan failed');
+  }
+  return response.json();
+}
+
+export async function auditPublic(repoUrl: string, targetClaims?: string[]): Promise<PublicScoreResult> {
+  const response = await fetch(`${API_BASE_URL}/api/projects/audit-public`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ repo_url: repoUrl, target_claims: targetClaims }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Audit failed');
+  }
+  return response.json();
+}
+
+export async function getPublicScore(owner: string, repo: string): Promise<PublicScoreResult> {
+  const response = await fetch(`${API_BASE_URL}/api/projects/score/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`);
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.detail || 'Score not found');
+  }
+  return response.json();
+}
+
+export async function getRecentScores(limit: number = 6): Promise<{ scores: RecentScore[] }> {
+  const response = await fetch(`${API_BASE_URL}/api/projects/recent-scores?limit=${limit}`);
+  if (!response.ok) return { scores: [] };
+  return response.json();
+}

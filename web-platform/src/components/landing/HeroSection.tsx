@@ -1,227 +1,179 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Button } from '@/components/ui/button';
-import { ArrowRight, Github, Loader2 } from 'lucide-react';
+import { Github, Loader2, Zap, Users, Shield } from 'lucide-react';
+import { DotPattern } from '@/components/ui/dot-pattern';
 import { signIn } from '@/lib/auth-client';
-import { DeveloperCard } from './DeveloperCard';
-import { useEffect, useState } from 'react';
-import { getStats } from '@/lib/api';
+import { useEffect, useState, useRef } from 'react';
+import { getStats, type PublicScanResult, type PublicScoreResult } from '@/lib/api';
+import { RepoScoreInput, type ScoringState } from './RepoScoreInput';
+import { HeroTerminal } from './HeroTerminal';
 
-const subtitles = [
-    "Verify your decisions.",
-    "Showcase your intent.",
-    "Prove your judgment.",
-];
+
+/* ── Animated counter ── */
+function AnimatedNumber({ value }: { value: number }) {
+    const [display, setDisplay] = useState(0);
+    const started = useRef(false);
+
+    useEffect(() => {
+        if (started.current || value === 0) return;
+        started.current = true;
+        const duration = 1500;
+        const start = performance.now();
+        const animate = (now: number) => {
+            const t = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - t, 3);
+            setDisplay(Math.round(eased * value));
+            if (t < 1) requestAnimationFrame(animate);
+        };
+        requestAnimationFrame(animate);
+    }, [value]);
+
+    return <>{display.toLocaleString()}</>;
+}
 
 export function HeroSection({ totalIssues: initialTotalIssues }: { totalIssues?: number }) {
     const [totalIssues, setTotalIssues] = useState<number | null>(initialTotalIssues || null);
-    const [currentSubtitle, setCurrentSubtitle] = useState(0);
-    const [displayText, setDisplayText] = useState('');
-    const [isDeleting, setIsDeleting] = useState(false);
-    const [loopNum, setLoopNum] = useState(0);
-    const [typingSpeed, setTypingSpeed] = useState(150);
     const [isSigningIn, setIsSigningIn] = useState(false);
+    const [repoUrl, setRepoUrl] = useState('');
+
+    const [scoringState, setScoringState] = useState<ScoringState>('idle');
+    const [scanResult, setScanResult] = useState<PublicScanResult | null>(null);
+    const [scoreResult, setScoreResult] = useState<PublicScoreResult | null>(null);
 
     const handleSignIn = () => {
         setIsSigningIn(true);
-        signIn.social({ provider: 'github' });
+        signIn.social({ provider: 'github', callbackURL: '/dashboard' });
     };
 
-    // Fetch live stats (only if not provided by prop)
     useEffect(() => {
         if (initialTotalIssues !== undefined) return;
-
-        async function loadStats() {
-            try {
-                const stats = await getStats();
-                setTotalIssues(stats.total_issues);
-            } catch (err) {
-                console.error('Failed to load stats:', err);
-            }
-        }
-        loadStats();
+        getStats().then(s => setTotalIssues(s.total_issues)).catch(() => {});
     }, [initialTotalIssues]);
 
-    // Typing animation
-    useEffect(() => {
-        const current = subtitles[currentSubtitle];
+    // Capture repo URL from input via scan callback
+    const handleScanResult = (result: PublicScanResult) => {
+        setScanResult(result);
+    };
 
-        const timeout = setTimeout(() => {
-            if (!isDeleting) {
-                if (displayText.length < current.length) {
-                    setDisplayText(current.slice(0, displayText.length + 1));
-                } else {
-                    setTimeout(() => setIsDeleting(true), 2000);
-                }
-            } else {
-                if (displayText.length > 0) {
-                    setDisplayText(displayText.slice(0, -1));
-                } else {
-                    setIsDeleting(false);
-                    setCurrentSubtitle((prev) => (prev + 1) % subtitles.length);
-                }
-            }
-        }, isDeleting ? 30 : 50);
-
-        return () => clearTimeout(timeout);
-    }, [displayText, isDeleting, currentSubtitle]);
+    const handleStateChange = (state: ScoringState) => {
+        setScoringState(state);
+        // Extract URL from the input element when scoring starts
+        if (state === 'scanning') {
+            const input = document.querySelector('input[placeholder*="github.com"]') as HTMLInputElement;
+            if (input) setRepoUrl(input.value);
+        }
+    };
 
     return (
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
-            {/* Animated gradient mesh background */}
-            <div className="absolute inset-0 -z-10">
-                {/* Primary emerald orb — top center, drifts slowly */}
-                <div
-                    className="absolute w-[600px] h-[600px] rounded-full opacity-20 blur-[120px] animate-[drift_20s_ease-in-out_infinite]"
-                    style={{ background: 'radial-gradient(circle, #10b981 0%, transparent 70%)', top: '-10%', left: '30%' }}
-                />
-                {/* Secondary teal orb — right side, counter-drift */}
-                <div
-                    className="absolute w-[500px] h-[500px] rounded-full opacity-15 blur-[100px] animate-[drift-reverse_25s_ease-in-out_infinite]"
-                    style={{ background: 'radial-gradient(circle, #059669 0%, transparent 70%)', top: '20%', right: '-5%' }}
-                />
-                {/* Subtle blue accent — bottom left */}
-                <div
-                    className="absolute w-[400px] h-[400px] rounded-full opacity-10 blur-[100px] animate-[drift_30s_ease-in-out_infinite_reverse]"
-                    style={{ background: 'radial-gradient(circle, #3b82f6 0%, transparent 70%)', bottom: '0%', left: '-5%' }}
-                />
-                {/* Fine grid overlay for texture */}
-                <div
-                    className="absolute inset-0 opacity-[0.03]"
-                    style={{
-                        backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
-                        backgroundSize: '60px 60px',
-                    }}
+        <section className="relative min-h-screen flex flex-col overflow-hidden bg-background">
+            {/* Background */}
+            <div className="absolute inset-0 z-0">
+                {/* Dot grid (Magic UI) */}
+                <DotPattern
+                    width={28}
+                    height={28}
+                    cr={0.7}
+                    className="text-zinc-500/[0.25]"
                 />
             </div>
 
-            {/* Floating verification badges — decorative */}
-            <div className="absolute inset-0 -z-5 overflow-hidden pointer-events-none hidden lg:block">
+            {/* Content */}
+            <div className="flex-1 flex flex-col items-center justify-center px-4 pt-24 pb-10 relative z-10">
+                {/* Badge */}
                 <motion.div
-                    animate={{ y: [0, -20, 0], x: [0, 10, 0] }}
-                    transition={{ duration: 8, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute top-[15%] left-[8%] px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: 0.1 }}
+                    className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm mb-8"
                 >
-                    ✓ PR merged
+                    <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    </span>
+                    <span className="font-mono text-xs">
+                        {totalIssues ? <><AnimatedNumber value={totalIssues} /> issues indexed</> : 'Loading...'}
+                    </span>
                 </motion.div>
-                <motion.div
-                    animate={{ y: [0, 15, 0], x: [0, -8, 0] }}
-                    transition={{ duration: 10, repeat: Infinity, ease: 'easeInOut', delay: 2 }}
-                    className="absolute top-[25%] right-[5%] px-3 py-1.5 rounded-full bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-mono"
-                >
-                    ELITE · 92
-                </motion.div>
-                <motion.div
-                    animate={{ y: [0, -12, 0], x: [0, -15, 0] }}
-                    transition={{ duration: 12, repeat: Infinity, ease: 'easeInOut', delay: 4 }}
-                    className="absolute bottom-[20%] left-[12%] px-3 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-mono"
-                >
-                    ✓ 14 features verified
-                </motion.div>
-                <motion.div
-                    animate={{ y: [0, 18, 0], x: [0, 12, 0] }}
-                    transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-                    className="absolute bottom-[30%] right-[10%] px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-mono"
-                >
-                    AST verified ✓
-                </motion.div>
-                <motion.div
-                    animate={{ y: [0, -15, 0] }}
-                    transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 3 }}
-                    className="absolute top-[60%] left-[3%] px-3 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-mono"
-                >
-                    +847 lines
-                </motion.div>
-            </div>
 
-            <div className="container mx-auto px-4 pt-28 pb-12 md:py-20 relative z-10">
-                <div className="flex flex-col lg:grid lg:grid-cols-2 gap-12 items-center">
-                    {/* Left Column - Text */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, ease: 'easeOut' }}
-                        className="text-center lg:text-left"
+                {/* Headline */}
+                <motion.h1
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.15 }}
+                    className="text-4xl sm:text-5xl font-bold leading-[1.08] mb-8 tracking-tight text-center"
+                >
+                    Prove What You Build.
+                    <br />
+                    <span className="bg-gradient-to-r from-emerald-400 via-emerald-500 to-teal-400 bg-clip-text text-transparent">
+                        Not What You Claim.
+                    </span>
+                </motion.h1>
+
+                {/* Input */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.25 }}
+                    className="w-full max-w-xl mx-auto mb-3"
+                >
+                    <RepoScoreInput
+                        onStateChange={handleStateChange}
+                        onScanResult={handleScanResult}
+                        onScoreResult={setScoreResult}
+                        onError={() => {}}
+                    />
+                </motion.div>
+
+                {/* Sign in link */}
+                <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.35 }}
+                    className="flex items-center gap-2 justify-center mb-10"
+                >
+                    <span className="text-xs text-muted-foreground">or</span>
+                    <button
+                        onClick={handleSignIn}
+                        disabled={isSigningIn}
+                        className="text-xs text-emerald-500 hover:text-emerald-400 transition-colors inline-flex items-center gap-1"
                     >
-                        <motion.div
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.2 }}
-                            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-card border border-border text-sm mb-6"
-                        >
-                            <span className="relative flex h-2 w-2">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
-                            </span>
-                            {totalIssues !== null ? (
-                                <span>{totalIssues.toLocaleString()} issues indexed</span>
-                            ) : (
-                                <span className="flex items-center gap-1.5">
-                                    <span className="h-4 w-12 bg-emerald-500/20 rounded animate-pulse" />
-                                    <span className="opacity-80">issues indexed</span>
-                                </span>
-                            )}
-                        </motion.div>
+                        {isSigningIn ? <Loader2 className="w-3 h-3 animate-spin" /> : <Github className="w-3 h-3" />}
+                        Sign in to save scores to your portfolio
+                    </button>
+                </motion.div>
 
-                        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold leading-tight mb-4">
-                            Prove What You Build.
-                            <br />
-                            <span className="text-emerald-500">Not What You Claim.</span>
-                        </h1>
+                {/* Terminal */}
+                <HeroTerminal
+                    state={scoringState}
+                    scanResult={scanResult}
+                    scoreResult={scoreResult}
+                    repoUrl={repoUrl}
+                />
 
-                        <div className="h-8 mb-4">
-                            <p className="text-xl text-muted-foreground">
-                                {displayText}
-                                <span className="animate-pulse">|</span>
-                            </p>
+                {/* Stats */}
+                <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.7 }}
+                    className="flex items-center justify-center gap-8 sm:gap-12 mt-10"
+                >
+                    {[
+                        { icon: Zap, value: '4-Bucket', label: 'AI Scoring' },
+                        { icon: Users, value: '66+', label: 'Developers' },
+                        { icon: Shield, value: '10', label: 'Anti-Gaming Layers' },
+                    ].map((stat, i) => (
+                        <div key={i} className="flex items-center gap-2.5">
+                            <div className="w-8 h-8 rounded-lg bg-card border border-border flex items-center justify-center">
+                                <stat.icon className="w-3.5 h-3.5 text-emerald-500" />
+                            </div>
+                            <div>
+                                <p className="text-sm font-bold leading-none">{stat.value}</p>
+                                <p className="text-[10px] text-muted-foreground mt-0.5">{stat.label}</p>
+                            </div>
                         </div>
-
-                        <p className="text-sm text-muted-foreground mb-8 max-w-md mx-auto lg:mx-0">
-                            Build a verified portfolio. Get hired on your work.
-                        </p>
-
-                        <div className="flex flex-wrap justify-center lg:justify-start gap-4 mb-6">
-                            <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                                <Button
-                                    size="lg"
-                                    className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white border-0"
-                                    onClick={handleSignIn}
-                                    disabled={isSigningIn}
-                                >
-                                    {isSigningIn ? (
-                                        <>
-                                            <Loader2 className="w-4 h-4 animate-spin" />
-                                            Signing in...
-                                        </>
-                                    ) : (
-                                        <>
-                                            Get Started Free
-                                            <ArrowRight className="w-4 h-4" />
-                                        </>
-                                    )}
-                                </Button>
-                            </motion.div>
-                            {/* <Button size="lg" variant="outline" className="gap-2" asChild>
-                                <a href="/portfolio/demo">View Demo Portfolio</a>
-                            </Button> */}
-                        </div>
-
-                        <p className="text-sm text-muted-foreground">
-                            <span className="underline">Free forever</span> • No credit card required • GitHub login
-                        </p>
-                    </motion.div>
-
-                    {/* Right Column - Developer Card */}
-                    <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8, delay: 0.3, ease: 'easeOut' }}
-                        className="flex justify-center lg:justify-end w-full"
-                    >
-                        <DeveloperCard />
-                    </motion.div>
-                </div>
+                    ))}
+                </motion.div>
             </div>
         </section>
     );

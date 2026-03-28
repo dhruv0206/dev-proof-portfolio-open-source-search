@@ -71,8 +71,13 @@ export default function RootLayout({
   };
 
   return (
-    <html lang="en" className={`${GeistSans.className}`} suppressHydrationWarning>
+    <html lang="en" className={`dark ${GeistSans.className}`} suppressHydrationWarning>
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()`,
+          }}
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

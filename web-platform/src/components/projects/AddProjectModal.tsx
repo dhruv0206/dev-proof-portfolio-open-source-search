@@ -99,17 +99,12 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
             setScanResult(data)
             setProjectType(data.archetype?.name || "Full Stack Application")
 
-            // Proactive Detection
-            try {
-                const urlObj = new URL(url)
-                const pathParts = urlObj.pathname.split('/').filter(Boolean)
-                const repoOwner = pathParts[0]
-
-                if (repoOwner && defaultGithubUsername && repoOwner.toLowerCase() !== defaultGithubUsername.toLowerCase()) {
-                    setIsContributionDetected(true)
-                    setIsContributor(true)
-                }
-            } catch (e) { console.error("URL Parse error", e) }
+            // Proactive Detection: Check if repo belongs to someone else
+            // Backend checks org membership with authenticated GitHub token
+            if (!data.is_own_repo) {
+                setIsContributionDetected(true)
+                setIsContributor(true)
+            }
 
             setScanned(true)
 
@@ -191,6 +186,10 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
 
             const data = await res.json()
             if (!res.ok) throw new Error(data.detail)
+
+            // Log V2 pipeline info
+            console.log(`%c[DevProof Audit] Pipeline: ${data.pipeline_version || 'v1'} | Evidence files: ${data.evidence_file_count || 'N/A'} | Score: ${data.score} | Tier: ${data.tier}`, 'color: #10b981; font-weight: bold;')
+            console.log('[DevProof Audit] Full result:', data)
 
             // Success! Fast forward to end and show results
             if (progressInterval.current) clearInterval(progressInterval.current)

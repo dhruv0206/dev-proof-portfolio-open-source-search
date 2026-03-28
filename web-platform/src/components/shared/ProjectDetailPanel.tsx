@@ -182,11 +182,6 @@ export function ProjectDetailPanel({ project, open, onClose }: ProjectDetailPane
                                         {forensics.sessions.count} sessions
                                     </Badge>
                                 )}
-                                {forensics.sessions && (
-                                    <Badge variant="secondary" className="text-xs">
-                                        ~{Math.round(forensics.sessions.avg_duration_mins)}min avg
-                                    </Badge>
-                                )}
                                 {forensics.fix_ratio != null && (
                                     <Badge variant="secondary" className="text-xs">
                                         {Math.round(forensics.fix_ratio * 100)}% fixes

@@ -4,7 +4,7 @@ import { motion, useInView } from 'framer-motion';
 import { useRef, useEffect, useState } from 'react';
 
 const stats = [
-    { value: 10000, suffix: '+', label: 'Issues Indexed' },
+    { value: 400000, suffix: '+', label: 'Issues Indexed' },
     { value: 500, suffix: '+', label: 'PRs Verified' },
     { value: 50, suffix: '+', label: 'Repos Tracked' },
 ];

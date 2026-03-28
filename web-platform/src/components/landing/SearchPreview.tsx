@@ -110,6 +110,7 @@ export function SearchPreview({ initialIssues }: { initialIssues?: SearchResult[
     const [loading, setLoading] = useState(!initialIssues);
     const [searching, setSearching] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
+    const [loadError, setLoadError] = useState(false);
 
     useEffect(() => {
         if (initialIssues) return;
@@ -120,6 +121,7 @@ export function SearchPreview({ initialIssues }: { initialIssues?: SearchResult[
                 setIssues(response.results);
             } catch (err) {
                 console.error('Failed to load issues:', err);
+                setLoadError(true);
             } finally {
                 setLoading(false);
             }
@@ -173,7 +175,7 @@ export function SearchPreview({ initialIssues }: { initialIssues?: SearchResult[
                         Find Your Next <span className="text-emerald-500">Contribution</span>
                     </h2>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Semantic search across 10,000+ open source issues
+                        Semantic search across 400,000+ open source issues
                     </p>
                 </motion.div>
 
@@ -237,11 +239,16 @@ export function SearchPreview({ initialIssues }: { initialIssues?: SearchResult[
                         issues.map((issue, index) => (
                             <IssueCard key={issue.issue_id} issue={issue} index={index} />
                         ))
-                    ) : (
+                    ) : loadError ? (
+                        <div className="col-span-3 text-center py-8 text-muted-foreground">
+                            <p className="mb-1">Could not load issues right now.</p>
+                            <p className="text-xs">Try searching or check back later.</p>
+                        </div>
+                    ) : hasSearched ? (
                         <div className="col-span-3 text-center py-8 text-muted-foreground">
                             No issues found for &ldquo;{query}&rdquo;
                         </div>
-                    )}
+                    ) : null}
                 </div>
 
                 <motion.div

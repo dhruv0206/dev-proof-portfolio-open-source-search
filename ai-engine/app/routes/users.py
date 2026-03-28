@@ -11,8 +11,23 @@ from app.database import get_db
 from app.models.issues import TrackedIssue, VerifiedContribution, IssueStatus
 
 
+class WorkExperienceEntry(BaseModel):
+    company: str
+    role: str
+    startDate: str          # "YYYY-MM" format
+    endDate: Optional[str] = None  # null = "Present"
+    description: Optional[str] = None  # bullet points / highlights
+
+
 class UpdateSettingsRequest(BaseModel):
     discoverable: Optional[bool] = None
+    openToWork: Optional[bool] = None
+    preferredRoles: Optional[List[str]] = None
+    workType: Optional[str] = None          # "remote" | "hybrid" | "onsite"
+    yearsOfExperience: Optional[str] = None # "0-2" | "2-5" | "5-10" | "10+"
+    timezone: Optional[str] = None
+    linkedinUrl: Optional[str] = None
+    workExperience: Optional[List[WorkExperienceEntry]] = None
 
 
 router = APIRouter(prefix="/api/users", tags=["users"])
@@ -176,7 +191,8 @@ async def get_my_projects(
                     "tier": c.get("tier", "Unknown"),
                     "feature_type": c.get("feature_type", "Unknown"),
                     "tier_reasoning": c.get("tier_reasoning", "No details available."),
-                    "evidence_file": c.get("evidence_file") or c.get("evidence", {}).get("file")
+                    "evidence_file": c.get("evidence_file") or (c["evidence"][0].get("file") if isinstance(c.get("evidence"), list) and c.get("evidence") else None),
+                    "evidence": c.get("evidence", [])
                 })
 
         # Recommendations Logic
@@ -234,34 +250,37 @@ async def get_user_settings(
     """Get current user's profile and settings."""
     from sqlalchemy import text
 
-    result = db.execute(
-        text('''SELECT id, name, email, image, "githubUsername", "githubId",
-                company, blog, location, bio, "twitterUsername",
-                "publicRepos", followers, following, hireable, discoverable
-                FROM "user" WHERE id = :user_id'''),
-        {"user_id": x_user_id}
-    ).fetchone()
+    from app.models.user import User
+    user = db.query(User).filter(User.id == x_user_id).first()
 
-    if not result:
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
     return {
-        "id": result[0],
-        "name": result[1],
-        "email": result[2],
-        "image": result[3],
-        "githubUsername": result[4],
-        "githubId": result[5],
-        "company": result[6],
-        "blog": result[7],
-        "location": result[8],
-        "bio": result[9],
-        "twitterUsername": result[10],
-        "publicRepos": result[11],
-        "followers": result[12],
-        "following": result[13],
-        "hireable": result[14],
-        "discoverable": result[15] or False,
+        "id": user.id,
+        "name": user.name,
+        "email": user.email,
+        "image": user.image,
+        "githubUsername": user.githubUsername,
+        "githubId": user.githubId,
+        "company": user.company,
+        "blog": user.blog,
+        "location": user.location,
+        "bio": user.bio,
+        "twitterUsername": user.twitterUsername,
+        "publicRepos": user.publicRepos,
+        "followers": user.followers,
+        "following": user.following,
+        "hireable": user.hireable,
+        "discoverable": user.discoverable or False,
+        # Recruiter-facing fields
+        "openToWork": user.openToWork or False,
+        "preferredRoles": user.preferredRoles or [],
+        "workType": user.workType,
+        "yearsOfExperience": user.yearsOfExperience,
+        "timezone": user.timezone,
+        "linkedinUrl": user.linkedinUrl,
+        "workExperience": user.workExperience or [],
     }
 
 
@@ -272,23 +291,43 @@ async def update_user_settings(
     db: Session = Depends(get_db)
 ):
     """Update user settings."""
-    from sqlalchemy import text
+    from app.models.user import User
+    import json
 
-    # Only update fields that were provided
-    updates = []
-    params = {"user_id": x_user_id}
+    user = db.query(User).filter(User.id == x_user_id).first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
 
+    updated = False
     if body.discoverable is not None:
-        updates.append('"discoverable" = :discoverable')
-        params["discoverable"] = body.discoverable
+        user.discoverable = body.discoverable
+        updated = True
+    if body.openToWork is not None:
+        user.openToWork = body.openToWork
+        updated = True
+    if body.preferredRoles is not None:
+        user.preferredRoles = body.preferredRoles
+        updated = True
+    if body.workType is not None:
+        user.workType = body.workType
+        updated = True
+    if body.yearsOfExperience is not None:
+        user.yearsOfExperience = body.yearsOfExperience
+        updated = True
+    if body.timezone is not None:
+        user.timezone = body.timezone
+        updated = True
+    if body.linkedinUrl is not None:
+        user.linkedinUrl = body.linkedinUrl
+        updated = True
+    if body.workExperience is not None:
+        user.workExperience = [entry.model_dump() for entry in body.workExperience]
+        updated = True
 
-    if not updates:
+    if not updated:
         raise HTTPException(status_code=400, detail="No fields to update")
 
-    query = f'UPDATE "user" SET {", ".join(updates)} WHERE id = :user_id'
-    db.execute(text(query), params)
     db.commit()
-
     return {"success": True, "message": "Settings updated"}
 
 
@@ -306,23 +345,22 @@ async def get_public_profile(
     from sqlalchemy import text
     
     # 1. Lookup user by GitHub username
-    user_result = db.execute(
-        text('SELECT id, name, image, "githubUsername", bio, location, company, blog, "twitterUsername" FROM "user" WHERE "githubUsername" = :username'),
-        {"username": username}
-    ).fetchone()
+    from app.models.user import User as UserModel
 
-    if not user_result:
+    user = db.query(UserModel).filter(UserModel.githubUsername == username).first()
+
+    if not user:
         raise HTTPException(status_code=404, detail="User not found")
 
-    user_id = user_result[0]
-    user_name = user_result[1]
-    user_avatar = user_result[2]
-    github_username = user_result[3]
-    user_bio = user_result[4]
-    user_location = user_result[5]
-    user_company = user_result[6]
-    user_blog = user_result[7]
-    user_twitter = user_result[8]
+    user_id = user.id
+    user_name = user.name
+    user_avatar = user.image
+    github_username = user.githubUsername
+    user_bio = user.bio
+    user_location = user.location
+    user_company = user.company
+    user_blog = user.blog
+    user_twitter = user.twitterUsername
     
     # 2. Count verified PRs
     verified_count = db.query(func.count(TrackedIssue.id)).filter(
@@ -398,7 +436,8 @@ async def get_public_profile(
                     "tier": c.get("tier", "Unknown"),
                     "feature_type": c.get("feature_type", "Unknown"),
                     "tier_reasoning": c.get("tier_reasoning", "No details available."),
-                    "evidence_file": c.get("evidence_file") or c.get("evidence", {}).get("file")
+                    "evidence_file": c.get("evidence_file") or (c["evidence"][0].get("file") if isinstance(c.get("evidence"), list) and c.get("evidence") else None),
+                    "evidence": c.get("evidence", [])
                 })
 
         # Recommendations Logic
@@ -455,6 +494,14 @@ async def get_public_profile(
             "company": user_company,
             "blog": user_blog,
             "twitter": user_twitter,
+            # Recruiter-facing fields (only if user is discoverable)
+            "openToWork": user.openToWork if user.discoverable else None,
+            "preferredRoles": user.preferredRoles if user.discoverable else None,
+            "workType": user.workType if user.discoverable else None,
+            "yearsOfExperience": user.yearsOfExperience if user.discoverable else None,
+            "timezone": user.timezone if user.discoverable else None,
+            "linkedinUrl": user.linkedinUrl if user.discoverable else None,
+            "workExperience": user.workExperience if user.discoverable else None,
         },
         "stats": {
             "verifiedPRs": verified_count,

@@ -1,76 +1,47 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { Search, GitPullRequest, BarChart3 } from 'lucide-react';
 
 const steps = [
-    {
-        number: '01',
-        icon: Search,
-        title: 'Discover',
-        description: 'Find issues that match your skills, or add your own projects.',
-        color: 'from-emerald-500 to-emerald-600',
-    },
-    {
-        number: '02',
-        icon: GitPullRequest,
-        title: 'Build',
-        description: 'Contribute to open source or ship your own verified projects.',
-        color: 'from-blue-500 to-blue-600',
-    },
-    {
-        number: '03',
-        icon: BarChart3,
-        title: 'Get Hired',
-        description: 'Share your verified portfolio. Let your work speak for itself.',
-        color: 'from-amber-500 to-amber-600',
-    },
+    { num: '01', title: 'Paste', desc: 'Drop any public GitHub repo URL. No signup needed.' },
+    { num: '02', title: 'Score', desc: 'AI analyzes code, architecture, and commit patterns in 60 seconds.' },
+    { num: '03', title: 'Share', desc: 'Get a shareable score page, OG image, and README badge.' },
 ];
 
 export function HowItWorks() {
     return (
-        <section className="py-20 border-t border-border">
-            <div className="container mx-auto px-4">
+        <section id="how-it-works" className="py-20 border-t border-border">
+            <div className="container mx-auto px-4 max-w-3xl">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="text-center mb-12 md:mb-16"
+                    className="text-center mb-14"
                 >
-                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
-                        How <span className="text-emerald-500">DevProof</span> Works
+                    <h2 className="text-2xl sm:text-3xl font-bold">
+                        How it works
                     </h2>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Three simple steps to build your verified developer portfolio
-                    </p>
                 </motion.div>
 
-                <div className="relative max-w-4xl mx-auto">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        {steps.map((step, index) => (
-                            <motion.div
-                                key={step.title}
-                                initial={{ opacity: 0, y: 30 }}
-                                whileInView={{ opacity: 1, y: 0 }}
-                                viewport={{ once: true }}
-                                transition={{ delay: index * 0.2 }}
-                                className="relative"
-                            >
-                                <div className="p-6 rounded-xl border border-border bg-card text-center">
-                                    <div className={`inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br ${step.color} text-white font-bold text-lg mb-4`}>
-                                        {step.number}
-                                    </div>
-
-                                    <div className="flex justify-center mb-4">
-                                        <step.icon className="w-8 h-8 text-muted-foreground" />
-                                    </div>
-
-                                    <h3 className="text-xl font-semibold mb-2">{step.title}</h3>
-                                    <p className="text-muted-foreground text-sm">{step.description}</p>
-                                </div>
-                            </motion.div>
-                        ))}
-                    </div>
+                <div className="space-y-8">
+                    {steps.map((step, i) => (
+                        <motion.div
+                            key={step.num}
+                            initial={{ opacity: 0, x: -10 }}
+                            whileInView={{ opacity: 1, x: 0 }}
+                            viewport={{ once: true }}
+                            transition={{ delay: i * 0.1 }}
+                            className="flex gap-6 items-start"
+                        >
+                            <span className="text-3xl font-bold text-emerald-500/30 font-mono shrink-0 w-10 select-none">
+                                {step.num}
+                            </span>
+                            <div>
+                                <h3 className="text-lg font-semibold mb-1">{step.title}</h3>
+                                <p className="text-sm text-muted-foreground leading-relaxed">{step.desc}</p>
+                            </div>
+                        </motion.div>
+                    ))}
                 </div>
             </div>
         </section>

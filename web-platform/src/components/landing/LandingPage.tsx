@@ -1,14 +1,12 @@
 'use client';
 
 import { HeroSection } from './HeroSection';
-
 import { FeaturesGrid } from './FeaturesGrid';
-import { RoadmapSection } from './RoadmapSection';
+import { RecentlyScored } from './RecentlyScored';
+import { SearchPreview } from './SearchPreview';
 import { CTASection } from './CTASection';
 import { LandingFooter } from './LandingFooter';
 import { LandingNavbar } from './LandingNavbar';
-import { SearchPreview } from './SearchPreview';
-import { HowItWorks } from './HowItWorks';
 
 import { SearchResult } from '@/lib/api';
 
@@ -17,10 +15,11 @@ export function LandingPage({ totalIssues, recentIssues }: { totalIssues?: numbe
         <div className="min-h-screen bg-background overflow-x-hidden">
             <LandingNavbar />
             <HeroSection totalIssues={totalIssues} />
-            <SearchPreview initialIssues={recentIssues} />
-            <HowItWorks />
             <FeaturesGrid />
-            <RoadmapSection />
+            <div id="recent-scores">
+                <RecentlyScored />
+            </div>
+            <SearchPreview initialIssues={recentIssues} />
             <CTASection />
             <LandingFooter />
         </div>

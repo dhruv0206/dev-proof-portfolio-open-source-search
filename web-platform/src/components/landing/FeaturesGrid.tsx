@@ -1,86 +1,163 @@
 'use client';
 
-import { motion } from 'framer-motion';
-import { Search, Shield, Code2, User } from 'lucide-react';
+import { motion, useInView } from 'framer-motion';
+import { useRef, useEffect, useState } from 'react';
 
-const features = [
-    {
-        icon: Search,
-        title: 'AI-Powered Search',
-        description: 'Semantic search across 10,000+ open source issues. Find issues that match your exact skills.',
-        accent: 'text-emerald-500',
-        accentBg: 'bg-emerald-500/10',
-    },
-    {
-        icon: Shield,
-        title: 'Verified PRs',
-        description: 'Blockchain-style proof of merge. Every contribution is cryptographically verified.',
-        accent: 'text-blue-500',
-        accentBg: 'bg-blue-500/10',
-    },
-    {
-        icon: Code2,
-        title: 'Code Scoring',
-        description: 'AST-based complexity analysis. Understand the true impact of your contributions.',
-        accent: 'text-amber-500',
-        accentBg: 'bg-amber-500/10',
-    },
-    {
-        icon: User,
-        title: 'Public Portfolio',
-        description: 'Shareable profile showcasing verified work. Stand out to recruiters and teams.',
-        accent: 'text-rose-500',
-        accentBg: 'bg-rose-500/10',
-    },
-];
+function Counter({ value, inView }: { value: number; inView: boolean }) {
+    const [count, setCount] = useState(0);
+    useEffect(() => {
+        if (!inView) return;
+        const dur = 1000;
+        const start = performance.now();
+        const run = (now: number) => {
+            const t = Math.min((now - start) / dur, 1);
+            setCount(Math.round((1 - Math.pow(1 - t, 3)) * value));
+            if (t < 1) requestAnimationFrame(run);
+        };
+        requestAnimationFrame(run);
+    }, [value, inView]);
+    return <>{count}</>;
+}
 
 export function FeaturesGrid() {
+    const ref = useRef(null);
+    const inView = useInView(ref, { once: true, amount: 0.15 });
+
+    const cardClass = 'p-6 rounded-xl border border-border bg-card transform-gpu transition-transform duration-300 hover:-translate-y-[2px]';
+
     return (
-        <section id="features" className="py-24">
-            <div className="container mx-auto px-4">
+        <section id="features" className="py-24 border-t border-border">
+            <div className="container mx-auto px-4 max-w-5xl">
                 <motion.div
-                    initial={{ opacity: 0, y: 20 }}
+                    initial={{ opacity: 0, y: 4 }}
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: true }}
-                    className="text-center mb-12 md:mb-16"
+                    transition={{ duration: 0.4 }}
+                    className="text-center mb-14"
                 >
-                    <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
-                        Built for <span className="text-emerald-500">Developers</span>
+                    <h2 className="text-2xl sm:text-3xl font-bold mb-3">
+                        The 4-Bucket Engine
                     </h2>
-                    <p className="text-muted-foreground max-w-2xl mx-auto">
-                        Everything you need to prove your skills and build credibility
+                    <p className="text-sm text-muted-foreground max-w-md mx-auto">
+                        We analyze what you built, how you structured it, and whether the commit history is real.
                     </p>
                 </motion.div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-                    {features.map((feature, index) => (
-                        <motion.div
-                            key={feature.title}
-                            initial={{ opacity: 0, y: 20 }}
-                            whileInView={{ opacity: 1, y: 0 }}
-                            viewport={{ once: true }}
-                            transition={{ delay: index * 0.1 }}
-                            whileHover={{ y: -4 }}
-                            className="group relative p-6 rounded-xl border border-border bg-card hover:bg-card/80 hover:shadow-lg hover:shadow-black/5 dark:hover:shadow-black/20 transition-all duration-300"
-                        >
-                            {/* Subtle top accent line */}
-                            <div className={`absolute top-0 left-6 right-6 h-px ${feature.accentBg.replace('/10', '/30')}`} />
+                <div ref={ref} className="grid grid-cols-1 sm:grid-cols-6 gap-4">
 
-                            {/* Icon with accent color */}
-                            <div className={`w-11 h-11 rounded-lg ${feature.accentBg} flex items-center justify-center mb-4`}>
-                                <feature.icon className={`w-5 h-5 ${feature.accent}`} />
+                    {/* Features — hero card */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={inView ? { opacity: 1, y: 0 } : {}}
+                        transition={{ duration: 0.4 }}
+                        className={`${cardClass} sm:col-span-4`}
+                    >
+                        <div className="flex items-start justify-between mb-2">
+                            <p className="text-[10px] text-emerald-500/60 font-mono uppercase tracking-widest">Bucket A</p>
+                            <span className="text-4xl font-bold font-mono text-emerald-500">
+                                <Counter value={40} inView={inView} />
+                            </span>
+                        </div>
+                        <h3 className="text-xl font-bold mb-3">Features</h3>
+                        <p className="text-sm text-muted-foreground leading-relaxed mb-4">
+                            What you built — custom implementations, algorithms, API integrations. Each feature is evidence-verified against your source code and classified into three complexity tiers.
+                        </p>
+                        <div className="grid grid-cols-3 gap-3 text-xs text-muted-foreground">
+                            <div className="p-2.5 rounded-lg bg-muted/50">
+                                <span className="text-emerald-500 font-mono font-bold text-sm">20</span>
+                                <span className="text-muted-foreground ml-1">pts</span>
+                                <p className="mt-1 text-[10px]">Deep — algorithms, custom engines</p>
                             </div>
+                            <div className="p-2.5 rounded-lg bg-muted/50">
+                                <span className="text-blue-500 font-mono font-bold text-sm">6</span>
+                                <span className="text-muted-foreground ml-1">pts</span>
+                                <p className="mt-1 text-[10px]">Logic — business rules, APIs</p>
+                            </div>
+                            <div className="p-2.5 rounded-lg bg-muted/50">
+                                <span className="text-zinc-400 font-mono font-bold text-sm">1</span>
+                                <span className="text-muted-foreground ml-1">pt</span>
+                                <p className="mt-1 text-[10px]">UI — layouts, styling, markup</p>
+                            </div>
+                        </div>
+                    </motion.div>
 
-                            <h3 className="text-lg font-semibold mb-2 group-hover:text-foreground transition-colors">
-                                {feature.title}
-                            </h3>
+                    {/* Architecture */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={inView ? { opacity: 1, y: 0 } : {}}
+                        transition={{ duration: 0.4, delay: 0.08 }}
+                        className={`${cardClass} sm:col-span-2`}
+                    >
+                        <div className="flex items-start justify-between mb-2">
+                            <p className="text-[10px] text-blue-500/60 font-mono uppercase tracking-widest">Bucket B</p>
+                            <span className="text-3xl font-bold font-mono text-blue-500">
+                                <Counter value={15} inView={inView} />
+                            </span>
+                        </div>
+                        <h3 className="text-lg font-bold mb-2">Architecture</h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                            Design patterns, separation of concerns, reusable abstractions. Diminishing returns prevent gaming.
+                        </p>
+                    </motion.div>
 
-                            <p className="text-sm text-muted-foreground leading-relaxed">
-                                {feature.description}
-                            </p>
-                        </motion.div>
-                    ))}
+                    {/* Intent */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={inView ? { opacity: 1, y: 0 } : {}}
+                        transition={{ duration: 0.4, delay: 0.16 }}
+                        className={`${cardClass} sm:col-span-2`}
+                    >
+                        <div className="flex items-start justify-between mb-2">
+                            <p className="text-[10px] text-purple-500/60 font-mono uppercase tracking-widest">Bucket C</p>
+                            <span className="text-3xl font-bold font-mono text-purple-500">
+                                <Counter value={25} inView={inView} />
+                            </span>
+                        </div>
+                        <h3 className="text-lg font-bold mb-2">Intent</h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                            Error handling, config management, test coverage, edge cases. Six quality signals normalized to 25.
+                        </p>
+                    </motion.div>
+
+                    {/* Forensics */}
+                    <motion.div
+                        initial={{ opacity: 0, y: 4 }}
+                        animate={inView ? { opacity: 1, y: 0 } : {}}
+                        transition={{ duration: 0.4, delay: 0.24 }}
+                        className={`${cardClass} sm:col-span-4`}
+                    >
+                        <div className="flex items-start justify-between mb-2">
+                            <p className="text-[10px] text-amber-500/60 font-mono uppercase tracking-widest">Bucket D</p>
+                            <span className="text-3xl font-bold font-mono text-amber-500">
+                                <Counter value={20} inView={inView} />
+                            </span>
+                        </div>
+                        <h3 className="text-lg font-bold mb-2">Forensics</h3>
+                        <p className="text-xs text-muted-foreground leading-relaxed mb-3">
+                            Commit sessions, fix ratio, message quality, evolution patterns. Detects bulk imports and fake history.
+                        </p>
+                        <div className="flex gap-4 text-[10px] text-muted-foreground">
+                            <span>Session analysis</span>
+                            <span className="text-zinc-700">·</span>
+                            <span>Time-spread check</span>
+                            <span className="text-zinc-700">·</span>
+                            <span>Commit authenticity</span>
+                            <span className="text-zinc-700">·</span>
+                            <span>Evolution mix</span>
+                        </div>
+                    </motion.div>
+
                 </div>
+
+                <motion.p
+                    initial={{ opacity: 0 }}
+                    whileInView={{ opacity: 1 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: 0.2 }}
+                    className="text-center text-xs text-muted-foreground mt-8"
+                >
+                    Protected by 10 anti-gaming layers including evidence gates, authorship verification, and time-spread analysis.
+                </motion.p>
             </div>
         </section>
     );
