@@ -44,6 +44,7 @@ htmlcov/
 RESEARCH.md
 USER_ACQUISITION_IDEAS.md
 research/
+reddit-posts.md
 
 # Internal scripts (not for open source)
 ai-engine/scripts/reaudit_v1_projects.py
