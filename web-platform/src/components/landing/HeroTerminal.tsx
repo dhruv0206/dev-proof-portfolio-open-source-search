@@ -229,9 +229,9 @@ function LiveSequence({ state, scanResult, scoreResult, repoUrl }: {
                 const show = s.done || (i === 0 && state === 'scanning') || (i === 1 && (state === 'scanned' || state === 'auditing')) || (i >= 2 && state === 'auditing') || state === 'complete';
                 if (!show) return null;
                 return (
-                    <AnimLine key={i} className={s.done ? 'text-emerald-400' : s.isAuditStart ? 'text-zinc-500' : 'text-zinc-600'}>
+                    <AnimLine key={i} className={s.done ? 'text-emerald-400' : 'text-zinc-400'}>
                         {s.done ? '  ✓ ' + s.label : (
-                            <>{'  '}<motion.span animate={{ opacity: [0.2, 1, 0.2] }} transition={{ duration: 1, repeat: Infinity }}>⠋</motion.span>{' ' + s.label}</>
+                            <>{'  '}<motion.span className="text-emerald-500" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity }}>⠋</motion.span>{' ' + s.label}</>
                         )}
                     </AnimLine>
                 );
