@@ -1,9 +1,50 @@
 """Audit Cache Service - Check and store audit results."""
+import hashlib
 import re
 from typing import Optional
 from sqlalchemy.orm import Session
 
 from app.models.audit_cache import AuditCache
+
+# Files excluded from code hash — changes to these should NOT invalidate cache
+_NON_CODE_EXTENSIONS = frozenset({
+    # Documentation
+    '.md', '.txt', '.rst', '.adoc', '.textile',
+    # Images
+    '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.webp', '.bmp', '.tiff',
+    # Documents / media
+    '.pdf', '.doc', '.docx', '.pptx', '.xlsx', '.mp4', '.mp3', '.wav',
+    # Lock files (dependency locks, not code)
+    '.lock',
+})
+
+_NON_CODE_EXACT = frozenset({
+    'license', 'licence', 'changelog', 'changes', 'authors', 'contributors',
+    'code_of_conduct', 'contributing', 'security',
+    '.gitignore', '.gitattributes', '.editorconfig', '.prettierrc',
+    '.eslintrc', '.eslintignore', 'renovate.json', '.npmrc',
+})
+
+_NON_CODE_PREFIXES = ('.github/', 'docs/', '.vscode/', '.idea/')
+
+
+def _is_code_file(path: str) -> bool:
+    """Check if a file path represents source code (not docs/images/config)."""
+    lower = path.lower()
+    basename = lower.rsplit('/', 1)[-1]
+
+    if basename in _NON_CODE_EXACT:
+        return False
+
+    dot_idx = basename.rfind('.')
+    if dot_idx != -1 and basename[dot_idx:] in _NON_CODE_EXTENSIONS:
+        return False
+
+    for prefix in _NON_CODE_PREFIXES:
+        if lower.startswith(prefix):
+            return False
+
+    return True
 
 
 class AuditCacheService:
@@ -106,26 +147,48 @@ class AuditCacheService:
         db.commit()
 
 
-def get_repo_head_sha(ingestor, repo_url: str) -> Optional[str]:
+def get_repo_code_hash(ingestor, repo_url: str) -> Optional[str]:
     """
-    Get the current HEAD commit SHA for a repository.
-    
-    Uses the existing GithubIngestor to fetch repo info.
+    Compute a deterministic hash of a repo's *source code* files only.
+
+    Uses the GitHub Trees API to list every blob in the repo, filters out
+    non-code files (docs, images, lock files, etc.), then hashes the sorted
+    (path, blob-sha) pairs.  Result: README-only commits produce the same
+    hash → cache hit → no unnecessary re-audit.
+
+    Returns a 40-char hex digest (same length as a Git SHA for column compat).
     """
-    # Parse owner/repo from URL
     match = re.search(r"github\.com/([^/]+)/([^/]+)", repo_url)
     if not match:
         return None
-    
+
     owner, repo_name = match.groups()
     full_name = f"{owner}/{repo_name}"
-    
+
     try:
         repo = ingestor.get_repo(full_name)
-        # Get the default branch's HEAD SHA
         default_branch = repo.default_branch
         branch = repo.get_branch(default_branch)
-        return branch.commit.sha
+
+        # Fetch full recursive tree (one API call)
+        tree = repo.get_git_tree(branch.commit.sha, recursive=True)
+
+        # Filter to code-only blobs and build a stable fingerprint
+        hasher = hashlib.sha1()  # SHA-1 for 40-char compat with column
+        code_entries = sorted(
+            (e.path, e.sha)
+            for e in tree.tree
+            if e.type == "blob" and _is_code_file(e.path)
+        )
+
+        if not code_entries:
+            # Fallback: if filter removed everything, hash the full tree
+            return branch.commit.sha
+
+        for path, blob_sha in code_entries:
+            hasher.update(f"{path}\0{blob_sha}\n".encode())
+
+        return hasher.hexdigest()
     except Exception as e:
-        print(f"Error getting commit SHA: {e}")
+        print(f"Error computing code hash: {e}")
         return None

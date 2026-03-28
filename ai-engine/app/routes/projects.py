@@ -7,7 +7,7 @@ from app.database import get_db
 from app.models.project import Project, ProjectAudit, TechTag, TagCategory
 from app.models.user import User
 from app.models.audit_cache import AuditCache
-from app.services.cache_service import AuditCacheService, get_repo_head_sha
+from app.services.cache_service import AuditCacheService, get_repo_code_hash
 from app.middleware.rate_limit import scan_limiter, audit_limiter
 from devproof_ranking_algo import AuditService
 import re
@@ -77,12 +77,12 @@ async def import_project(
     applicant_username = user.githubUsername
 
     # 1. CHECK CACHE FIRST
-    # Get current commit SHA for this repo
-    commit_sha = get_repo_head_sha(audit_service.ingestor, req.repo_url)
-    
-    if commit_sha:
-        # Check if we have a cached result for this exact commit
-        cached_result = AuditCacheService.get_cached_audit(db, req.repo_url, commit_sha)
+    # Compute a hash of source-code files only (ignores README/docs/images)
+    code_hash = get_repo_code_hash(audit_service.ingestor, req.repo_url)
+
+    if code_hash:
+        # Check if we have a cached result for this code state
+        cached_result = AuditCacheService.get_cached_audit(db, req.repo_url, code_hash)
         cached_report = (cached_result.get("report") or {}) if cached_result else {}
         if cached_result and cached_report.get("score_breakdown"):
             # Use cached V2 result - skip expensive AI audit
@@ -91,16 +91,16 @@ async def import_project(
             # No cache hit - run full audit
             try:
                 result = await audit_service.run_audit(
-                    req.repo_url, req.user_id, req.project_type, 
+                    req.repo_url, req.user_id, req.project_type,
                     req.target_claims, applicant_username
                 )
                 # Cache the result for future requests
                 if result.get("status") == "VERIFIED":
-                    AuditCacheService.cache_audit_result(db, req.repo_url, commit_sha, result)
+                    AuditCacheService.cache_audit_result(db, req.repo_url, code_hash, result)
             except Exception as e:
                 raise HTTPException(status_code=400, detail=str(e))
     else:
-        # Couldn't get commit SHA - run audit without caching
+        # Couldn't compute code hash - run audit without caching
         try:
             result = await audit_service.run_audit(
                 req.repo_url, req.user_id, req.project_type, 
@@ -216,9 +216,9 @@ async def audit_public(
     audit_limiter.check(request)
 
     # Check cache first (only use V2 cache entries that have score_breakdown)
-    commit_sha = get_repo_head_sha(audit_service.ingestor, req.repo_url)
-    if commit_sha:
-        cached = AuditCacheService.get_cached_audit(db, req.repo_url, commit_sha)
+    code_hash = get_repo_code_hash(audit_service.ingestor, req.repo_url)
+    if code_hash:
+        cached = AuditCacheService.get_cached_audit(db, req.repo_url, code_hash)
         if cached:
             # Skip stale V1 cache entries that lack score_breakdown
             report = cached.get("report") or {}
@@ -235,8 +235,8 @@ async def audit_public(
         raise HTTPException(status_code=400, detail=str(e))
 
     # Cache if verified
-    if commit_sha and result.get("status") == "VERIFIED":
-        AuditCacheService.cache_audit_result(db, req.repo_url, commit_sha, result)
+    if code_hash and result.get("status") == "VERIFIED":
+        AuditCacheService.cache_audit_result(db, req.repo_url, code_hash, result)
 
     if result["status"] == "REJECTED":
         return {
