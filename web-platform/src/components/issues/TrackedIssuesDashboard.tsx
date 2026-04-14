@@ -169,7 +169,7 @@ export function TrackedIssuesDashboard({ userId }: TrackedIssuesDashboardProps) 
         try {
             if (parsed.type === 'issue') {
                 // Track as in-progress issue
-                const response = await fetch(`${API_BASE_URL}/api/issues/track`, {
+                const response = await fetch(`${API_BASE_URL}/api/issues/start-working`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

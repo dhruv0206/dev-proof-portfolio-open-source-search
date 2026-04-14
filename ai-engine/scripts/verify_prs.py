@@ -59,7 +59,7 @@ def fetch_pr_info(owner: str, repo: str, pr_number: int) -> dict | None:
         if response.status_code == 200:
             return response.json()
         else:
-            logger.warning(f"GitHub API returned {response.status_code} for {pr_url}")
+            logger.warning(f"GitHub API returned {response.status_code} for {url}")
             return None
     except Exception as e:
         logger.error(f"Failed to fetch PR info: {e}")
@@ -167,13 +167,13 @@ def verify_pending_prs():
                 
                 # Also create a verified_contributions entry
                 session.execute(text("""
-                    INSERT INTO verified_contributions 
-                    (user_id, issue_url, pr_url, repo_owner, repo_name, merged_at, lines_added, lines_removed)
-                    SELECT user_id, issue_url, pr_url, repo_owner, repo_name, :merged_at, :lines_added, :lines_removed
+                    INSERT INTO verified_contributions
+                    (id, user_id, issue_url, pr_url, repo_owner, repo_name, merged_at, lines_added, lines_removed)
+                    SELECT gen_random_uuid(), user_id, issue_url, pr_url, repo_owner, repo_name, :merged_at, :lines_added, :lines_removed
                     FROM tracked_issues WHERE id = :id
-                    ON CONFLICT DO NOTHING
+                    ON CONFLICT (user_id, pr_url) DO NOTHING
                 """), {
-                    "id": issue_id, 
+                    "id": issue_id,
                     "merged_at": merged_at,
                     "lines_added": lines_added,
                     "lines_removed": lines_deleted

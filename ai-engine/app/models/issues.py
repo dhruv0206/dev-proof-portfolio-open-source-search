@@ -1,5 +1,5 @@
 """SQLAlchemy models for issue tracking."""
-from sqlalchemy import Column, String, Integer, DateTime, Enum, Text
+from sqlalchemy import Column, String, Integer, DateTime, Enum, Text, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.sql import func
 import enum
@@ -41,7 +41,10 @@ class TrackedIssue(Base):
 class VerifiedContribution(Base):
     """Model for successfully merged PRs."""
     __tablename__ = "verified_contributions"
-    
+    __table_args__ = (
+        UniqueConstraint('user_id', 'pr_url', name='uq_verified_contributions_user_pr'),
+    )
+
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(String, nullable=False, index=True)
     issue_url = Column(Text, nullable=False)

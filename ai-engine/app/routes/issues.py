@@ -131,24 +131,125 @@ def get_tracked_issues(
 
 @router.post("/verify")
 def submit_pr_for_verification(request: SubmitPRRequest, db: Session = Depends(get_db)):
-    """Submit a PR URL for verification."""
+    """Submit a PR URL for verification.
+
+    Tries inline verification first (checks GitHub API immediately).
+    If the PR is already merged and authored by the user, verifies instantly.
+    If not merged yet, sets status to pr_submitted for later re-check.
+    """
+    import requests as http_requests
+    import os
+
     # Validate PR URL format
-    pr_regex = r"^https://github\.com/[\w-]+/[\w-]+/pull/\d+$"
-    if not re.match(pr_regex, request.pr_url):
+    pr_regex = r"^https://github\.com/([\w.-]+)/([\w.-]+)/pull/(\d+)$"
+    match = re.match(pr_regex, request.pr_url)
+    if not match:
         raise HTTPException(
             status_code=400,
             detail="Invalid PR URL format. Expected: https://github.com/owner/repo/pull/123"
         )
-    
-    issue = issue_tracker.submit_pr_for_verification(db, request.issue_id, request.pr_url)
-    
+
+    # Look up the tracked issue
+    issue = issue_tracker.get_tracked_issue_by_id(db, request.issue_id)
     if not issue:
         raise HTTPException(status_code=404, detail="Issue not found")
-    
+
+    owner, repo, pr_number = match.group(1), match.group(2), int(match.group(3))
+
+    # Try inline verification via GitHub API
+    github_token = os.getenv("GITHUB_TOKEN")
+    api_url = f"https://api.github.com/repos/{owner}/{repo}/pulls/{pr_number}"
+    headers = {
+        "Accept": "application/vnd.github+json",
+        "User-Agent": "ContribFinder-Verification",
+    }
+    if github_token:
+        headers["Authorization"] = f"Bearer {github_token}"
+
+    pr_data = None
+    try:
+        response = http_requests.get(api_url, headers=headers, timeout=10)
+        if response.status_code == 200:
+            pr_data = response.json()
+    except Exception:
+        pass  # Fall through to pr_submitted path
+
+    if pr_data and pr_data.get("merged"):
+        # PR is merged — verify author identity
+        from sqlalchemy import text as sql_text
+        result = db.execute(
+            sql_text('SELECT "githubUsername", "githubId" FROM "user" WHERE id = :user_id'),
+            {"user_id": issue.user_id}
+        ).fetchone()
+
+        if result:
+            db_github_username = result[0]
+            db_github_id = result[1]
+            pr_user = pr_data.get("user", {})
+            pr_author_id = str(pr_user.get("id", ""))
+            pr_author_username = pr_user.get("login", "").lower()
+
+            is_author = False
+            if db_github_id and pr_author_id and str(db_github_id) == pr_author_id:
+                is_author = True
+            elif db_github_username and pr_author_username and db_github_username.lower() == pr_author_username:
+                is_author = True
+
+            if is_author:
+                # Verify immediately
+                merged_at = pr_data.get("merged_at")
+                lines_added = pr_data.get("additions", 0)
+                lines_removed = pr_data.get("deletions", 0)
+
+                issue.pr_url = request.pr_url
+                issue.status = IssueStatus.VERIFIED.value
+                issue.verified_at = merged_at
+                issue.check_count = (issue.check_count or 0) + 1
+                db.commit()
+                db.refresh(issue)
+
+                # Insert into verified_contributions
+                from sqlalchemy import text as sql_text2
+                db.execute(
+                    sql_text2("""
+                        INSERT INTO verified_contributions
+                        (id, user_id, issue_url, pr_url, repo_owner, repo_name, merged_at, lines_added, lines_removed)
+                        VALUES (gen_random_uuid(), :user_id, :issue_url, :pr_url, :repo_owner, :repo_name, :merged_at, :lines_added, :lines_removed)
+                        ON CONFLICT (user_id, pr_url) DO NOTHING
+                    """),
+                    {
+                        "user_id": issue.user_id,
+                        "issue_url": issue.issue_url,
+                        "pr_url": request.pr_url,
+                        "repo_owner": owner,
+                        "repo_name": repo,
+                        "merged_at": merged_at,
+                        "lines_added": lines_added,
+                        "lines_removed": lines_removed,
+                    }
+                )
+                db.commit()
+
+                return {
+                    "success": True,
+                    "message": "PR verified! Your contribution has been confirmed.",
+                    "issue": TrackedIssueResponse.model_validate(issue),
+                    "verified": True,
+                }
+            else:
+                raise HTTPException(
+                    status_code=403,
+                    detail=f"This PR was created by '{pr_author_username}', but your linked GitHub account is '{db_github_username}'. You can only verify your own PRs."
+                )
+
+    # PR not merged yet (or couldn't reach GitHub) — queue for later
+    issue = issue_tracker.submit_pr_for_verification(db, request.issue_id, request.pr_url)
+
     return {
         "success": True,
-        "message": "PR submitted for verification. We'll check it within 4 hours.",
+        "message": "PR submitted. It will be verified automatically once it's merged.",
         "issue": TrackedIssueResponse.model_validate(issue),
+        "verified": False,
     }
 
 
@@ -314,10 +415,10 @@ def verify_pr_directly(request: VerifyPRDirectRequest, db: Session = Depends(get
     # Also insert into verified_contributions for line count tracking
     db.execute(
         text("""
-            INSERT INTO verified_contributions 
+            INSERT INTO verified_contributions
             (id, user_id, issue_url, pr_url, repo_owner, repo_name, merged_at, lines_added, lines_removed)
             VALUES (gen_random_uuid(), :user_id, :issue_url, :pr_url, :repo_owner, :repo_name, :merged_at, :lines_added, :lines_removed)
-            ON CONFLICT DO NOTHING
+            ON CONFLICT (user_id, pr_url) DO NOTHING
         """),
         {
             "user_id": request.user_id,
