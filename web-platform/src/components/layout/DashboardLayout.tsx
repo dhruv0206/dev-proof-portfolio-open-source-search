@@ -2,7 +2,6 @@
 
 import { DashboardSidebar } from '@/components/layout/DashboardSidebar';
 import { ThemeToggle } from '@/components/layout/ThemeToggle';
-import { EarlyAdopterBanner } from '@/components/shared/EarlyAdopterBanner';
 import { SidebarProvider, useSidebar } from '@/components/layout/SidebarContext';
 import { Button } from '@/components/ui/button';
 import { Menu } from 'lucide-react';
@@ -53,8 +52,6 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
                         <ThemeToggle />
                     </header>
                 )}
-
-                <EarlyAdopterBanner />
 
                 {children}
             </div>
