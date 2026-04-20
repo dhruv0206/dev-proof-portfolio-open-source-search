@@ -72,7 +72,7 @@ export function ProjectsList({ userId, currentUser }: { userId: string, currentU
 
     return (
         <>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className={`grid gap-4 ${projects.length === 1 ? 'grid-cols-1 max-w-2xl' : 'grid-cols-1 lg:grid-cols-2'}`}>
                 {projects.map((p, i) => (
                     <ProjectShowcaseCard
                         key={i}
