@@ -13,6 +13,7 @@ from app.services.v4_shadow_runner import run_v4
 from app.middleware.rate_limit import scan_limiter, audit_limiter
 from app.config import get_settings
 from devproof_ranking_algo import AuditService
+import asyncio
 import logging
 import re
 import uuid
@@ -74,17 +75,30 @@ def _run_v4_shadow_background(
     repo_url: str,
     applicant_username: str | None,
 ) -> None:
-    """Background task: run V4 pipeline, persist output to audit_v4_shadow.
+    """Background task: run the full V4 pipeline, persist to audit_v4_shadow.
 
     Runs in a fresh DB session (the request's session is closed by the time
     the background task executes). All exceptions are swallowed so a shadow
     failure never affects the V3 response the user already received.
+
+    ``run_v4`` is async; FastAPI's BackgroundTasks dispatches sync callables
+    via a thread, so we drive it with ``asyncio.run`` inside that thread.
+
+    Shadow mode keeps ``enable_verify=False`` — verify is tool-calling and
+    expensive, and shadow is a firehose. The diagnostic endpoint turns it on.
     """
     if SessionLocal is None:
         log.warning("[v4-shadow-bg] no DB session available, skipping shadow write")
         return
     try:
-        payload = run_v4(repo_url, github_username=applicant_username)
+        payload = asyncio.run(
+            run_v4(
+                repo_url,
+                github_username=applicant_username,
+                run_full_pipeline=True,
+                enable_verify=False,
+            )
+        )
     except Exception as e:  # noqa: BLE001 — ultimate belt-and-braces
         log.error("[v4-shadow-bg] run_v4 raised (should never happen): %s", e)
         return
@@ -99,7 +113,7 @@ def _run_v4_shadow_background(
             v4_output=payload,
             latency_ms=payload.get("latency_ms"),
             errors=payload.get("errors"),
-            pipeline_version=payload.get("pipeline_version", "v4-phase1"),
+            pipeline_version=payload.get("pipeline_version", "v4-phase3"),
             succeeded=1 if payload.get("succeeded") else 0,
         )
         session.add(row)

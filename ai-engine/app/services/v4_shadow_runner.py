@@ -1,8 +1,14 @@
-"""V4 Shadow Runner — orchestrates the V4 Phase 1 pipeline for a repo.
+"""V4 Shadow Runner — orchestrates the FULL V4 pipeline for a repo.
 
 Extracted so both the diagnostic endpoint and the /import shadow-run path
 can share the same orchestration. Never raises — returns a structured
 payload with `errors: []` on partial failures, `succeeded: bool` overall.
+
+Phase 1 stages (graph + importance + patterns + ownership) populate the
+top-level ``graph_stats / importance / patterns / ownership`` fields for
+backward compatibility. When ``run_full_pipeline=True`` (default), Phase 2
+(tagger + map) and Phase 3 (reduce + optional verify) also run, and the
+full :class:`V4Output` lands under ``v4_output``.
 
 Designed to be safe to call from a FastAPI BackgroundTasks job: all
 exceptions are caught, logged, and surfaced in the output dict.
@@ -25,6 +31,8 @@ from devproof_ranking_algo.v4.importance import compute as compute_importance
 from devproof_ranking_algo.v4.ownership import compute as compute_ownership
 from devproof_ranking_algo.v4.pattern_detectors import detect_all as detect_patterns
 
+from app.config import get_settings
+
 log = logging.getLogger(__name__)
 
 _README_CANDIDATES = (
@@ -35,6 +43,9 @@ _README_CANDIDATES = (
 )
 
 _OWNERSHIP_TOP_N = 20
+
+# Default: verify only claims below this confidence. Mirrors verify_phase default.
+_VERIFY_CONFIDENCE_THRESHOLD = 0.70
 
 
 def _parse_owner_repo(repo_url: str) -> Optional[tuple[str, str]]:
@@ -82,11 +93,39 @@ def _graph_stats(graph: Any) -> dict[str, Any]:
     }
 
 
-def run_v4(
+def _build_gemini_client() -> Any:
+    """Construct a google.genai Client from settings. Returns None on failure.
+
+    Imports are lazy so unit tests that patch ``run_v4`` never need the real
+    ``google.genai`` package installed.
+    """
+    try:
+        from google import genai  # type: ignore
+    except Exception as e:  # noqa: BLE001
+        log.warning("[v4-shadow] google.genai import failed: %s", e)
+        return None
+    try:
+        api_key = get_settings().gemini_api_key
+    except Exception as e:  # noqa: BLE001
+        log.warning("[v4-shadow] gemini_api_key missing in settings: %s", e)
+        return None
+    if not api_key:
+        return None
+    try:
+        return genai.Client(api_key=api_key)
+    except Exception as e:  # noqa: BLE001
+        log.warning("[v4-shadow] genai.Client init failed: %s", e)
+        return None
+
+
+async def run_v4(
     repo_url: str,
     github_username: Optional[str] = None,
+    *,
+    run_full_pipeline: bool = True,
+    enable_verify: bool = True,
 ) -> dict[str, Any]:
-    """Run the V4 Phase 1 pipeline on a repo and return a structured payload.
+    """Run the V4 pipeline on a repo and return a structured payload.
 
     Never raises. Tarball fetch failure yields a payload with ``succeeded=False``
     and the error in ``errors[]``. Per-stage failures are collected similarly.
@@ -94,20 +133,27 @@ def run_v4(
     Args:
         repo_url: GitHub URL, e.g. ``https://github.com/owner/repo``.
         github_username: if provided, compute ownership score for this author.
+        run_full_pipeline: when True (default), runs tag + map + reduce (and
+            verify if ``enable_verify``). When False, only Phase 1 runs — the
+            legacy behaviour — and ``v4_output`` stays ``None``.
+        enable_verify: gate the tool-calling verify phase. More expensive than
+            reduce, so shadow mode keeps it off; diagnostic mode turns it on.
 
     Returns:
         Dict with keys: repo_url, commit_sha, pipeline_version, latency_ms,
-        graph_stats, importance, patterns, ownership, errors, succeeded.
+        graph_stats, importance, patterns, ownership, v4_output, errors, succeeded.
     """
+    pipeline_version = "v4-phase3" if run_full_pipeline else "v4-phase1"
     result: dict[str, Any] = {
         "repo_url": repo_url,
         "commit_sha": None,
-        "pipeline_version": "v4-phase1",
+        "pipeline_version": pipeline_version,
         "latency_ms": {},
         "graph_stats": None,
         "importance": None,
         "patterns": [],
         "ownership": None,
+        "v4_output": None,
         "errors": [],
         "succeeded": False,
     }
@@ -177,6 +223,7 @@ def run_v4(
     # 7. Importance
     t0 = time.perf_counter()
     top_20_paths: list[str] = []
+    imp = None
     readme_content = _find_readme(file_map)
     if graph is not None:
         try:
@@ -197,38 +244,139 @@ def run_v4(
 
     # 8. Patterns
     t0 = time.perf_counter()
+    detected_patterns: list = []
     if graph is not None:
         try:
-            detected = detect_patterns(graph, file_map)
-            result["patterns"] = [_pattern_to_dict(p) for p in detected]
+            detected_patterns = list(detect_patterns(graph, file_map))
+            result["patterns"] = [_pattern_to_dict(p) for p in detected_patterns]
         except Exception as e:  # noqa: BLE001
             errors.append(f"patterns: {e}")
             log.warning("[v4-shadow] patterns failed: %s", e)
     latency["patterns"] = int((time.perf_counter() - t0) * 1000)
 
     # 9. Ownership (optional)
+    ownership_result = None
     if github_username and repo_obj is not None:
         t0 = time.perf_counter()
         try:
-            own = compute_ownership(
+            ownership_result = compute_ownership(
                 repo_obj,
                 github_username,
                 importance_ranked_files=top_20_paths[:_OWNERSHIP_TOP_N] or None,
             )
-            result["ownership"] = _ownership_to_dict(own)
+            result["ownership"] = _ownership_to_dict(ownership_result)
         except Exception as e:  # noqa: BLE001
             errors.append(f"ownership: {e}")
             log.warning("[v4-shadow] ownership failed: %s", e)
         latency["ownership"] = int((time.perf_counter() - t0) * 1000)
 
-    # Overall success: graph + importance both landed
-    result["succeeded"] = (
-        result["graph_stats"] is not None and result["importance"] is not None
-    )
+    # 10. Full pipeline (tagger + map + reduce + optional verify)
+    phase1_ok = result["graph_stats"] is not None and result["importance"] is not None
+
+    if run_full_pipeline and phase1_ok and graph is not None and imp is not None:
+        # Import V4 phase modules lazily so Phase-1-only paths don't need them.
+        from devproof_ranking_algo.v4 import map_phase, reduce_phase, tagger, verify_phase
+
+        client = _build_gemini_client()
+        if client is None:
+            errors.append("gemini_client_init: no client available (missing key or SDK)")
+            log.warning("[v4-shadow] skipping Phase 2/3 — no Gemini client")
+        else:
+            # 10a. Tagger
+            t0 = time.perf_counter()
+            tagger_result = None
+            try:
+                tagger_result = await tagger.tag_all(file_map, graph, client)
+            except Exception as e:  # noqa: BLE001
+                errors.append(f"tag: {e}")
+                log.warning("[v4-shadow] tagger failed: %s", e)
+            latency["tag"] = int((time.perf_counter() - t0) * 1000)
+
+            # 10b. Map phase
+            t0 = time.perf_counter()
+            map_result = None
+            if tagger_result is not None:
+                try:
+                    file_tags = {t.file_path: t for t in tagger_result.tags}
+                    map_result = await map_phase.run(
+                        imp.core_set,
+                        file_map,
+                        graph,
+                        client,
+                        file_tags=file_tags,
+                    )
+                except Exception as e:  # noqa: BLE001
+                    errors.append(f"map: {e}")
+                    log.warning("[v4-shadow] map failed: %s", e)
+            latency["map"] = int((time.perf_counter() - t0) * 1000)
+
+            # 10c. Reduce
+            t0 = time.perf_counter()
+            v4_output = None
+            if tagger_result is not None and map_result is not None:
+                try:
+                    v4_output = await reduce_phase.reduce(
+                        repo_url=repo_url,
+                        commit_sha=result.get("commit_sha"),
+                        applicant_username=github_username,
+                        file_map=file_map,
+                        graph=graph,
+                        importance=imp,
+                        patterns=detected_patterns,
+                        ownership=ownership_result,
+                        tagger_result=tagger_result,
+                        map_phase_result=map_result,
+                        gemini_client=client,
+                    )
+                except Exception as e:  # noqa: BLE001
+                    # reduce_phase has its own fallback; this guards truly
+                    # uncaught exceptions (e.g. import-time bugs).
+                    errors.append(f"reduce: {e}")
+                    log.error("[v4-shadow] reduce raised uncaught: %s", e)
+            latency["reduce"] = int((time.perf_counter() - t0) * 1000)
+
+            # 10d. Verify — gated by flag AND low-confidence claims present.
+            t0 = time.perf_counter()
+            if v4_output is not None and enable_verify:
+                low_conf = any(
+                    c.confidence < _VERIFY_CONFIDENCE_THRESHOLD
+                    for c in v4_output.claims
+                )
+                if low_conf:
+                    try:
+                        v4_output = await verify_phase.verify(
+                            v4_output,
+                            file_map,
+                            graph,
+                            client,
+                            confidence_threshold=_VERIFY_CONFIDENCE_THRESHOLD,
+                        )
+                    except Exception as e:  # noqa: BLE001
+                        errors.append(f"verify: {e}")
+                        log.warning("[v4-shadow] verify failed: %s", e)
+            latency["verify"] = int((time.perf_counter() - t0) * 1000)
+
+            if v4_output is not None:
+                try:
+                    result["v4_output"] = v4_output.model_dump(mode="json")
+                except Exception as e:  # noqa: BLE001
+                    errors.append(f"v4_output_serialize: {e}")
+                    log.warning("[v4-shadow] v4_output serialize failed: %s", e)
+
+    # Overall success:
+    # - Phase-1-only mode: graph + importance both landed.
+    # - Full pipeline: also require a v4_output (which reduce's fallback
+    #   guarantees when all upstream inputs existed).
+    if run_full_pipeline:
+        result["succeeded"] = phase1_ok and result["v4_output"] is not None
+    else:
+        result["succeeded"] = phase1_ok
+
     latency["total"] = int((time.perf_counter() - t_total) * 1000)
 
     log.info(
-        "[v4-shadow] %s/%s -> succeeded=%s, total=%dms, errors=%d",
-        owner, repo_name, result["succeeded"], latency["total"], len(errors),
+        "[v4-shadow] %s/%s -> succeeded=%s, total=%dms, errors=%d, full=%s",
+        owner, repo_name, result["succeeded"], latency["total"],
+        len(errors), run_full_pipeline,
     )
     return result
