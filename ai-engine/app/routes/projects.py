@@ -3,15 +3,21 @@ from functools import lru_cache
 from sqlalchemy.orm import Session
 from sqlalchemy import desc
 from pydantic import BaseModel, Field
-from app.database import get_db
+from app.database import SessionLocal, get_db
 from app.models.project import Project, ProjectAudit, TechTag, TagCategory
 from app.models.user import User
 from app.models.audit_cache import AuditCache
+from app.models.audit_v4_shadow import AuditV4Shadow
 from app.services.cache_service import AuditCacheService, get_repo_code_hash
+from app.services.v4_shadow_runner import run_v4
 from app.middleware.rate_limit import scan_limiter, audit_limiter
+from app.config import get_settings
 from devproof_ranking_algo import AuditService
+import logging
 import re
 import uuid
+
+log = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/projects", tags=["projects"])
 
@@ -63,11 +69,58 @@ async def extract_features(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+def _run_v4_shadow_background(
+    project_audit_id: str,
+    repo_url: str,
+    applicant_username: str | None,
+) -> None:
+    """Background task: run V4 pipeline, persist output to audit_v4_shadow.
+
+    Runs in a fresh DB session (the request's session is closed by the time
+    the background task executes). All exceptions are swallowed so a shadow
+    failure never affects the V3 response the user already received.
+    """
+    if SessionLocal is None:
+        log.warning("[v4-shadow-bg] no DB session available, skipping shadow write")
+        return
+    try:
+        payload = run_v4(repo_url, github_username=applicant_username)
+    except Exception as e:  # noqa: BLE001 — ultimate belt-and-braces
+        log.error("[v4-shadow-bg] run_v4 raised (should never happen): %s", e)
+        return
+
+    session = SessionLocal()
+    try:
+        row = AuditV4Shadow(
+            project_audit_id=uuid.UUID(project_audit_id) if project_audit_id else None,
+            repo_url=repo_url,
+            commit_sha=payload.get("commit_sha"),
+            applicant_username=applicant_username,
+            v4_output=payload,
+            latency_ms=payload.get("latency_ms"),
+            errors=payload.get("errors"),
+            pipeline_version=payload.get("pipeline_version", "v4-phase1"),
+            succeeded=1 if payload.get("succeeded") else 0,
+        )
+        session.add(row)
+        session.commit()
+        log.info(
+            "[v4-shadow-bg] persisted shadow row for project_audit_id=%s succeeded=%s",
+            project_audit_id, payload.get("succeeded"),
+        )
+    except Exception as e:  # noqa: BLE001
+        log.error("[v4-shadow-bg] DB write failed: %s", e)
+        session.rollback()
+    finally:
+        session.close()
+
+
 @router.post("/import")
 async def import_project(
-    req: ImportRequest, 
+    req: ImportRequest,
+    background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    audit_service: AuditService = Depends(get_audit_service)
+    audit_service: AuditService = Depends(get_audit_service),
 ):
     # 0. Security: Get the real GitHub, username of the applicant
     user = db.query(User).filter(User.id == req.user_id).first()
@@ -164,7 +217,24 @@ async def import_project(
             seen_domains.add(tag_name)
 
     db.commit()
-    
+    db.refresh(audit)
+
+    # ── V4 SHADOW RUN (feature-flagged) ──────────────────────────────────────
+    # V3 already produced the user-visible result above. If the flag is on,
+    # run V4 in a background task — non-blocking, writes to audit_v4_shadow.
+    # Errors here NEVER affect the user response.
+    try:
+        if get_settings().enable_v4_shadow:
+            background_tasks.add_task(
+                _run_v4_shadow_background,
+                str(audit.id),
+                req.repo_url,
+                applicant_username,
+            )
+            log.info("[v4-shadow] enqueued for project_audit_id=%s", audit.id)
+    except Exception as e:  # noqa: BLE001 — never break V3
+        log.error("[v4-shadow] failed to enqueue shadow task: %s", e)
+
     return {
         "status": "success",
         "project_id": str(project.id),

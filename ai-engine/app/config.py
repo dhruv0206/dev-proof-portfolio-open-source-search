@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     # App settings
     embedding_model: str = "models/gemini-embedding-001"
     embedding_dimension: int = 768
+
+    # V4 pipeline feature flags (defaults OFF — enable per-revision via env var)
+    enable_v4_shadow: bool = False   # run V4 silently alongside V3, store in audit_v4_shadow
     
     # Ingestion settings
     default_languages: list[str] = [
