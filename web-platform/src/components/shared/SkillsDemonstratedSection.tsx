@@ -39,15 +39,15 @@ export function SkillsDemonstratedSection({ claims }: { claims: Claim[] }) {
                     ({skills.length})
                 </span>
             </h3>
-            <div className="flex flex-wrap gap-1.5">
+            <div className="flex flex-wrap gap-1.5 max-w-full">
                 {skills.map((s) => (
                     <span
                         key={s.skill_id}
-                        className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full border ${DEPTH_STYLES[s.depth]}`}
+                        className={`inline-flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full border whitespace-nowrap max-w-full ${DEPTH_STYLES[s.depth]}`}
                         title={`${s.skill_id} — ${DEPTH_LABEL[s.depth]}`}
                     >
-                        {s.skill_id}
-                        <span className="text-[10px] opacity-70">{DEPTH_LABEL[s.depth]}</span>
+                        <span className="truncate">{s.skill_id}</span>
+                        <span className="text-[10px] opacity-70 shrink-0">{DEPTH_LABEL[s.depth]}</span>
                     </span>
                 ))}
             </div>

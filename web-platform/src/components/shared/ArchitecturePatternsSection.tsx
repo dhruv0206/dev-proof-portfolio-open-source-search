@@ -29,10 +29,10 @@ export function ArchitecturePatternsSection({
                 {patterns.map((p, i) => (
                     <li
                         key={`${p.name}-${i}`}
-                        className="flex items-start justify-between gap-3 text-sm border rounded-md px-3 py-2"
+                        className="text-sm border rounded-md px-3 py-2 overflow-hidden"
                     >
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
+                        <div className="flex items-start justify-between gap-3 mb-1.5">
+                            <div className="flex items-center gap-2 flex-wrap min-w-0">
                                 <span className="font-medium">{p.name}</span>
                                 <Badge
                                     variant={p.type === 'ADVANCED' ? 'default' : 'secondary'}
@@ -41,16 +41,24 @@ export function ArchitecturePatternsSection({
                                     {p.type === 'ADVANCED' ? 'Advanced' : 'Standard'}
                                 </Badge>
                             </div>
-                            {p.files.length > 0 && (
-                                <p className="text-[11px] text-muted-foreground mt-1 font-mono truncate">
-                                    {p.files.slice(0, 3).join(', ')}
-                                    {p.files.length > 3 && ` +${p.files.length - 3} more`}
-                                </p>
-                            )}
+                            <span className="text-[11px] text-muted-foreground shrink-0">
+                                {p.files.length} {p.files.length === 1 ? 'file' : 'files'}
+                            </span>
                         </div>
-                        <span className="text-[11px] text-muted-foreground shrink-0 mt-0.5">
-                            {p.files.length} {p.files.length === 1 ? 'file' : 'files'}
-                        </span>
+                        {p.files.length > 0 && (
+                            <ul className="text-[11px] text-muted-foreground font-mono space-y-0.5">
+                                {p.files.slice(0, 4).map((f) => (
+                                    <li key={f} className="truncate" title={f}>
+                                        {f}
+                                    </li>
+                                ))}
+                                {p.files.length > 4 && (
+                                    <li className="text-muted-foreground/70">
+                                        +{p.files.length - 4} more
+                                    </li>
+                                )}
+                            </ul>
+                        )}
                     </li>
                 ))}
             </ul>

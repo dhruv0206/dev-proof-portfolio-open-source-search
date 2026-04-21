@@ -81,7 +81,7 @@ export function ProjectDetailPanel({ project, open, onClose }: ProjectDetailPane
 
     return (
         <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     {/* Header */}
                     <div className="flex items-start justify-between gap-3">
