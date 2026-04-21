@@ -12,6 +12,7 @@ import { CheckCircle2, AlertCircle, ExternalLink, GitCommit } from 'lucide-react
 import type { ProjectProps, VerifiedFeature } from '@/components/shared/ProjectShowcaseCard';
 import { ArchitecturePatternsSection } from '@/components/shared/ArchitecturePatternsSection';
 import { SkillsDemonstratedSection } from '@/components/shared/SkillsDemonstratedSection';
+import { VerifiedClaimsSection } from '@/components/shared/VerifiedClaimsSection';
 
 interface ProjectDetailPanelProps {
     project: ProjectProps | null;
@@ -151,8 +152,14 @@ export function ProjectDetailPanel({ project, open, onClose }: ProjectDetailPane
                         </section>
                     )}
 
-                    {/* Section 2: Verified Features */}
-                    {project.verifiedFeatures.length > 0 && (
+                    {/* Section 2: Verified Features
+                        V4 path reads from v4.claims directly to surface the
+                        full payload (feature_type, cross_file, tier_reasoning,
+                        full evidence list). Falls back to the legacy V3-shape
+                        renderer for projects audited before the V4 flip. */}
+                    {v4 && v4.claims && v4.claims.length > 0 ? (
+                        <VerifiedClaimsSection claims={v4.claims} />
+                    ) : project.verifiedFeatures.length > 0 ? (
                         <section>
                             <h3 className="text-sm font-medium text-muted-foreground mb-3">
                                 Verified Features
@@ -187,7 +194,7 @@ export function ProjectDetailPanel({ project, open, onClose }: ProjectDetailPane
                                 ))}
                             </div>
                         </section>
-                    )}
+                    ) : null}
 
                     {/* V4-exclusive: Architecture Patterns */}
                     {v4 && (
