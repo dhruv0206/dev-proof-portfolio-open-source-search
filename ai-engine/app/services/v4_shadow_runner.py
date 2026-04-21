@@ -124,6 +124,9 @@ async def run_v4(
     *,
     run_full_pipeline: bool = True,
     enable_verify: bool = True,
+    cached_tagger_result: Any = None,
+    cached_map_result: Any = None,
+    return_intermediates: bool = False,
 ) -> dict[str, Any]:
     """Run the V4 pipeline on a repo and return a structured payload.
 
@@ -138,12 +141,29 @@ async def run_v4(
             legacy behaviour — and ``v4_output`` stays ``None``.
         enable_verify: gate the tool-calling verify phase. More expensive than
             reduce, so shadow mode keeps it off; diagnostic mode turns it on.
+        cached_tagger_result: if provided, skip the tagger stage and use this
+            instead. Saves ~20s of Flash calls. Must be paired with
+            ``cached_map_result`` — if only one is provided, both stages re-run.
+        cached_map_result: if provided alongside ``cached_tagger_result``, skip
+            the map stage. Saves ~100s of parallel Flash calls.
+        return_intermediates: when True, the result dict includes an
+            ``_intermediates`` key with the raw (non-JSON-serializable)
+            ``TaggerResult`` and ``MapPhaseResult`` objects so a caller can
+            persist them to a tier-1 cache. Callers MUST strip this key
+            before JSON-serializing the result.
 
     Returns:
         Dict with keys: repo_url, commit_sha, pipeline_version, latency_ms,
-        graph_stats, importance, patterns, ownership, v4_output, errors, succeeded.
+        graph_stats, importance, patterns, ownership, v4_output, errors,
+        succeeded, cache_reused (dict of which stages came from cache).
     """
     pipeline_version = "v4-phase3" if run_full_pipeline else "v4-phase1"
+    # Only honour caches when BOTH are supplied — a partial resume would
+    # mean tagger and map ran on different sources-of-truth.
+    have_cached_intermediates = (
+        cached_tagger_result is not None and cached_map_result is not None
+    )
+
     result: dict[str, Any] = {
         "repo_url": repo_url,
         "commit_sha": None,
@@ -156,10 +176,19 @@ async def run_v4(
         "v4_output": None,
         "errors": [],
         "succeeded": False,
+        "cache_reused": {
+            "tagger": have_cached_intermediates,
+            "map": have_cached_intermediates,
+        },
     }
     errors: list[str] = result["errors"]
     latency: dict[str, int] = result["latency_ms"]
     t_total = time.perf_counter()
+
+    # Hoisted so ``return_intermediates`` handling always sees bound names
+    # regardless of which branches executed.
+    tagger_result: Any = None
+    map_result: Any = None
 
     # 1. Parse owner/repo
     parsed = _parse_owner_repo(repo_url)
@@ -282,20 +311,29 @@ async def run_v4(
             errors.append("gemini_client_init: no client available (missing key or SDK)")
             log.warning("[v4-shadow] skipping Phase 2/3 — no Gemini client")
         else:
-            # 10a. Tagger
+            # 10a. Tagger — skip if cached intermediates supplied
             t0 = time.perf_counter()
             tagger_result = None
-            try:
-                tagger_result = await tagger.tag_all(file_map, graph, client)
-            except Exception as e:  # noqa: BLE001
-                errors.append(f"tag: {e}")
-                log.warning("[v4-shadow] tagger failed: %s", e)
+            if have_cached_intermediates:
+                tagger_result = cached_tagger_result
+                log.info("[v4-shadow] tagger: reusing cached result (%d tags)",
+                         len(tagger_result.tags))
+            else:
+                try:
+                    tagger_result = await tagger.tag_all(file_map, graph, client)
+                except Exception as e:  # noqa: BLE001
+                    errors.append(f"tag: {e}")
+                    log.warning("[v4-shadow] tagger failed: %s", e)
             latency["tag"] = int((time.perf_counter() - t0) * 1000)
 
-            # 10b. Map phase
+            # 10b. Map phase — skip if cached intermediates supplied
             t0 = time.perf_counter()
             map_result = None
-            if tagger_result is not None:
+            if have_cached_intermediates:
+                map_result = cached_map_result
+                log.info("[v4-shadow] map: reusing cached result (%d chunks)",
+                         len(map_result.chunks))
+            elif tagger_result is not None:
                 try:
                     file_tags = {t.file_path: t for t in tagger_result.tags}
                     map_result = await map_phase.run(
@@ -374,9 +412,154 @@ async def run_v4(
 
     latency["total"] = int((time.perf_counter() - t_total) * 1000)
 
+    # Optionally surface raw intermediates for cache persistence. Not
+    # JSON-serializable — callers must strip this key before serialization.
+    if return_intermediates:
+        result["_intermediates"] = {
+            "tagger_result": tagger_result if run_full_pipeline and not have_cached_intermediates else None,
+            "map_result": map_result if run_full_pipeline and not have_cached_intermediates else None,
+        }
+
     log.info(
-        "[v4-shadow] %s/%s -> succeeded=%s, total=%dms, errors=%d, full=%s",
+        "[v4-shadow] %s/%s -> succeeded=%s, total=%dms, errors=%d, full=%s, cache=%s",
         owner, repo_name, result["succeeded"], latency["total"],
-        len(errors), run_full_pipeline,
+        len(errors), run_full_pipeline, result["cache_reused"],
     )
+    return result
+
+
+# ─── Cache-aware wrapper ─────────────────────────────────────────────────────
+
+async def run_v4_cached(
+    repo_url: str,
+    github_username: Optional[str],
+    db_session_factory,
+    *,
+    run_full_pipeline: bool = True,
+    enable_verify: bool = True,
+) -> dict[str, Any]:
+    """Run the V4 pipeline with two-tier cache support.
+
+    Flow:
+    1. Compute ``code_hash`` via the Trees API (applicant-agnostic fingerprint).
+    2. Tier-2 check: ``(repo_url, code_hash, applicant_username)`` — if hit,
+       return a synthetic result with ``v4_output`` populated and
+       ``cache_reused.tier2 = True``. No pipeline work.
+    3. Tier-1 check: ``(repo_url, code_hash)`` — if hit, pass cached
+       ``tagger_result`` + ``map_result`` to ``run_v4`` to skip LLM stages.
+    4. After a successful fresh run, write both tiers.
+
+    If ``code_hash`` can't be computed (rate limits, permission errors) the
+    whole caching layer is bypassed and a fresh run_v4 executes.
+
+    Args:
+        db_session_factory: zero-arg callable returning a SQLAlchemy session.
+            Accepts a factory (not a session directly) because cache reads
+            and writes may span long-running pipeline work; taking a fresh
+            session per DB interaction avoids holding connections idle.
+
+    Returns:
+        Same shape as ``run_v4``. Adds ``cache_reused.tier2`` bool and
+        ``code_hash`` to the top-level dict for observability.
+    """
+    # Lazy imports so unit tests can patch run_v4 without pulling in the
+    # full SQLAlchemy stack.
+    from app.services.cache_service import get_repo_code_hash
+    from app.services.v4_cache_service import V4CacheService, V4CodeCacheService
+
+    code_hash: Optional[str] = None
+    try:
+        ingestor = GithubIngestor()
+        code_hash = get_repo_code_hash(ingestor, repo_url)
+    except Exception as e:  # noqa: BLE001
+        log.warning("[v4-shadow] code_hash compute failed, bypassing cache: %s", e)
+
+    # Tier-2 check — instant return on hit
+    if code_hash and github_username:
+        try:
+            with db_session_factory() as db:
+                cached_output = V4CacheService.get(
+                    db, repo_url, code_hash, github_username,
+                )
+        except Exception as e:  # noqa: BLE001
+            log.warning("[v4-shadow] tier2 read failed: %s", e)
+            cached_output = None
+
+        if cached_output is not None:
+            log.info("[v4-shadow] tier2 HIT for %s / %s", repo_url, github_username)
+            return {
+                "repo_url": repo_url,
+                "commit_sha": None,
+                "pipeline_version": "v4-phase3-cached",
+                "latency_ms": {"total": 0, "cache_lookup": 0},
+                "graph_stats": None,
+                "importance": None,
+                "patterns": [],
+                "ownership": None,
+                "v4_output": cached_output,
+                "errors": [],
+                "succeeded": True,
+                "cache_reused": {"tagger": True, "map": True, "tier2": True},
+                "code_hash": code_hash,
+            }
+
+    # Tier-1 check — fetch cached LLM intermediates if available
+    cached_tagger, cached_map = None, None
+    if code_hash:
+        try:
+            with db_session_factory() as db:
+                tier1_hit = V4CodeCacheService.get(db, repo_url, code_hash)
+        except Exception as e:  # noqa: BLE001
+            log.warning("[v4-shadow] tier1 read failed: %s", e)
+            tier1_hit = None
+
+        if tier1_hit is not None:
+            cached_tagger, cached_map = tier1_hit
+            log.info("[v4-shadow] tier1 HIT for %s", repo_url)
+
+    # Full run — passes cached intermediates when available, asks for raw
+    # intermediates back so we can write them to the cache afterwards.
+    result = await run_v4(
+        repo_url,
+        github_username,
+        run_full_pipeline=run_full_pipeline,
+        enable_verify=enable_verify,
+        cached_tagger_result=cached_tagger,
+        cached_map_result=cached_map,
+        return_intermediates=True,
+    )
+    result["code_hash"] = code_hash
+    result["cache_reused"]["tier2"] = False
+
+    # Cache writes — best-effort, never fail the request
+    if code_hash and result.get("succeeded"):
+        intermediates = result.pop("_intermediates", None) or {}
+        fresh_tagger = intermediates.get("tagger_result")
+        fresh_map = intermediates.get("map_result")
+        v4_output = result.get("v4_output")
+
+        # Tier-1: only write when we freshly computed both (not on cache resume)
+        if fresh_tagger is not None and fresh_map is not None:
+            try:
+                with db_session_factory() as db:
+                    V4CodeCacheService.put(
+                        db, repo_url, code_hash, fresh_tagger, fresh_map,
+                    )
+            except Exception as e:  # noqa: BLE001
+                log.warning("[v4-shadow] tier1 write failed: %s", e)
+
+        # Tier-2: write any successful per-applicant output
+        if github_username and v4_output:
+            try:
+                with db_session_factory() as db:
+                    V4CacheService.put(
+                        db, repo_url, code_hash, github_username, v4_output,
+                    )
+            except Exception as e:  # noqa: BLE001
+                log.warning("[v4-shadow] tier2 write failed: %s", e)
+    else:
+        # Strip intermediates even on failure so callers never see the
+        # non-JSON-serializable objects.
+        result.pop("_intermediates", None)
+
     return result

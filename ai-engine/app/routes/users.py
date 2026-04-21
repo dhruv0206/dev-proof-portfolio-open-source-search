@@ -156,13 +156,20 @@ async def get_my_projects(
     x_user_id: str = Header(..., alias="X-User-Id"),
     db: Session = Depends(get_db)
 ):
-    """Get verified projects for the current user."""
+    """Get projects for the current user.
+
+    Returns BOTH verified projects and projects whose V4 audit is still
+    running (status=PENDING). The frontend renders a pending card for
+    those and polls this endpoint to catch the flip to VERIFIED.
+    """
     user_id = x_user_id
     from app.models.project import Project, ProjectAudit, TechTag, TagCategory
 
     db_projects = db.query(Project).filter(
         Project.user_id == user_id,
-        Project.is_verified == True
+        # Include VERIFIED (V4 done) and PENDING (V4 running). Exclude
+        # REJECTED so users don't see failed attempts clutter the list.
+        Project.verification_status.in_(["VERIFIED", "PENDING"]),
     ).order_by(Project.authorship_percent.desc()).all()
 
     verified_projects_data = []
@@ -218,8 +225,10 @@ async def get_my_projects(
                 recommendations.append("Elite status achieved. Maintain this standard.")
 
         project_data = {
+            "id": str(proj.id),
             "name": proj.repo_name,
             "repoUrl": proj.repo_url,
+            "status": proj.verification_status,  # "VERIFIED" | "PENDING"
             "authorship": proj.authorship_percent,
             "stack": stack,
             "verifiedFeatures": verified_feats,
@@ -236,6 +245,19 @@ async def get_my_projects(
             # Score breakdown from audit report
             if proj.audit.audit_report:
                 project_data["scoreBreakdown"] = proj.audit.audit_report.get("score_breakdown", {})
+
+        # V4 fields — included when the V4 pipeline has completed.
+        # Frontend prefers these when present, falls back to V3 otherwise.
+        if proj.audit and proj.audit.v4_output is not None:
+            project_data["v4"] = {
+                "score": proj.audit.v4_score,
+                "tier": proj.audit.v4_tier,
+                "output": proj.audit.v4_output,
+                "audited_at": (
+                    proj.audit.v4_audited_at.isoformat()
+                    if proj.audit.v4_audited_at else None
+                ),
+            }
 
         verified_projects_data.append(project_data)
 
@@ -467,6 +489,19 @@ async def get_public_profile(
             project_data["forensicsData"] = getattr(proj.audit, 'forensics_data', None)
             if proj.audit.audit_report:
                 project_data["scoreBreakdown"] = proj.audit.audit_report.get("score_breakdown", {})
+
+        # V4 fields — included when the V4 pipeline has completed.
+        # Frontend prefers these when present, falls back to V3 otherwise.
+        if proj.audit and proj.audit.v4_output is not None:
+            project_data["v4"] = {
+                "score": proj.audit.v4_score,
+                "tier": proj.audit.v4_tier,
+                "output": proj.audit.v4_output,
+                "audited_at": (
+                    proj.audit.v4_audited_at.isoformat()
+                    if proj.audit.v4_audited_at else None
+                ),
+            }
 
         verified_projects_data.append(project_data)
 

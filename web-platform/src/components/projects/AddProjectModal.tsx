@@ -5,7 +5,8 @@ import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog"
-import { Loader2, Plus, CheckCircle2, AlertTriangle, ShieldCheck, Circle, Trophy } from "lucide-react"
+import { Loader2, Plus, CheckCircle2, AlertTriangle, ShieldCheck, Circle, Trophy, Sparkles } from "lucide-react"
+import type { V4Bundle } from "@/lib/types/v4-output"
 import { useRouter } from "next/navigation"
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
@@ -20,8 +21,12 @@ const PROGRESS_STEPS = [
 ]
 
 interface AuditResult {
-    score: number
-    tier: string
+    // V4-only import returns { status: 'pending', project_id }. Score/tier
+    // arrive via polling → v4Data once the V4 pipeline completes.
+    status?: 'pending' | 'success'
+    score?: number
+    tier?: string
+    project_id?: string
     scoringVersion?: number
     discipline?: string
     scoreBreakdown?: {
@@ -30,6 +35,16 @@ interface AuditResult {
         intent_score: number
         forensics_score: number
     }
+}
+
+type V4Status = 'pending' | 'ready' | 'failed'
+
+interface V4StatusResponse {
+    project_id: string
+    v3_ready: boolean
+    v4_ready: boolean
+    v4_status: V4Status
+    v4: V4Bundle | null
 }
 
 export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: string, defaultGithubUsername?: string }) {
@@ -58,6 +73,13 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
     const [currentStep, setCurrentStep] = useState(0)
     const progressInterval = useRef<NodeJS.Timeout | null>(null)
 
+    // V4 async status — poll /status/{project_id} after /import returns the
+    // V3 preliminary. When v4_status flips to 'ready' the UI upgrades the
+    // displayed score; on 'failed' we stop polling and keep V3.
+    const [v4Status, setV4Status] = useState<V4Status>('pending')
+    const [v4Data, setV4Data] = useState<V4Bundle | null>(null)
+    const v4PollInterval = useRef<NodeJS.Timeout | null>(null)
+
     // Audit Result State
     const [auditResult, setAuditResult] = useState<AuditResult | null>(null)
 
@@ -70,8 +92,55 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
     useEffect(() => {
         return () => {
             if (progressInterval.current) clearInterval(progressInterval.current)
+            if (v4PollInterval.current) clearInterval(v4PollInterval.current)
         }
     }, [])
+
+    // V4 status polling — starts once /import returns a project_id, stops
+    // on ready/failed or after ~20 min hard cap. Keeps network traffic low
+    // (every 15s) and the UI honest (shows a pending pill until flip).
+    useEffect(() => {
+        const pid = auditResult?.project_id
+        if (!pid) return
+        if (v4Status === 'ready' || v4Status === 'failed') return
+
+        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+        const start = Date.now()
+        const HARD_CAP_MS = 20 * 60 * 1000
+
+        const tick = async () => {
+            try {
+                const res = await fetch(`${API_URL}/api/projects/status/${pid}`)
+                if (!res.ok) return
+                const body: V4StatusResponse = await res.json()
+                if (body.v4_ready && body.v4) {
+                    setV4Data(body.v4)
+                    setV4Status('ready')
+                    if (v4PollInterval.current) clearInterval(v4PollInterval.current)
+                    return
+                }
+                if (body.v4_status === 'failed') {
+                    setV4Status('failed')
+                    if (v4PollInterval.current) clearInterval(v4PollInterval.current)
+                    return
+                }
+                if (Date.now() - start > HARD_CAP_MS) {
+                    setV4Status('failed')
+                    if (v4PollInterval.current) clearInterval(v4PollInterval.current)
+                }
+            } catch {
+                // Swallow — next tick will retry. If network is truly out
+                // the hard cap eventually flips this to 'failed'.
+            }
+        }
+
+        tick() // fire immediately so the user sees the pending state
+        v4PollInterval.current = setInterval(tick, 15000)
+
+        return () => {
+            if (v4PollInterval.current) clearInterval(v4PollInterval.current)
+        }
+    }, [auditResult?.project_id, v4Status])
 
     const handleScan = async () => {
         if (!url) return
@@ -231,7 +300,10 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
         setIsAuditing(false)
         setCurrentStep(0)
         setAuditResult(null)
+        setV4Status('pending')
+        setV4Data(null)
         if (progressInterval.current) clearInterval(progressInterval.current)
+        if (v4PollInterval.current) clearInterval(v4PollInterval.current)
     }
 
     const handleOpenChange = (newOpen: boolean) => {
@@ -265,53 +337,102 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
                 </DialogHeader>
 
                 {auditResult ? (
-                    // RESULT VIEW
-                    <div className="py-6 space-y-6">
-                        <div className="flex flex-col items-center text-center space-y-3">
-                            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
-                                <Trophy className="w-8 h-8 text-green-600" />
-                            </div>
-                            <h3 className="font-bold text-lg">Project Verified!</h3>
-                            <div className="flex items-center gap-2">
-                                <span className="text-4xl font-bold">{auditResult.score.toFixed(0)}</span>
-                                <div className="text-left">
-                                    <Badge className={
-                                        auditResult.tier === "ELITE" ? "bg-purple-100 text-purple-700 border-purple-200" :
-                                        auditResult.tier === "ADVANCED" ? "bg-blue-100 text-blue-700 border-blue-200" :
-                                        auditResult.tier === "INTERMEDIATE" ? "bg-amber-100 text-amber-700 border-amber-200" :
-                                        "bg-slate-100 text-slate-700 border-slate-200"
-                                    }>
-                                        {auditResult.tier}
-                                    </Badge>
-                                    {auditResult.discipline && (
-                                        <p className="text-xs text-muted-foreground mt-1">{auditResult.discipline}</p>
-                                    )}
+                    // RESULT VIEW — V4-only: pending until poll flips v4Status to 'ready'.
+                    v4Status === 'pending' ? (
+                        // ── Pending: /import returned, V4 still running in background ──
+                        <div className="py-6 space-y-6">
+                            <div className="flex flex-col items-center text-center space-y-3">
+                                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                                    <Loader2 className="w-8 h-8 text-blue-600 animate-spin" />
+                                </div>
+                                <h3 className="font-bold text-lg">Deep analysis running</h3>
+                                <p className="text-sm text-muted-foreground px-4">
+                                    We're running the full V4 pipeline — graph analysis, pattern
+                                    detection, semantic chunking, and forensics.
+                                </p>
+                                <p className="text-xs text-muted-foreground/70">
+                                    Usually 1–15 min depending on repo size.
+                                    <br />
+                                    You can close this dialog — your project will appear on your
+                                    profile when ready.
+                                </p>
+                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs">
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                    <span>Checking status every 15s</span>
                                 </div>
                             </div>
                         </div>
-
-                        {/* V2 Score Breakdown */}
-                        {auditResult.scoreBreakdown && (
-                            <div className="space-y-2 px-4">
-                                {[
-                                    { label: "Features", value: auditResult.scoreBreakdown.feature_score, max: 40, color: "bg-purple-500" },
-                                    { label: "Architecture", value: auditResult.scoreBreakdown.architecture_score, max: 15, color: "bg-blue-500" },
-                                    { label: "Intent & Standards", value: auditResult.scoreBreakdown.intent_score, max: 25, color: "bg-emerald-500" },
-                                    { label: "Forensics", value: auditResult.scoreBreakdown.forensics_score, max: 20, color: "bg-amber-500" },
-                                ].map(({ label, value, max, color }) => (
-                                    <div key={label} className="space-y-1">
-                                        <div className="flex justify-between text-xs">
-                                            <span className="text-muted-foreground">{label}</span>
-                                            <span className="font-mono font-bold">{value}/{max}</span>
-                                        </div>
-                                        <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
-                                            <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${Math.min((value / max) * 100, 100)}%` }} />
-                                        </div>
-                                    </div>
-                                ))}
+                    ) : v4Status === 'failed' ? (
+                        // ── Failed: V4 pipeline errored, timed out, or authorship too low ──
+                        <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
+                            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center">
+                                <AlertTriangle className="w-8 h-8 text-red-600" />
                             </div>
-                        )}
-                    </div>
+                            <div className="space-y-2">
+                                <h3 className="font-bold text-lg text-red-700">Audit Failed</h3>
+                                <p className="text-sm text-muted-foreground px-4">
+                                    The deep analysis didn't complete successfully. This usually
+                                    means authorship is too low, the repo is private/inaccessible,
+                                    or the pipeline hit an error.
+                                </p>
+                                <p className="text-xs text-muted-foreground/70 px-8">
+                                    Try again or check the repo URL. If this keeps happening,
+                                    reach out on support.
+                                </p>
+                            </div>
+                        </div>
+                    ) : (
+                        // ── Ready: V4 finished — show V4 score + V4 breakdown ──
+                        <div className="py-6 space-y-6">
+                            <div className="flex flex-col items-center text-center space-y-3">
+                                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                                    <Trophy className="w-8 h-8 text-green-600" />
+                                </div>
+                                <h3 className="font-bold text-lg">Project Verified!</h3>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-4xl font-bold">
+                                        {Math.round(v4Data?.output?.repo_score ?? 0)}
+                                    </span>
+                                    <div className="text-left">
+                                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                                            {v4Data?.output?.repo_tier ?? 'V4'}
+                                        </Badge>
+                                        {v4Data?.output?.discipline && (
+                                            <p className="text-xs text-muted-foreground mt-1">
+                                                {v4Data.output.discipline}
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs">
+                                    <Sparkles className="w-3.5 h-3.5" />
+                                    <span>Scored by V4 deep analysis</span>
+                                </div>
+                            </div>
+
+                            {/* V4 Score Breakdown */}
+                            {v4Data?.output?.score_breakdown && (
+                                <div className="space-y-2 px-4">
+                                    {[
+                                        { label: "Features", value: v4Data.output.score_breakdown.features.score, max: 40, color: "bg-purple-500" },
+                                        { label: "Architecture", value: v4Data.output.score_breakdown.architecture.score, max: 15, color: "bg-blue-500" },
+                                        { label: "Intent & Standards", value: v4Data.output.score_breakdown.intent_and_standards.score, max: 25, color: "bg-emerald-500" },
+                                        { label: "Forensics", value: v4Data.output.score_breakdown.forensics.score, max: 20, color: "bg-amber-500" },
+                                    ].map(({ label, value, max, color }) => (
+                                        <div key={label} className="space-y-1">
+                                            <div className="flex justify-between text-xs">
+                                                <span className="text-muted-foreground">{label}</span>
+                                                <span className="font-mono font-bold">{value}/{max}</span>
+                                            </div>
+                                            <div className="h-1.5 w-full rounded-full bg-secondary overflow-hidden">
+                                                <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${Math.min((value / max) * 100, 100)}%` }} />
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )
                 ) : isAuditing ? (
                     // PROGRESS VIEW
                     <div className="py-6 space-y-6">

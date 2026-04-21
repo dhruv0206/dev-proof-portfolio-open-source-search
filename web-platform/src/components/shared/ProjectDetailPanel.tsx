@@ -10,6 +10,8 @@ import { ScoreBreakdownChart } from '@/components/shared/ScoreBreakdownChart';
 import { Badge } from '@/components/ui/badge';
 import { CheckCircle2, AlertCircle, ExternalLink, GitCommit } from 'lucide-react';
 import type { ProjectProps, VerifiedFeature } from '@/components/shared/ProjectShowcaseCard';
+import { ArchitecturePatternsSection } from '@/components/shared/ArchitecturePatternsSection';
+import { SkillsDemonstratedSection } from '@/components/shared/SkillsDemonstratedSection';
 
 interface ProjectDetailPanelProps {
     project: ProjectProps | null;
@@ -62,6 +64,21 @@ export function ProjectDetailPanel({ project, open, onClose }: ProjectDetailPane
     const forensics = project.forensicsData;
     const breakdown = project.scoreBreakdown;
 
+    // V4 data — optional. When present, render two additional sections
+    // (Architecture + Skills) that V3 can't produce, and use V4's score +
+    // breakdown in place of V3's.
+    const v4 = project.v4?.output;
+
+    const displayScore = v4?.repo_score ?? project.score ?? 0;
+    const displayBreakdown = v4
+        ? {
+            feature_score: v4.score_breakdown.features.score,
+            architecture_score: v4.score_breakdown.architecture.score,
+            intent_score: v4.score_breakdown.intent_and_standards.score,
+            forensics_score: v4.score_breakdown.forensics.score,
+        }
+        : breakdown;
+
     return (
         <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
             <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
@@ -96,8 +113,16 @@ export function ProjectDetailPanel({ project, open, onClose }: ProjectDetailPane
                                     className="text-lg font-bold font-mono"
                                     style={{ color: config.color }}
                                 >
-                                    {Math.round(project.score || 0)}
+                                    {Math.round(displayScore)}
                                 </span>
+                                {v4 && (
+                                    <Badge
+                                        variant="outline"
+                                        className="text-[10px] uppercase tracking-wider px-1.5 py-0 text-emerald-400 border-emerald-500/30"
+                                    >
+                                        V4
+                                    </Badge>
+                                )}
                                 {project.discipline && (
                                     <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
                                         {project.discipline}
@@ -109,18 +134,18 @@ export function ProjectDetailPanel({ project, open, onClose }: ProjectDetailPane
                 </DialogHeader>
 
                 <div className="space-y-6 mt-4">
-                    {/* Section 1: Score Breakdown */}
-                    {breakdown && (
+                    {/* Section 1: Score Breakdown — V4 values when present, else V3 */}
+                    {displayBreakdown && (
                         <section>
                             <h3 className="text-sm font-medium text-muted-foreground mb-3">
                                 Score Breakdown
                             </h3>
                             <div className="h-[250px]">
                                 <ScoreBreakdownChart
-                                    features={breakdown.feature_score}
-                                    architecture={breakdown.architecture_score}
-                                    intent={breakdown.intent_score}
-                                    forensics={breakdown.forensics_score}
+                                    features={displayBreakdown.feature_score}
+                                    architecture={displayBreakdown.architecture_score}
+                                    intent={displayBreakdown.intent_score}
+                                    forensics={displayBreakdown.forensics_score}
                                 />
                             </div>
                         </section>
@@ -163,6 +188,16 @@ export function ProjectDetailPanel({ project, open, onClose }: ProjectDetailPane
                             </div>
                         </section>
                     )}
+
+                    {/* V4-exclusive: Architecture Patterns */}
+                    {v4 && (
+                        <ArchitecturePatternsSection
+                            patterns={v4.architecture?.detected_patterns ?? []}
+                        />
+                    )}
+
+                    {/* V4-exclusive: Skills Demonstrated */}
+                    {v4 && <SkillsDemonstratedSection claims={v4.claims ?? []} />}
 
                     {/* Section 3: Forensics */}
                     {forensics && !forensics.insufficient_data && (

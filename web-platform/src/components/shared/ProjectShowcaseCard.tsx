@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { CheckCircle2, ExternalLink } from 'lucide-react';
 import { motion } from 'framer-motion';
+import type { V4Bundle } from '@/lib/types/v4-output';
 
 export interface VerifiedFeature {
     feature: string;
@@ -44,6 +45,11 @@ export interface ProjectProps {
     discipline?: string;
     forensicsData?: ForensicsData;
     scoreBreakdown?: ScoreBreakdown;
+    /**
+     * V4 pipeline output when available. Surfaces that know about V4
+     * prefer this over the V3 fields above; others ignore it.
+     */
+    v4?: V4Bundle;
 }
 
 interface ProjectShowcaseCardProps {
@@ -73,6 +79,10 @@ const langColors: Record<string, string> = {
 };
 
 export function ProjectShowcaseCard({ project, onSelect }: ProjectShowcaseCardProps) {
+    // Prefer V4 score when present, else fall back to V3
+    const hasV4 = !!project.v4?.output;
+    const displayScore = project.v4?.output?.repo_score ?? project.score ?? 0;
+
     const tier = project.tier?.toUpperCase() || 'BASIC';
     const config = tierConfig[tier] || tierConfig.BASIC;
 
@@ -84,7 +94,7 @@ export function ProjectShowcaseCard({ project, onSelect }: ProjectShowcaseCardPr
     const frameworks = project.stack.frameworks.slice(0, 3);
 
     const circumference = 2 * Math.PI * 22;
-    const progress = Math.min((project.score || 0) / 100, 1);
+    const progress = Math.min(displayScore / 100, 1);
 
     return (
         <motion.div
@@ -130,7 +140,7 @@ export function ProjectShowcaseCard({ project, onSelect }: ProjectShowcaseCardPr
                             className="text-sm font-bold font-mono"
                             style={{ color: config.color }}
                         >
-                            {Math.round(project.score || 0)}
+                            {Math.round(displayScore)}
                         </span>
                     </div>
                 </div>
@@ -150,13 +160,22 @@ export function ProjectShowcaseCard({ project, onSelect }: ProjectShowcaseCardPr
                             <ExternalLink className="h-3.5 w-3.5" />
                         </a>
                     </div>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                         <Badge
                             variant="outline"
                             className={cn('text-[10px] uppercase tracking-wider px-1.5 py-0', config.text)}
                         >
                             {tier}
                         </Badge>
+                        {hasV4 && (
+                            <Badge
+                                variant="outline"
+                                className="text-[10px] uppercase tracking-wider px-1.5 py-0 text-emerald-400 border-emerald-500/30"
+                                title="Scored by V4 pipeline"
+                            >
+                                V4
+                            </Badge>
+                        )}
                         {project.discipline && (
                             <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
                                 {project.discipline}

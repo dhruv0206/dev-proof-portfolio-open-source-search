@@ -2,11 +2,14 @@
 
 import { ScoreRadial } from '@/components/shared/ScoreRadial';
 import { ScoreBreakdownChart } from '@/components/shared/ScoreBreakdownChart';
+import { ArchitecturePatternsSection } from '@/components/shared/ArchitecturePatternsSection';
+import { SkillsDemonstratedSection } from '@/components/shared/SkillsDemonstratedSection';
 import { ExternalLink, Github, ArrowRight, Share2, CheckCircle2, XCircle, Clock, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { signIn } from '@/lib/auth-client';
 import { motion } from 'framer-motion';
+import type { V4Bundle } from '@/lib/types/v4-output';
 
 interface Claim {
     feature: string;
@@ -36,6 +39,12 @@ interface ScoreData {
     authorship?: number;
     forensics_data?: Record<string, unknown>;
     scored_at?: string;
+    /**
+     * V4 pipeline payload when available. When present, UI prefers V4
+     * score / tier / breakdown and renders V4-exclusive sections
+     * (architecture patterns, skills demonstrated).
+     */
+    v4?: V4Bundle;
 }
 
 const TIER_COLORS: Record<string, { color: string; bg: string; border: string }> = {
@@ -94,12 +103,25 @@ function BadgeEmbed({ owner, repo }: { owner: string; repo: string }) {
 export function PublicScorePage({ data }: { data: ScoreData }) {
     const tier = data.tier?.toUpperCase() || 'BASIC';
     const tierConfig = TIER_COLORS[tier] || TIER_COLORS.BASIC;
-    const bd = data.score_breakdown || {};
+
+    // V4 preference — when present, use V4's score + breakdown instead of V3.
+    // The tier BADGE still uses V3's label system (ELITE/ADVANCED/...) because
+    // V4's repo_tier is different semantics; we keep the visual consistent.
+    const v4 = data.v4?.output;
+    const displayScore = v4?.repo_score ?? data.score;
+    const bd = v4
+        ? {
+            feature_score: v4.score_breakdown.features.score,
+            architecture_score: v4.score_breakdown.architecture.score,
+            intent_score: v4.score_breakdown.intent_and_standards.score,
+            forensics_score: v4.score_breakdown.forensics.score,
+        }
+        : data.score_breakdown || {};
     const hasBreakdown = !!(bd.feature_score || bd.architecture_score || bd.intent_score || bd.forensics_score);
 
     const handleShare = () => {
         const shareUrl = `${window.location.origin}/score/${data.owner}/${data.repo}`;
-        const text = `${data.owner}/${data.repo} scored ${Math.round(data.score)}/100 (${data.tier}) on DevProof`;
+        const text = `${data.owner}/${data.repo} scored ${Math.round(displayScore)}/100 (${data.tier}) on DevProof`;
         navigator.clipboard.writeText(`${text}\n${shareUrl}`);
     };
 
@@ -146,6 +168,14 @@ export function PublicScorePage({ data }: { data: ScoreData }) {
                         <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider border ${tierConfig.color} ${tierConfig.bg} ${tierConfig.border}`}>
                             {tier}
                         </span>
+                        {v4 && (
+                            <span
+                                className="px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border text-emerald-400 bg-emerald-500/10 border-emerald-500/20"
+                                title="Scored by V4 pipeline"
+                            >
+                                V4
+                            </span>
+                        )}
                         {data.discipline && (
                             <span className="px-3 py-1 rounded-full text-xs text-muted-foreground bg-muted border border-border">
                                 {data.discipline}
@@ -167,7 +197,7 @@ export function PublicScorePage({ data }: { data: ScoreData }) {
                     className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8"
                 >
                     <div className="p-6 rounded-xl border border-border bg-card flex items-center justify-center">
-                        <ScoreRadial score={Math.round(data.score)} tier={tier} label="TDS" />
+                        <ScoreRadial score={Math.round(displayScore)} tier={tier} label={v4 ? 'DEVPROOF' : 'TDS'} />
                     </div>
                     <div className="p-6 rounded-xl border border-border bg-card">
                         {hasBreakdown ? (
@@ -263,6 +293,21 @@ export function PublicScorePage({ data }: { data: ScoreData }) {
                                 );
                             })}
                         </div>
+                    </motion.div>
+                )}
+
+                {/* V4-exclusive: Architecture Patterns + Skills */}
+                {v4 && (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.35 }}
+                        className="p-6 rounded-xl border border-border bg-card mb-8 space-y-6"
+                    >
+                        <ArchitecturePatternsSection
+                            patterns={v4.architecture?.detected_patterns ?? []}
+                        />
+                        <SkillsDemonstratedSection claims={v4.claims ?? []} />
                     </motion.div>
                 )}
 

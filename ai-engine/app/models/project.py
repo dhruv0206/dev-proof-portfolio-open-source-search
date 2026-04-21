@@ -57,6 +57,13 @@ class ProjectAudit(Base):
     scoring_version = Column(Integer, default=1)   # 1=legacy, 2=v2
     discipline = Column(String, nullable=True)     # Detected discipline
 
+    # V4 Fields — populated after the V4 shadow task completes.
+    # v4_output holds the full V4Output JSON (claims, architecture, breakdown).
+    v4_score = Column(Float, nullable=True)
+    v4_tier = Column(String, nullable=True)
+    v4_output = Column(JSON, nullable=True)
+    v4_audited_at = Column(DateTime, nullable=True)
+
     audited_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
     # Relations

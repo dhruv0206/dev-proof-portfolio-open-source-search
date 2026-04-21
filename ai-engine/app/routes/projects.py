@@ -9,7 +9,7 @@ from app.models.user import User
 from app.models.audit_cache import AuditCache
 from app.models.audit_v4_shadow import AuditV4Shadow
 from app.services.cache_service import AuditCacheService, get_repo_code_hash
-from app.services.v4_shadow_runner import run_v4
+from app.services.v4_shadow_runner import run_v4, run_v4_cached
 from app.middleware.rate_limit import scan_limiter, audit_limiter
 from app.config import get_settings
 from devproof_ranking_algo import AuditService
@@ -17,6 +17,7 @@ import asyncio
 import logging
 import re
 import uuid
+from datetime import datetime, timezone
 
 log = logging.getLogger(__name__)
 
@@ -70,42 +71,60 @@ async def extract_features(
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-def _run_v4_shadow_background(
+# V4 tier → V3 tier label, so UI components that still read complexity_tier
+# (dashboards, legacy cards) keep working during the transition.
+_V4_TO_V3_TIER = {
+    "TIER_3_DEEP": "ELITE",
+    "TIER_2_LOGIC": "ADVANCED",
+    "TIER_1_UI": "INTERMEDIATE",
+}
+
+
+def _run_v4_primary_background(
     project_audit_id: str,
+    project_id: str,
     repo_url: str,
     applicant_username: str | None,
 ) -> None:
-    """Background task: run the full V4 pipeline, persist to audit_v4_shadow.
+    """Background task: run V4 and populate Project + ProjectAudit.
 
-    Runs in a fresh DB session (the request's session is closed by the time
-    the background task executes). All exceptions are swallowed so a shadow
-    failure never affects the V3 response the user already received.
+    This is the PRIMARY audit path as of the V3→V4 flip. ``/import`` creates
+    empty Project+Audit rows and returns ``status: pending`` immediately;
+    this task fills them in. Frontend polls ``/status/{project_id}`` until
+    v4_ready flips true.
 
-    ``run_v4`` is async; FastAPI's BackgroundTasks dispatches sync callables
-    via a thread, so we drive it with ``asyncio.run`` inside that thread.
+    On success:
+    - Project: is_verified=True, verification_status=VERIFIED, authorship_percent
+    - ProjectAudit: v4_* fields + legacy fields (tds_score etc.) mapped from V4
+    - TechTag rows created from the V4-detected stack
+    - AuditV4Shadow row for observability (kept during transition)
 
-    Shadow mode keeps ``enable_verify=False`` — verify is tool-calling and
-    expensive, and shadow is a firehose. The diagnostic endpoint turns it on.
+    On failure (V4 raised, returned succeeded=False, or low authorship):
+    - Project.verification_status=REJECTED so frontend can surface a message
     """
     if SessionLocal is None:
-        log.warning("[v4-shadow-bg] no DB session available, skipping shadow write")
+        log.warning("[v4-bg] no DB session available, skipping")
         return
+
     try:
         payload = asyncio.run(
-            run_v4(
+            run_v4_cached(
                 repo_url,
                 github_username=applicant_username,
+                db_session_factory=SessionLocal,
                 run_full_pipeline=True,
                 enable_verify=False,
             )
         )
     except Exception as e:  # noqa: BLE001 — ultimate belt-and-braces
-        log.error("[v4-shadow-bg] run_v4 raised (should never happen): %s", e)
+        log.error("[v4-bg] run_v4_cached raised: %s", e)
+        _mark_project_rejected(project_id, f"pipeline error: {e}")
         return
 
     session = SessionLocal()
     try:
-        row = AuditV4Shadow(
+        # Observability row (kept during transition; safe to remove later)
+        session.add(AuditV4Shadow(
             project_audit_id=uuid.UUID(project_audit_id) if project_audit_id else None,
             repo_url=repo_url,
             commit_sha=payload.get("commit_sha"),
@@ -115,15 +134,115 @@ def _run_v4_shadow_background(
             errors=payload.get("errors"),
             pipeline_version=payload.get("pipeline_version", "v4-phase3"),
             succeeded=1 if payload.get("succeeded") else 0,
+        ))
+
+        succeeded = payload.get("succeeded")
+        v4_out = payload.get("v4_output") or {}
+
+        if not succeeded or not v4_out:
+            # V4 ran but didn't produce a usable output — reject cleanly so
+            # the polling UI surfaces a specific error rather than hanging.
+            project_row = session.query(Project).filter(
+                Project.id == uuid.UUID(project_id),
+            ).first()
+            if project_row is not None:
+                project_row.verification_status = "REJECTED"
+            session.commit()
+            log.warning("[v4-bg] V4 produced no output for project_id=%s", project_id)
+            return
+
+        # ── Success path ───────────────────────────────────────────────────
+        audit_row = session.query(ProjectAudit).filter(
+            ProjectAudit.id == uuid.UUID(project_audit_id),
+        ).first()
+        if audit_row is None:
+            log.error("[v4-bg] audit_row missing for id=%s", project_audit_id)
+            session.commit()
+            return
+
+        # V4 fields — the source of truth going forward
+        audit_row.v4_score = v4_out.get("repo_score")
+        audit_row.v4_tier = v4_out.get("repo_tier")
+        audit_row.v4_output = v4_out
+        audit_row.v4_audited_at = datetime.now(timezone.utc)
+
+        # Legacy/V3-shape mirrors — so unmigrated UI surfaces still render.
+        # Can be removed once every reader preferences V4 (step 7 cleanup).
+        audit_row.tds_score = v4_out.get("repo_score")
+        audit_row.complexity_tier = _V4_TO_V3_TIER.get(
+            v4_out.get("repo_tier"), "BASIC",
         )
-        session.add(row)
+        audit_row.audit_report = {
+            "score_breakdown": {
+                "feature_score": v4_out.get("score_breakdown", {}).get("features", {}).get("score"),
+                "architecture_score": v4_out.get("score_breakdown", {}).get("architecture", {}).get("score"),
+                "intent_score": v4_out.get("score_breakdown", {}).get("intent_and_standards", {}).get("score"),
+                "forensics_score": v4_out.get("score_breakdown", {}).get("forensics", {}).get("score"),
+            },
+            "claims": [
+                {
+                    "feature": c.get("feature"),
+                    "status": "VERIFIED",
+                    "tier": c.get("tier"),
+                    "tier_reasoning": c.get("tier_reasoning"),
+                    "evidence_file": (c.get("evidence") or [{}])[0].get("file"),
+                    "feature_type": c.get("feature_type"),
+                    "evidence": c.get("evidence", []),
+                }
+                for c in (v4_out.get("claims") or [])
+            ],
+        }
+        audit_row.discipline = v4_out.get("discipline")
+        audit_row.scoring_version = 4
+        audit_row.forensics_data = v4_out.get("forensics")
+
+        # Project row: flip to verified + set authorship
+        project_row = session.query(Project).filter(
+            Project.id == uuid.UUID(project_id),
+        ).first()
+        if project_row is not None:
+            project_row.is_verified = True
+            project_row.verification_status = "VERIFIED"
+            project_row.authorship_percent = v4_out.get("authorship_percent") or 0.0
+
+            # TechTag rows — purge any stale ones, then (re)insert from V4
+            session.query(TechTag).filter(TechTag.project_id == project_row.id).delete()
+            stack = v4_out.get("stack") or {}
+            for lang in stack.get("languages") or []:
+                session.add(TechTag(project_id=project_row.id, name=lang, category=TagCategory.LANGUAGE))
+            for fw in stack.get("frameworks") or []:
+                session.add(TechTag(project_id=project_row.id, name=fw, category=TagCategory.FRAMEWORK))
+            for lib in stack.get("libs") or []:
+                session.add(TechTag(project_id=project_row.id, name=lib, category=TagCategory.LIBRARY))
+
         session.commit()
         log.info(
-            "[v4-shadow-bg] persisted shadow row for project_audit_id=%s succeeded=%s",
-            project_audit_id, payload.get("succeeded"),
+            "[v4-bg] V4 completed for project_id=%s score=%s tier=%s",
+            project_id, v4_out.get("repo_score"), v4_out.get("repo_tier"),
         )
     except Exception as e:  # noqa: BLE001
-        log.error("[v4-shadow-bg] DB write failed: %s", e)
+        log.error("[v4-bg] DB write failed: %s", e)
+        session.rollback()
+        _mark_project_rejected(project_id, f"db error: {e}")
+    finally:
+        session.close()
+
+
+def _mark_project_rejected(project_id: str, reason: str) -> None:
+    """Best-effort mark a pending project as rejected. Silent on errors."""
+    if SessionLocal is None:
+        return
+    session = SessionLocal()
+    try:
+        row = session.query(Project).filter(
+            Project.id == uuid.UUID(project_id),
+        ).first()
+        if row is not None:
+            row.verification_status = "REJECTED"
+            session.commit()
+            log.warning("[v4-bg] marked project_id=%s REJECTED: %s", project_id, reason)
+    except Exception as e:  # noqa: BLE001
+        log.error("[v4-bg] _mark_project_rejected failed: %s", e)
         session.rollback()
     finally:
         session.close()
@@ -134,131 +253,95 @@ async def import_project(
     req: ImportRequest,
     background_tasks: BackgroundTasks,
     db: Session = Depends(get_db),
-    audit_service: AuditService = Depends(get_audit_service),
 ):
-    # 0. Security: Get the real GitHub, username of the applicant
+    """Start a V4 audit. Returns immediately with a project_id; frontend polls
+    ``/status/{project_id}`` until V4 completes.
+
+    This is V4-primary — no V3 runs on /import. Authorship gating and score
+    computation happen inside the V4 pipeline itself.
+    """
+    # 0. Security: Get the real GitHub username of the applicant
     user = db.query(User).filter(User.id == req.user_id).first()
     if not user or not user.githubUsername:
-         raise HTTPException(status_code=400, detail="User not found or GitHub not connected")
-    
+        raise HTTPException(status_code=400, detail="User not found or GitHub not connected")
+
     applicant_username = user.githubUsername
 
-    # 1. CHECK CACHE FIRST
-    # Compute a hash of source-code files only (ignores README/docs/images)
-    code_hash = get_repo_code_hash(audit_service.ingestor, req.repo_url)
+    # 0.5 Dedup: if this user already has this repo imported, reuse the row.
+    # Without this, every click of "Audit" creates a fresh Project — the
+    # frontend ends up with duplicate cards and we waste LLM calls.
+    # Re-auditing intentionally is a separate /reaudit flow (not built yet).
+    existing = db.query(Project).filter(
+        Project.user_id == req.user_id,
+        Project.repo_url == req.repo_url,
+    ).first()
+    if existing is not None:
+        existing_audit = db.query(ProjectAudit).filter(
+            ProjectAudit.project_id == existing.id,
+        ).first()
+        log.info(
+            "[v4] /import dedup hit — returning existing project_id=%s status=%s",
+            existing.id, existing.verification_status,
+        )
+        # Status reflects what's already on the row:
+        #   VERIFIED (V4 done)  -> "ready"
+        #   PENDING             -> "pending" (poll for completion)
+        #   REJECTED            -> "failed"
+        status_map = {"VERIFIED": "ready", "PENDING": "pending", "REJECTED": "failed"}
+        return {
+            "status": status_map.get(existing.verification_status, "pending"),
+            "project_id": str(existing.id),
+            "project_audit_id": str(existing_audit.id) if existing_audit else None,
+            "pipeline_version": "v4",
+            "message": "Returning existing project — it was already imported.",
+            "deduped": True,
+        }
 
-    if code_hash:
-        # Check if we have a cached result for this code state
-        cached_result = AuditCacheService.get_cached_audit(db, req.repo_url, code_hash)
-        cached_report = (cached_result.get("report") or {}) if cached_result else {}
-        if cached_result and cached_report.get("score_breakdown"):
-            # Use cached V2 result - skip expensive AI audit
-            result = cached_result
-        else:
-            # No cache hit - run full audit
-            try:
-                result = await audit_service.run_audit(
-                    req.repo_url, req.user_id, req.project_type,
-                    req.target_claims, applicant_username
-                )
-                # Cache the result for future requests
-                if result.get("status") == "VERIFIED":
-                    AuditCacheService.cache_audit_result(db, req.repo_url, code_hash, result)
-            except Exception as e:
-                raise HTTPException(status_code=400, detail=str(e))
-    else:
-        # Couldn't compute code hash - run audit without caching
-        try:
-            result = await audit_service.run_audit(
-                req.repo_url, req.user_id, req.project_type, 
-                req.target_claims, applicant_username
-            )
-        except Exception as e:
-            raise HTTPException(status_code=400, detail=str(e))
-        
-    if result["status"] == "REJECTED":
-         raise HTTPException(status_code=400, detail=f"Project Rejected: {result['reason']}")
-
-    # 2. Save Project
-    # Extract Repo Name
+    # 1. Create pending Project + ProjectAudit rows. V4 background fills them in.
     repo_name = req.repo_url.split("/")[-1]
-    
     project = Project(
         user_id=req.user_id,
         repo_url=req.repo_url,
         repo_name=repo_name,
-        is_verified=True,
-        verification_status="VERIFIED",
-        authorship_percent=result["authorship"]
+        is_verified=False,
+        verification_status="PENDING",
+        authorship_percent=0.0,
     )
     db.add(project)
-    db.commit() # Get ID
+    db.commit()
     db.refresh(project)
-    
-    # 3. Save Audit
+
     audit = ProjectAudit(
         project_id=project.id,
-        tds_score=result["score"],
-        complexity_tier=result["tier"],
-        audit_report=result["report"],
-        # V2 fields
-        forensics_data=result.get("forensics_data"),
-        intent_signals=result.get("intent_signals"),
-        scoring_version=result.get("scoring_version", 1),
-        discipline=result.get("discipline"),
+        tds_score=None,
+        complexity_tier=None,
+        scoring_version=4,
     )
     db.add(audit)
-    
-    # 4. Save Tags
-    # Stack Tags
-    stack = result["stack"]
-    for lang in stack["languages"]:
-        db.add(TechTag(project_id=project.id, name=lang, category=TagCategory.LANGUAGE))
-    for fw in stack["frameworks"]:
-        db.add(TechTag(project_id=project.id, name=fw, category=TagCategory.FRAMEWORK))
-    for lib in stack["libs"]:
-        db.add(TechTag(project_id=project.id, name=lib, category=TagCategory.LIBRARY))
-        
-    # Domain Tags (From Features)
-    claims = result["report"].get("claims", [])
-    seen_domains = set()
-    for c in claims:
-        # Simple heuristic: Use feature name as Domain Tag for now
-        # In Prod, we'd double-pass Gemini to normalize "Real-time Chat" -> "Real-Time"
-        tag_name = c["feature"]
-        if tag_name not in seen_domains:
-            db.add(TechTag(project_id=project.id, name=tag_name, category=TagCategory.DOMAIN))
-            seen_domains.add(tag_name)
-
     db.commit()
     db.refresh(audit)
 
-    # ── V4 SHADOW RUN (feature-flagged) ──────────────────────────────────────
-    # V3 already produced the user-visible result above. If the flag is on,
-    # run V4 in a background task — non-blocking, writes to audit_v4_shadow.
-    # Errors here NEVER affect the user response.
-    try:
-        if get_settings().enable_v4_shadow:
-            background_tasks.add_task(
-                _run_v4_shadow_background,
-                str(audit.id),
-                req.repo_url,
-                applicant_username,
-            )
-            log.info("[v4-shadow] enqueued for project_audit_id=%s", audit.id)
-    except Exception as e:  # noqa: BLE001 — never break V3
-        log.error("[v4-shadow] failed to enqueue shadow task: %s", e)
+    # 2. Kick off V4 pipeline in the background. All downstream work
+    # (authorship, scoring, tags) happens inside this task.
+    background_tasks.add_task(
+        _run_v4_primary_background,
+        str(audit.id),
+        str(project.id),
+        req.repo_url,
+        applicant_username,
+    )
+    log.info(
+        "[v4] enqueued primary audit for project_id=%s audit_id=%s",
+        project.id, audit.id,
+    )
 
     return {
-        "status": "success",
+        "status": "pending",
         "project_id": str(project.id),
-        "score": result["score"],
-        "tier": result["tier"],
-        "scoringVersion": result.get("scoring_version", 1),
-        "discipline": result.get("discipline"),
-        "scoreBreakdown": result.get("report", {}).get("score_breakdown", {}),
-        "pipeline_version": result.get("pipeline_version", "v1"),
-        "evidence_file_count": result.get("evidence_file_count"),
+        "project_audit_id": str(audit.id),
+        "pipeline_version": "v4",
+        "message": "Deep analysis started — poll /status/{project_id} for completion.",
+        "deduped": False,
     }
 
 
@@ -331,13 +414,82 @@ async def audit_public(
     return _format_public_score(result, req.repo_url, from_cache=False)
 
 
+@router.get("/status/{project_id}")
+async def get_project_audit_status(
+    project_id: str,
+    db: Session = Depends(get_db),
+):
+    """Polling endpoint for the V4 async UX.
+
+    Returns a small payload the frontend can hit every ~15s after /import:
+    - ``v3_ready`` — V3 audit row exists (should always be true right after /import)
+    - ``v4_ready`` — V4 shadow task completed for this project
+    - ``v4_status`` — ``pending`` | ``ready`` | ``failed`` (derived)
+    - ``v4`` — the full V4 bundle when ready, matching the shape /me/projects uses
+
+    Once ``v4_ready=true`` the caller can stop polling.
+    """
+    try:
+        pid = uuid.UUID(project_id)
+    except (ValueError, TypeError):
+        raise HTTPException(status_code=400, detail="Invalid project_id")
+
+    audit = (
+        db.query(ProjectAudit)
+        .filter(ProjectAudit.project_id == pid)
+        .first()
+    )
+    if audit is None:
+        # No audit row yet — project may have been rejected or is mid-insert.
+        return {
+            "project_id": project_id,
+            "v3_ready": False,
+            "v4_ready": False,
+            "v4_status": "pending",
+            "v4": None,
+        }
+
+    v4_ready = audit.v4_output is not None and audit.v4_audited_at is not None
+
+    # `failed` signals "V4 shadow task errored" — we don't track that explicitly
+    # yet, but we can use a stale-heuristic: audit older than 20 min with no V4
+    # suggests the shadow task failed. Conservative for now.
+    v4_status = "ready" if v4_ready else "pending"
+    if not v4_ready and audit.audited_at is not None:
+        age = datetime.now(timezone.utc) - audit.audited_at.replace(
+            tzinfo=timezone.utc
+        ) if audit.audited_at.tzinfo is None else datetime.now(timezone.utc) - audit.audited_at
+        if age.total_seconds() > 20 * 60:
+            v4_status = "failed"
+
+    return {
+        "project_id": project_id,
+        "v3_ready": audit.tds_score is not None,
+        "v4_ready": v4_ready,
+        "v4_status": v4_status,
+        "v4": {
+            "score": audit.v4_score,
+            "tier": audit.v4_tier,
+            "output": audit.v4_output,
+            "audited_at": (
+                audit.v4_audited_at.isoformat() if audit.v4_audited_at else None
+            ),
+        } if v4_ready else None,
+    }
+
+
 @router.get("/score/{owner}/{repo}")
 async def get_public_score(
     owner: str,
     repo: str,
     db: Session = Depends(get_db),
 ):
-    """Lookup cached score for a repo. Powers /score/[owner]/[repo] page."""
+    """Lookup cached score for a repo. Powers /score/[owner]/[repo] page.
+
+    Returns V3 fields from ``audit_cache`` (always) and — when a verified
+    project exists for this repo with V4 data populated — also a ``v4``
+    block. Frontend prefers V4 when present.
+    """
     repo_url = f"https://github.com/{owner}/{repo}"
 
     entry = (
@@ -352,7 +504,7 @@ async def get_public_score(
     report = entry.audit_report or {}
     breakdown = report.get("score_breakdown", {})
 
-    return {
+    response = {
         "owner": owner,
         "repo": repo,
         "repo_url": repo_url,
@@ -369,6 +521,33 @@ async def get_public_score(
         "intent_signals": entry.intent_signals,
         "scored_at": entry.created_at.isoformat() if entry.created_at else None,
     }
+
+    # V4 augmentation — find the most recent verified project with V4 data
+    # for this repo. Applicant-specific scores, so "first verified" wins on
+    # the public page (essentially whoever claimed it).
+    v4_row = (
+        db.query(ProjectAudit)
+        .join(Project, ProjectAudit.project_id == Project.id)
+        .filter(
+            Project.repo_url == repo_url,
+            Project.is_verified == True,  # noqa: E712
+            ProjectAudit.v4_output.isnot(None),
+        )
+        .order_by(desc(ProjectAudit.v4_audited_at))
+        .first()
+    )
+    if v4_row is not None:
+        response["v4"] = {
+            "score": v4_row.v4_score,
+            "tier": v4_row.v4_tier,
+            "output": v4_row.v4_output,
+            "audited_at": (
+                v4_row.v4_audited_at.isoformat()
+                if v4_row.v4_audited_at else None
+            ),
+        }
+
+    return response
 
 
 @router.get("/recent-scores")
