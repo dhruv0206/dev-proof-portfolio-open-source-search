@@ -660,7 +660,7 @@ function SummaryHeader({ result }: { result: V4DiagnosticResponse }) {
 function GraphStatsCard({
     stats,
 }: {
-    stats: V4DiagnosticResponse['graph_stats'];
+    stats: NonNullable<V4DiagnosticResponse['graph_stats']>;
 }) {
     const total =
         stats.coverage.ast +
@@ -760,7 +760,7 @@ function StatTile({ label, value }: { label: string; value: number }) {
 function ImportanceTable({
     importance,
 }: {
-    importance: V4DiagnosticResponse['importance'];
+    importance: NonNullable<V4DiagnosticResponse['importance']>;
 }) {
     return (
         <Card>
