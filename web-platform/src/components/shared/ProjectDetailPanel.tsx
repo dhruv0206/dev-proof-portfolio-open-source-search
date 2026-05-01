@@ -82,7 +82,7 @@ export function ProjectDetailPanel({ project, open, onClose }: ProjectDetailPane
 
     return (
         <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
-            <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="!max-w-4xl max-h-[90vh] overflow-y-auto overflow-x-hidden">
                 <DialogHeader>
                     {/* Header */}
                     <div className="flex items-start justify-between gap-3">
@@ -141,7 +141,7 @@ export function ProjectDetailPanel({ project, open, onClose }: ProjectDetailPane
                             <h3 className="text-sm font-medium text-muted-foreground mb-3">
                                 Score Breakdown
                             </h3>
-                            <div className="h-[250px]">
+                            <div className="h-[260px] max-w-md mx-auto">
                                 <ScoreBreakdownChart
                                     features={displayBreakdown.feature_score}
                                     architecture={displayBreakdown.architecture_score}

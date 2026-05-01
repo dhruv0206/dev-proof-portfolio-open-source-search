@@ -9,6 +9,17 @@
 export type RepoTierV4 = 'TIER_1_UI' | 'TIER_2_LOGIC' | 'TIER_3_DEEP';
 export type FeatureType = 'WRAPPER' | 'COMPLEX' | 'CUSTOM';
 export type SkillDepth = 'BEGINNER' | 'WORKING' | 'PROFICIENT' | 'EXPERT';
+/**
+ * Architectural layer of a claim's evidence — used by the post-LLM tier cap.
+ * UI claims cap at TIER_2_LOGIC because AI can one-shot most UI work; only
+ * non-UI Tier 3 unlocks the 90+ score band.
+ */
+export type ClaimLayer =
+    | 'UI'
+    | 'APP_LOGIC'
+    | 'SERVICE'
+    | 'INFRA'
+    | 'SYSTEMS';
 export type ErrorHandlingMode = 'explicit' | 'partial' | 'absent';
 export type PatternArchType = 'STANDARD' | 'ADVANCED';
 export type EvidenceRole =
@@ -54,6 +65,32 @@ export interface Claim {
     confidence: number;
     cross_file: boolean;
     grouping_signal: string | null;
+    /** Architectural layer of evidence files; null on legacy audits before v4.1. */
+    layer?: ClaimLayer | null;
+    /**
+     * True when the post-LLM tier cap downgraded this claim (e.g. UI-only
+     * Deep-Tech claim demoted to TIER_2_LOGIC). Surface as a badge so
+     * hiring managers see the algorithmic correction.
+     */
+    layer_capped?: boolean;
+    /**
+     * True when the SDK-glue cap downgraded this claim — evidence is
+     * dominated by external-SDK orchestration (>50% of meaningful lines).
+     * Distinct from ``layer_capped`` (which fires on UI-only evidence).
+     */
+    sdk_glue_capped?: boolean;
+    /**
+     * External SDK packages detected in this claim's evidence files
+     * (e.g. ``['twilio', 'livekit']``). Used for transparency in the UI.
+     */
+    sdk_packages_used?: string[];
+    /**
+     * LLM-extracted "Chose X over Y because Z (file:lines)" decisions
+     * visible in code or comments. The judgment signal — what hiring
+     * managers actually want to see, beyond "this person built X."
+     * Empty list is correct when no real tradeoff is visible.
+     */
+    tradeoffs?: string[];
 }
 
 export interface ArchitecturePatternV4 {

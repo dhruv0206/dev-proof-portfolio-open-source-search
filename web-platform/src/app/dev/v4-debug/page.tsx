@@ -39,6 +39,13 @@ import {
 } from '@/components/ui/table';
 import { useSession } from '@/lib/auth-client';
 import {
+    LayerBadge,
+    LayerCappedBadge,
+    SdkGlueCappedBadge,
+    SdkPackageList,
+    TradeoffsPanel,
+} from '@/components/v4/badges';
+import {
     AlertCircle,
     AlertTriangle,
     Check,
@@ -93,6 +100,7 @@ interface OwnershipBlock {
 type RepoTier = 'TIER_1_UI' | 'TIER_2_LOGIC' | 'TIER_3_DEEP';
 type FeatureType = 'WRAPPER' | 'COMPLEX' | 'CUSTOM';
 type SkillDepth = 'BEGINNER' | 'WORKING' | 'PROFICIENT' | 'EXPERT';
+type ClaimLayer = 'UI' | 'APP_LOGIC' | 'SERVICE' | 'INFRA' | 'SYSTEMS';
 type ErrorHandlingMode = 'explicit' | 'partial' | 'absent';
 type PatternArchType = 'STANDARD' | 'ADVANCED';
 type EvidenceRole =
@@ -138,6 +146,26 @@ interface Claim {
     confidence: number;
     cross_file: boolean;
     grouping_signal: string | null;
+    /** Architectural layer of evidence files (post-LLM classification). */
+    layer?: ClaimLayer | null;
+    /**
+     * True when the layer-aware tier cap downgraded this claim — e.g. a
+     * UI-only Deep-Tech claim demoted to TIER_2_LOGIC because AI can
+     * one-shot most UI work.
+     */
+    layer_capped?: boolean;
+    /**
+     * True when the SDK-glue cap downgraded this claim — evidence is
+     * dominated by external-SDK orchestration (>50% of meaningful lines).
+     */
+    sdk_glue_capped?: boolean;
+    /** External SDK packages detected in evidence files (e.g. ['twilio']). */
+    sdk_packages_used?: string[];
+    /**
+     * LLM-extracted "Chose X over Y because Z" decisions visible in code.
+     * The judgment signal — what hiring managers actually want to see.
+     */
+    tradeoffs?: string[];
 }
 
 interface ArchitecturePatternV4 {
@@ -1225,6 +1253,9 @@ function TierBadge({ tier }: { tier: RepoTier }) {
     );
 }
 
+// Badges (LayerBadge, LayerCappedBadge, SdkGlueCappedBadge, SdkPackageChip)
+// imported from @/components/v4/badges so production surfaces share them.
+
 function FeatureTypeChip({ type }: { type: FeatureType }) {
     return (
         <span
@@ -1419,12 +1450,20 @@ function ClaimCard({ claim }: { claim: Claim }) {
                 <div className="flex flex-wrap items-center gap-1.5">
                     <TierBadge tier={claim.tier} />
                     <FeatureTypeChip type={claim.feature_type} />
+                    {claim.layer && <LayerBadge layer={claim.layer} />}
+                    {claim.layer_capped && <LayerCappedBadge />}
+                    {claim.sdk_glue_capped && <SdkGlueCappedBadge />}
                     {claim.cross_file && claim.grouping_signal && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded border border-dashed text-[10px] font-mono text-muted-foreground">
                             {claim.grouping_signal}
                         </span>
                     )}
                 </div>
+                {claim.sdk_packages_used && claim.sdk_packages_used.length > 0 && (
+                    <div className="mt-1">
+                        <SdkPackageList packages={claim.sdk_packages_used} />
+                    </div>
+                )}
             </div>
 
             {claim.tier_reasoning && (
@@ -1432,6 +1471,8 @@ function ClaimCard({ claim }: { claim: Claim }) {
                     {claim.tier_reasoning}
                 </div>
             )}
+
+            {claim.tradeoffs && <TradeoffsPanel tradeoffs={claim.tradeoffs} />}
 
             {claim.skills_demonstrated.length > 0 && (
                 <div>

@@ -4,6 +4,7 @@ import { ScoreRadial } from '@/components/shared/ScoreRadial';
 import { ScoreBreakdownChart } from '@/components/shared/ScoreBreakdownChart';
 import { ArchitecturePatternsSection } from '@/components/shared/ArchitecturePatternsSection';
 import { SkillsDemonstratedSection } from '@/components/shared/SkillsDemonstratedSection';
+import { VerifiedClaimsSection } from '@/components/shared/VerifiedClaimsSection';
 import { ExternalLink, Github, ArrowRight, Share2, CheckCircle2, XCircle, Clock, Copy, Check } from 'lucide-react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
@@ -253,8 +254,21 @@ export function PublicScorePage({ data }: { data: ScoreData }) {
                     </motion.div>
                 )}
 
-                {/* Verified Features */}
-                {data.claims && data.claims.length > 0 && (
+                {/* Verified Features
+                    V4 path: render via VerifiedClaimsSection so layer/SDK
+                    badges + "Why X over Y" tradeoffs panel propagate to the
+                    public score page. Falls back to the V3-shape flat list
+                    for projects audited before the V4 flip. */}
+                {v4 && v4.claims && v4.claims.length > 0 ? (
+                    <motion.div
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.3 }}
+                        className="p-6 rounded-xl border border-border bg-card mb-8"
+                    >
+                        <VerifiedClaimsSection claims={v4.claims} />
+                    </motion.div>
+                ) : data.claims && data.claims.length > 0 ? (
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -294,7 +308,7 @@ export function PublicScorePage({ data }: { data: ScoreData }) {
                             })}
                         </div>
                     </motion.div>
-                )}
+                ) : null}
 
                 {/* V4-exclusive: Architecture Patterns + Skills */}
                 {v4 && (

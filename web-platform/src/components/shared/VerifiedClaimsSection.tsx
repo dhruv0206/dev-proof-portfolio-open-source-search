@@ -4,6 +4,11 @@ import { useState } from 'react';
 import type { Claim, FeatureType, RepoTierV4 } from '@/lib/types/v4-output';
 import { Badge } from '@/components/ui/badge';
 import {
+    ClaimAlgorithmicBadges,
+    SdkPackageList,
+    TradeoffsPanel,
+} from '@/components/v4/badges';
+import {
     CheckCircle2,
     ChevronDown,
     ChevronRight,
@@ -89,9 +94,9 @@ function ClaimRow({ claim }: { claim: Claim }) {
                 className="w-full flex items-start gap-2 text-sm px-3 py-2 text-left hover:bg-muted/30 transition-colors disabled:hover:bg-transparent disabled:cursor-default"
             >
                 <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 overflow-hidden">
                     <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium">{claim.feature}</span>
+                        <span className="font-medium break-words">{claim.feature}</span>
                         <Badge
                             variant="outline"
                             className={`text-[10px] uppercase tracking-wider px-1.5 py-0 ${FEATURE_TYPE_STYLE[claim.feature_type]}`}
@@ -108,6 +113,7 @@ function ClaimRow({ claim }: { claim: Claim }) {
                                 Cross-file
                             </Badge>
                         )}
+                        <ClaimAlgorithmicBadges claim={claim} />
                     </div>
                     {claim.evidence && claim.evidence.length > 0 && (
                         <p className="text-[11px] text-muted-foreground font-mono mt-0.5 truncate">
@@ -133,6 +139,12 @@ function ClaimRow({ claim }: { claim: Claim }) {
                             {claim.tier_reasoning}
                         </p>
                     )}
+                    {claim.tradeoffs && (
+                        <TradeoffsPanel tradeoffs={claim.tradeoffs} />
+                    )}
+                    {claim.sdk_packages_used && claim.sdk_packages_used.length > 0 && (
+                        <SdkPackageList packages={claim.sdk_packages_used} />
+                    )}
                     {claim.evidence && claim.evidence.length > 0 && (
                         <div className="space-y-1">
                             <p className="text-[10px] uppercase tracking-wider text-muted-foreground/70">
@@ -142,10 +154,10 @@ function ClaimRow({ claim }: { claim: Claim }) {
                                 {claim.evidence.map((e, i) => (
                                     <li
                                         key={`${e.file}-${i}`}
-                                        className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground"
+                                        className="flex items-center gap-2 text-[11px] font-mono text-muted-foreground min-w-0"
                                     >
                                         <FileCode className="h-3 w-3 shrink-0" />
-                                        <span className="truncate" title={`${e.file}:${e.lines[0]}-${e.lines[1]}`}>
+                                        <span className="min-w-0 flex-1 truncate" title={`${e.file}:${e.lines[0]}-${e.lines[1]}`}>
                                             {e.file}
                                             <span className="text-muted-foreground/60">:{e.lines[0]}-{e.lines[1]}</span>
                                         </span>
