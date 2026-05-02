@@ -3,6 +3,8 @@ import { headers } from 'next/headers';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { DashboardContent } from '@/components/dashboard/DashboardContent';
 import { AuthRequiredModal } from '@/components/shared/AuthRequiredModal';
+import { DualAxisHero } from '@/components/profile/DualAxisHero';
+import { ShareScoreButton } from '@/components/profile/ShareScoreButton';
 
 export default async function DashboardPage() {
     const session = await auth.api.getSession({
@@ -20,15 +22,26 @@ export default async function DashboardPage() {
         );
     }
 
+    const githubUsername = session.user.name;
+
     return (
         <DashboardLayout>
             <main className="w-full px-6 lg:px-8 py-6">
-                <div className="mb-6">
-                    <h1 className="text-2xl font-semibold">Dashboard</h1>
-                    <p className="text-sm text-muted-foreground mt-1">
-                        Your development overview and progress
-                    </p>
+                <div className="mb-6 flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                        <h1 className="text-2xl font-semibold">Dashboard</h1>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Your development overview and progress
+                        </p>
+                    </div>
+                    {githubUsername && <ShareScoreButton username={githubUsername} />}
                 </div>
+
+                {githubUsername && (
+                    <section className="mb-8">
+                        <DualAxisHero username={githubUsername} />
+                    </section>
+                )}
 
                 <DashboardContent userId={session.user.id} />
             </main>

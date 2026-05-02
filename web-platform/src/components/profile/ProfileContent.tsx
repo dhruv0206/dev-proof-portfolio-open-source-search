@@ -22,11 +22,10 @@ import {
 import { ProjectShowcaseCard } from '@/components/shared/ProjectShowcaseCard';
 import { ProjectDetailPanel } from '@/components/shared/ProjectDetailPanel';
 import type { ProjectProps } from '@/components/shared/ProjectShowcaseCard';
-import { ProfileScoreHero } from '@/components/profile/ProfileScoreHero';
 import { DualAxisHero } from '@/components/profile/DualAxisHero';
 import { ContributionHeatmap } from '@/components/profile/ContributionHeatmap';
 import { TechStackSection } from '@/components/profile/TechStackSection';
-import { getBestProject, aggregateTechStack } from '@/lib/profileUtils';
+import { aggregateTechStack } from '@/lib/profileUtils';
 
 interface ProfileData {
     profile: {
@@ -193,13 +192,7 @@ export function ProfileContent({ username }: ProfileContentProps) {
     const verifiedProjects = data?.verifiedProjects ?? [];
     const contributions = data?.contributions ?? [];
 
-    const bestProject = useMemo(() => getBestProject(verifiedProjects), [verifiedProjects]);
     const techStack = useMemo(() => aggregateTechStack(verifiedProjects), [verifiedProjects]);
-    const disciplines = useMemo(() => {
-        const set = new Set<string>();
-        verifiedProjects.forEach(p => { if (p.discipline) set.add(p.discipline); });
-        return Array.from(set);
-    }, [verifiedProjects]);
 
     if (loading) {
         return (
@@ -409,16 +402,8 @@ export function ProfileContent({ username }: ProfileContentProps) {
                 </div>
             </div>
 
-            {/* Dual-axis score hero — Phase 4.5 */}
+            {/* Dual-axis score hero — Phase 4.5 (replaces legacy ProfileScoreHero) */}
             <DualAxisHero username={username} />
-
-            {/* Legacy single-axis project hero — kept below the dual-axis
-                until we deprecate it cleanly. */}
-            <ProfileScoreHero
-                bestProject={bestProject}
-                disciplines={disciplines}
-                projectCount={verifiedProjects.length}
-            />
 
             {/* Stats Grid */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
