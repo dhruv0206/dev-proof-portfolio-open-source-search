@@ -80,6 +80,12 @@ export interface Claim {
      */
     sdk_glue_capped?: boolean;
     /**
+     * True when the rule-9 cap downgraded this claim — TIER_3_DEEP was
+     * claimed but tier_reasoning didn't cite a rule-5 (a)-(f) sub-criterion.
+     * Catches "this is interesting design therefore it's deep" over-promotion.
+     */
+    rule9_capped?: boolean;
+    /**
      * External SDK packages detected in this claim's evidence files
      * (e.g. ``['twilio', 'livekit']``). Used for transparency in the UI.
      */

@@ -66,6 +66,17 @@ export function SdkGlueCappedBadge() {
     );
 }
 
+export function Rule9CappedBadge() {
+    return (
+        <span
+            className="inline-flex items-center px-1.5 py-0.5 rounded border text-[10px] font-medium uppercase bg-yellow-500/10 text-yellow-700 border-yellow-500/30 dark:text-yellow-400"
+            title="Tier was reduced by rule-9 enforcement — the LLM tagged this TIER_3_DEEP but its reasoning didn't explicitly cite one of the rule-5 (a)-(f) sub-criteria (novel algorithm / distributed primitive / custom protocol / performance-critical / compiled cross-file / systems-level). Generic phrases like 'complex orchestration' aren't sufficient evidence for Engineering Depth."
+        >
+            Rule-9-Capped
+        </span>
+    );
+}
+
 // ─── SDK package chip ────────────────────────────────────────────────────
 
 export function SdkPackageChip({ pkg }: { pkg: string }) {
@@ -127,6 +138,7 @@ export function ClaimAlgorithmicBadges({ claim }: { claim: Claim }) {
             {claim.layer && <LayerBadge layer={claim.layer} />}
             {claim.layer_capped && <LayerCappedBadge />}
             {claim.sdk_glue_capped && <SdkGlueCappedBadge />}
+            {claim.rule9_capped && <Rule9CappedBadge />}
         </>
     );
 }

@@ -41,6 +41,7 @@ import { useSession } from '@/lib/auth-client';
 import {
     LayerBadge,
     LayerCappedBadge,
+    Rule9CappedBadge,
     SdkGlueCappedBadge,
     SdkPackageList,
     TradeoffsPanel,
@@ -159,6 +160,11 @@ interface Claim {
      * dominated by external-SDK orchestration (>50% of meaningful lines).
      */
     sdk_glue_capped?: boolean;
+    /**
+     * True when rule-9 enforcement demoted this claim — TIER_3_DEEP was
+     * claimed but tier_reasoning didn't cite a rule-5 (a)-(f) sub-criterion.
+     */
+    rule9_capped?: boolean;
     /** External SDK packages detected in evidence files (e.g. ['twilio']). */
     sdk_packages_used?: string[];
     /**
@@ -1453,6 +1459,7 @@ function ClaimCard({ claim }: { claim: Claim }) {
                     {claim.layer && <LayerBadge layer={claim.layer} />}
                     {claim.layer_capped && <LayerCappedBadge />}
                     {claim.sdk_glue_capped && <SdkGlueCappedBadge />}
+                    {claim.rule9_capped && <Rule9CappedBadge />}
                     {claim.cross_file && claim.grouping_signal && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded border border-dashed text-[10px] font-mono text-muted-foreground">
                             {claim.grouping_signal}
