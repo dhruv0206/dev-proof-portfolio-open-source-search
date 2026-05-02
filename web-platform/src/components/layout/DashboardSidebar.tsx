@@ -13,7 +13,8 @@ import {
     PanelLeftOpen,
     Menu,
     Code,
-    Linkedin
+    Linkedin,
+    ShieldCheck,
 } from 'lucide-react';
 import { useSession, signIn, signOut } from '@/lib/auth-client';
 import { useSidebar } from '@/components/layout/SidebarContext';
@@ -50,6 +51,11 @@ const menuItems = [
         name: 'Profile',
         icon: UserCircle,
         href: '/profile',
+    },
+    {
+        name: 'GitHub Access',
+        icon: ShieldCheck,
+        href: '/settings/github',
     },
     {
         name: 'Settings',

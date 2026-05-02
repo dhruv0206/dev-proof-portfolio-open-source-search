@@ -248,6 +248,64 @@ def _mark_project_rejected(project_id: str, reason: str) -> None:
         session.close()
 
 
+def _check_repo_accessibility(repo_url: str) -> tuple[bool, str | None]:
+    """Quick pre-check: is the repo accessible to our backend's GitHub token?
+
+    Returns ``(accessible, error_code)`` where ``error_code`` is one of:
+    - ``"private_repo_no_access"`` — repo exists but is private (or visibility
+      requires a token scope we don't have)
+    - ``"repo_not_found"`` — URL points to nothing (typo, deleted, never existed)
+    - ``"repo_check_failed"`` — network or rate-limit issue; let the audit try
+    - ``None`` — repo is public and accessible
+    """
+    import re
+    from devproof_ranking_algo.ingestor import GithubIngestor
+
+    m = re.search(r"github\.com/([^/]+)/([^/]+?)(?:\.git)?/?$", repo_url)
+    if not m:
+        return False, "invalid_url"
+    owner, name = m.group(1), m.group(2)
+
+    try:
+        ingestor = GithubIngestor()
+    except Exception as e:  # noqa: BLE001
+        log.warning("[import-precheck] GithubIngestor init failed: %s", e)
+        return True, None  # let the audit try; don't block on infra issues
+
+    try:
+        repo = ingestor.g.get_repo(f"{owner}/{name}")
+        # If we can read the repo and it's not private — green light.
+        if getattr(repo, "private", False):
+            return False, "private_repo_no_access"
+        return True, None
+    except Exception as e:  # noqa: BLE001
+        msg = str(e).lower()
+        # PyGithub raises GithubException with status code; check the message.
+        if "404" in msg or "not found" in msg:
+            # 404 from GitHub on an unauth/insufficient-scope token returns
+            # the same code for both "doesn't exist" and "private without
+            # access" — we can't distinguish. Default to the access path
+            # since that's the more common case for a user trying to import.
+            return False, "private_repo_no_access"
+        if "403" in msg or "forbidden" in msg:
+            return False, "private_repo_no_access"
+        log.warning("[import-precheck] unexpected error checking %s: %s", repo_url, e)
+        return True, None  # fail open — let the audit try
+
+
+_PRIVATE_REPO_ERROR_DETAIL = {
+    "error_code": "private_repo_no_access",
+    "title": "We can't access this repository",
+    "message": (
+        "This repo appears to be private — or it doesn't exist on GitHub. "
+        "DevProof currently only audits public repos. To audit a private "
+        "repo, we'd need broader GitHub permissions; visit Settings → "
+        "GitHub Access to grant repo-read access (coming soon)."
+    ),
+    "fix_action": "grant_repo_scope",
+}
+
+
 @router.post("/import")
 async def import_project(
     req: ImportRequest,
@@ -266,6 +324,23 @@ async def import_project(
         raise HTTPException(status_code=400, detail="User not found or GitHub not connected")
 
     applicant_username = user.githubUsername
+
+    # 0.1 Pre-check: is the repo accessible at all? Fail fast on private/404
+    # so we don't burn 5 minutes of audit only to mark it REJECTED with a
+    # generic error. Surfaces structured ``error_code`` so the frontend can
+    # render the right fix-flow UI.
+    accessible, error_code = _check_repo_accessibility(req.repo_url)
+    if not accessible:
+        if error_code == "private_repo_no_access":
+            raise HTTPException(status_code=403, detail=_PRIVATE_REPO_ERROR_DETAIL)
+        if error_code == "invalid_url":
+            raise HTTPException(status_code=400, detail={
+                "error_code": "invalid_url",
+                "title": "Repository URL doesn't look right",
+                "message": "Expected something like https://github.com/owner/repo.",
+            })
+        # Unknown error — fall through and let the audit try; it'll fail
+        # with a clearer reason if we hit it again.
 
     # 0.5 Dedup: if this user already has this repo imported, reuse the row.
     # Without this, every click of "Audit" creates a fresh Project — the

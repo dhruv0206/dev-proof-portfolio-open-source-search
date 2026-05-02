@@ -19,6 +19,11 @@ export const auth = betterAuth({
     github: {
       clientId: process.env.GITHUB_CLIENT_ID as string,
       clientSecret: process.env.GITHUB_CLIENT_SECRET as string,
+      // Default scopes — enough to read public profile + email + public repos.
+      // Private-repo access is upgraded explicitly via /settings/github
+      // (the "Grant private repo access" flow re-runs OAuth with repo scope
+      // so existing users aren't surprise-promoted to a broader grant).
+      scope: ["read:user", "user:email"],
       // Map GitHub profile to user fields
       mapProfileToUser: (profile) => {
         return {

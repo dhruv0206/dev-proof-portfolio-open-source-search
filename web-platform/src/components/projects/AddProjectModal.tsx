@@ -67,6 +67,14 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
     const [selectedClaims, setSelectedClaims] = useState<string[]>([])
     const [claimsReviewed, setClaimsReviewed] = useState(false)
     const [rejectionReason, setRejectionReason] = useState<string | null>(null)
+    // Structured error for private repos / invalid URLs / etc. When set,
+    // we render a friendly fix-flow card instead of the generic alert.
+    const [structuredError, setStructuredError] = useState<{
+        error_code: string;
+        title: string;
+        message: string;
+        fix_action?: string;
+    } | null>(null)
 
     // New Progress State
     const [isAuditing, setIsAuditing] = useState(false)
@@ -254,7 +262,18 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
             })
 
             const data = await res.json()
-            if (!res.ok) throw new Error(data.detail)
+            if (!res.ok) {
+                // Structured error: backend returns { detail: { error_code, title, message, fix_action? } }
+                // for known fixable cases (private repo, invalid URL, etc.)
+                if (data.detail && typeof data.detail === 'object' && data.detail.error_code) {
+                    if (progressInterval.current) clearInterval(progressInterval.current)
+                    setStructuredError(data.detail)
+                    setIsAuditing(false)
+                    return
+                }
+                // Plain string — fall through to legacy error handling.
+                throw new Error(typeof data.detail === 'string' ? data.detail : 'Audit failed')
+            }
 
             // Log V2 pipeline info
             console.log(`%c[DevProof Audit] Pipeline: ${data.pipeline_version || 'v1'} | Evidence files: ${data.evidence_file_count || 'N/A'} | Score: ${data.score} | Tier: ${data.tier}`, 'color: #10b981; font-weight: bold;')
@@ -294,6 +313,7 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
         setSelectedClaims([])
         setStatusText("")
         setRejectionReason(null)
+        setStructuredError(null)
         setIsContributor(false)
         setIsContributionDetected(false)
         setConfirmedContribution(false)
@@ -461,6 +481,31 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
                         <p className="text-xs text-center text-muted-foreground/60 pt-4">
                             You can close this window. The audit will continue in the background.
                         </p>
+                    </div>
+                ) : structuredError ? (
+                    // STRUCTURED-ERROR VIEW (private repo, invalid URL, etc.)
+                    <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
+                        <div className="w-16 h-16 bg-amber-100 rounded-full flex items-center justify-center">
+                            <ShieldCheck className="w-8 h-8 text-amber-600" />
+                        </div>
+                        <div className="space-y-2 max-w-md">
+                            <h3 className="font-bold text-lg text-amber-700">{structuredError.title}</h3>
+                            <p className="text-sm text-muted-foreground px-4 leading-relaxed">
+                                {structuredError.message}
+                            </p>
+                        </div>
+                        {structuredError.fix_action === "grant_repo_scope" && (
+                            <div className="bg-blue-50 dark:bg-blue-950/30 p-4 rounded-md text-sm text-blue-800 dark:text-blue-200 mt-2 mx-4 max-w-md flex flex-col gap-3 items-start text-left">
+                                <div className="flex gap-2 items-start">
+                                    <AlertTriangle className="w-4 h-4 mt-0.5 shrink-0" />
+                                    <span>
+                                        <strong>Want to audit private repos?</strong>{" "}
+                                        Visit <a href="/settings/github" className="underline hover:no-underline">Settings → GitHub Access</a>{" "}
+                                        to grant DevProof read-access to your private repos. (Coming soon — currently only public repos are supported.)
+                                    </span>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 ) : rejectionReason ? (
                     // REJECTION VIEW
