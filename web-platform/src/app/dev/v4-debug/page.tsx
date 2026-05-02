@@ -802,12 +802,19 @@ function ImportanceTable({
                 <div className="flex flex-wrap items-start justify-between gap-2">
                     <div>
                         <CardTitle className="text-base">
-                            Importance — Top 20
+                            Graph Centrality — Top 20
                         </CardTitle>
                         <CardDescription className="mt-1">
                             Core set: {importance.core_set_size} · Periphery:{' '}
                             {importance.periphery_size}
                         </CardDescription>
+                        <p className="mt-2 max-w-2xl text-xs text-muted-foreground">
+                            Files ranked by graph signals (PageRank, complexity,
+                            entry points). This is a code-archaeology view —{' '}
+                            <span className="text-foreground/80">it does NOT drive the score</span>.
+                            The score comes from the Claims section below, which targets the
+                            files the LLM identified as engineering work.
+                        </p>
                     </div>
                     <WeightsPopover weights={importance.weights_used} />
                 </div>
