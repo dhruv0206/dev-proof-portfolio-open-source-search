@@ -144,6 +144,41 @@ export const FIXTURE_DHRUV: PersonScore = {
         },
         // ... shortened for brevity; UI handles "+ N more skipped" gracefully
     ],
+    skills: [
+        { skill_id: 'typescript', repo_count: 5 },
+        { skill_id: 'typescript.next', repo_count: 3 },
+        { skill_id: 'typescript.react', repo_count: 3 },
+        { skill_id: 'python', repo_count: 2 },
+        { skill_id: 'python.fastapi', repo_count: 2 },
+        { skill_id: 'rtc.livekit', repo_count: 2 },
+        { skill_id: 'ai.gemini', repo_count: 2 },
+        { skill_id: 'pattern.streaming-sse', repo_count: 1 },
+        { skill_id: 'pattern.api-integration', repo_count: 4 },
+        { skill_id: 'infra.docker', repo_count: 2 },
+    ],
+    oss_contributions: {
+        contribution_score: 18,
+        total_merged_prs: 2,
+        unique_orgs: 2,
+        total_recipient_stars: 1_400,
+        top_contributions: [
+            {
+                pr_url: 'https://github.com/example/popular-lib/pull/42',
+                pr_title: 'fix: handle null upstream gracefully',
+                recipient_repo: 'example/popular-lib',
+                recipient_stars: 1_200,
+                age_years: 1.2,
+            },
+            {
+                pr_url: 'https://github.com/example/utils/pull/9',
+                pr_title: 'docs: clarify async usage',
+                recipient_repo: 'example/utils',
+                recipient_stars: 200,
+                age_years: 0.6,
+            },
+        ],
+        errors: [],
+    },
 };
 
 // ─── Sindre-Sorhus-style high-reach-low-depth ─────────────────────────────────
@@ -277,6 +312,36 @@ export const FIXTURE_SINDRESORHUS: PersonScore = {
             skip_reason: null,
         },
     ],
+    skills: [
+        { skill_id: 'javascript', repo_count: 5 },
+        { skill_id: 'typescript', repo_count: 3 },
+        { skill_id: 'pattern.api-integration', repo_count: 5 },
+        { skill_id: 'javascript.async', repo_count: 4 },
+        { skill_id: 'pattern.middleware', repo_count: 2 },
+    ],
+    oss_contributions: {
+        contribution_score: 88,
+        total_merged_prs: 47,
+        unique_orgs: 31,
+        total_recipient_stars: 1_280_000,
+        top_contributions: [
+            {
+                pr_url: 'https://github.com/nodejs/node/pull/12345',
+                pr_title: 'fix(stream): correctly propagate backpressure',
+                recipient_repo: 'nodejs/node',
+                recipient_stars: 110_000,
+                age_years: 1.8,
+            },
+            {
+                pr_url: 'https://github.com/microsoft/typescript/pull/4321',
+                pr_title: 'feat: improve type inference for chained pipes',
+                recipient_repo: 'microsoft/typescript',
+                recipient_stars: 102_000,
+                age_years: 2.1,
+            },
+        ],
+        errors: [],
+    },
 };
 
 export const FIXTURE_PROFILES: Record<string, PersonScore> = {

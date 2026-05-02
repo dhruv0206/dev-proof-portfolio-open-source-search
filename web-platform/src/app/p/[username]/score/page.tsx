@@ -19,6 +19,7 @@ import type { PersonScore, PersonRepoSummary } from '@/lib/types/person-output';
 import {
     ExternalLink, Github, Star, GitFork, Calendar, Code,
     AlertCircle, TrendingUp, Layers, ArrowRight, Loader2,
+    GitMerge, Users, Tag,
 } from 'lucide-react';
 
 
@@ -402,6 +403,109 @@ export default function PersonScorePage({
                         </div>
                     )}
                 </section>
+
+                {/* OSS contribution graph (Phase 4.4) */}
+                {profile.oss_contributions && profile.oss_contributions.total_merged_prs > 0 && (
+                    <section className="mb-10">
+                        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 inline-flex items-center gap-2">
+                            <GitMerge className="h-4 w-4" />
+                            OSS contributions
+                        </h2>
+                        <div className="rounded-lg border p-4">
+                            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4 pb-4 border-b border-border/50">
+                                <div>
+                                    <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Score</div>
+                                    <div className="text-2xl font-bold font-mono text-emerald-600 dark:text-emerald-400">
+                                        {profile.oss_contributions.contribution_score}
+                                        <span className="text-sm font-normal opacity-60"> / 100</span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Merged PRs</div>
+                                    <div className="text-2xl font-bold font-mono">
+                                        {profile.oss_contributions.total_merged_prs}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1 inline-flex items-center gap-1">
+                                        <Users className="h-3 w-3" /> Orgs
+                                    </div>
+                                    <div className="text-2xl font-bold font-mono">
+                                        {profile.oss_contributions.unique_orgs}
+                                    </div>
+                                </div>
+                                <div>
+                                    <div className="text-xs uppercase tracking-wider text-muted-foreground mb-1 inline-flex items-center gap-1">
+                                        <Star className="h-3 w-3" /> Recipient stars
+                                    </div>
+                                    <div className="text-2xl font-bold font-mono">
+                                        {profile.oss_contributions.total_recipient_stars.toLocaleString()}
+                                    </div>
+                                </div>
+                            </div>
+                            {profile.oss_contributions.top_contributions.length > 0 && (
+                                <div>
+                                    <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+                                        Top merged PRs
+                                    </div>
+                                    <ul className="space-y-1.5">
+                                        {profile.oss_contributions.top_contributions.slice(0, 5).map((c) => (
+                                            <li key={c.pr_url} className="flex items-center justify-between gap-3 text-sm">
+                                                <a
+                                                    href={c.pr_url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="truncate hover:underline flex-1 min-w-0"
+                                                    title={c.pr_title}
+                                                >
+                                                    <span className="font-mono text-xs text-muted-foreground mr-2">
+                                                        {c.recipient_repo}
+                                                    </span>
+                                                    {c.pr_title}
+                                                </a>
+                                                <span className="shrink-0 text-xs text-muted-foreground font-mono inline-flex items-center gap-1">
+                                                    <Star className="h-3 w-3" />
+                                                    {c.recipient_stars.toLocaleString()}
+                                                </span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
+                    </section>
+                )}
+
+                {/* Skills (Phase 4.6) */}
+                {profile.skills && profile.skills.length > 0 && (
+                    <section className="mb-10">
+                        <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-3 inline-flex items-center gap-2">
+                            <Tag className="h-4 w-4" />
+                            Skills demonstrated ({profile.skills.length})
+                        </h2>
+                        <div className="rounded-lg border p-4">
+                            <div className="flex flex-wrap gap-2">
+                                {profile.skills.map((skill) => (
+                                    <span
+                                        key={skill.skill_id}
+                                        className="inline-flex items-center gap-1.5 rounded-full bg-muted/50 border px-2.5 py-1 text-xs font-mono"
+                                    >
+                                        {skill.skill_id}
+                                        {skill.repo_count > 1 && (
+                                            <span className="text-[10px] text-muted-foreground">
+                                                ×{skill.repo_count}
+                                            </span>
+                                        )}
+                                    </span>
+                                ))}
+                            </div>
+                            <p className="mt-3 text-xs text-muted-foreground">
+                                Aggregated from claims across audited repos. Counts indicate
+                                how many repos demonstrate each canonical skill.
+                            </p>
+                        </div>
+                    </section>
+                )}
 
                 {/* Eligible repos */}
                 {eligibleRepos.length > 0 && (

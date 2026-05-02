@@ -23,6 +23,7 @@ import { ProjectShowcaseCard } from '@/components/shared/ProjectShowcaseCard';
 import { ProjectDetailPanel } from '@/components/shared/ProjectDetailPanel';
 import type { ProjectProps } from '@/components/shared/ProjectShowcaseCard';
 import { ProfileScoreHero } from '@/components/profile/ProfileScoreHero';
+import { DualAxisHero } from '@/components/profile/DualAxisHero';
 import { ContributionHeatmap } from '@/components/profile/ContributionHeatmap';
 import { TechStackSection } from '@/components/profile/TechStackSection';
 import { getBestProject, aggregateTechStack } from '@/lib/profileUtils';
@@ -408,7 +409,11 @@ export function ProfileContent({ username }: ProfileContentProps) {
                 </div>
             </div>
 
-            {/* Score Summary Hero */}
+            {/* Dual-axis score hero — Phase 4.5 */}
+            <DualAxisHero username={username} />
+
+            {/* Legacy single-axis project hero — kept below the dual-axis
+                until we deprecate it cleanly. */}
             <ProfileScoreHero
                 bestProject={bestProject}
                 disciplines={disciplines}

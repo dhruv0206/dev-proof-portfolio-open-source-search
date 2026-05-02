@@ -51,6 +51,28 @@ export interface ReachScoreBreakdown {
     popular_repo_count: number;
 }
 
+export interface TopContribution {
+    pr_url: string;
+    pr_title: string;
+    recipient_repo: string;
+    recipient_stars: number;
+    age_years: number;
+}
+
+export interface OssContributionSummary {
+    contribution_score: number;
+    total_merged_prs: number;
+    unique_orgs: number;
+    total_recipient_stars: number;
+    top_contributions: TopContribution[];
+    errors: string[];
+}
+
+export interface SkillBadge {
+    skill_id: string;
+    repo_count: number;
+}
+
 export interface PersonScore {
     schema_version: string;
     formula_version: string;
@@ -67,4 +89,6 @@ export interface PersonScore {
     cohort_key: string | null;
     cohort_percentile: number | null;
     cohort_size: number | null;
+    oss_contributions?: OssContributionSummary | null;
+    skills?: SkillBadge[];
 }
