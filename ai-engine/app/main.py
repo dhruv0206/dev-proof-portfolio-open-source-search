@@ -65,6 +65,8 @@ from app.routes import projects
 app.include_router(projects.router)
 from app.routes.v4_diagnostic import router as v4_diagnostic_router
 app.include_router(v4_diagnostic_router)
+from app.routes import profile
+app.include_router(profile.router)
 
 
 @app.get("/")

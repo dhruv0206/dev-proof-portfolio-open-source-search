@@ -3,22 +3,22 @@
 /**
  * /p/[username]/score — Phase 4.5 person profile (dual-axis scoreboard).
  *
- * Sub-route of the existing /p/[username] profile so legacy profile UI
- * isn't disrupted. Currently uses fixture data; Phase 4.5b wires the
- * real backend route.
+ * Phase 4.5b: fetches /api/profile/{username} for real data. Falls back
+ * to FIXTURE_PROFILES when the API isn't reachable (local dev without
+ * backend, or for the demo accounts).
  *
  * The dual-axis hero (person_score AND reach_score, never collapsed)
  * is the differentiation: addresses the Sindre-Sorhus / awesome insight
  * where one-axis scoring breaks at extremes.
  */
 
-import { use } from 'react';
+import { use, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { FIXTURE_PROFILES } from '@/lib/person-fixture';
 import type { PersonScore, PersonRepoSummary } from '@/lib/types/person-output';
 import {
     ExternalLink, Github, Star, GitFork, Calendar, Code,
-    AlertCircle, TrendingUp, Layers, ArrowRight,
+    AlertCircle, TrendingUp, Layers, ArrowRight, Loader2,
 } from 'lucide-react';
 
 
@@ -154,9 +154,64 @@ export default function PersonScorePage({
     params: Promise<{ username: string }>;
 }) {
     const { username } = use(params);
-    const profile: PersonScore | undefined = FIXTURE_PROFILES[username.toLowerCase()];
+    const [profile, setProfile] = useState<PersonScore | undefined>(undefined);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    if (!profile) {
+    useEffect(() => {
+        let cancelled = false;
+        async function load() {
+            setLoading(true);
+            setError(null);
+            // Try the real backend first
+            try {
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+                const res = await fetch(`${API_URL}/api/profile/${encodeURIComponent(username)}`);
+                if (res.ok) {
+                    const data = await res.json();
+                    if (!cancelled) setProfile(data);
+                    return;
+                }
+                if (res.status === 404) {
+                    // Backend says user doesn't exist — fall through to fixture check
+                }
+            } catch (e) {
+                // Network error / backend down — fall through to fixture
+            }
+            // Fixture fallback (demo accounts + offline dev)
+            const fixture = FIXTURE_PROFILES[username.toLowerCase()];
+            if (!cancelled) {
+                if (fixture) {
+                    setProfile(fixture);
+                } else {
+                    setError('not_found');
+                }
+                setLoading(false);
+            }
+        }
+        load().then(() => {
+            if (!cancelled) setLoading(false);
+        });
+        return () => { cancelled = true; };
+    }, [username]);
+
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-background flex items-center justify-center">
+                <div className="text-center">
+                    <Loader2 className="h-6 w-6 animate-spin mx-auto mb-3 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">
+                        Computing person score for <code className="font-mono">{username}</code>...
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                        Discovering repos + aggregating cached audits.
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!profile || error === 'not_found') {
         return (
             <div className="min-h-screen bg-background flex items-center justify-center">
                 <div className="max-w-md p-8 rounded-xl border bg-card text-center">
