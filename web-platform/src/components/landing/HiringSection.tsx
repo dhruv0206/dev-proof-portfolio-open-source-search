@@ -32,7 +32,7 @@ export function HiringSection() {
                     transition={{ duration: 0.4 }}
                     className="text-center mb-14"
                 >
-                    <p className="text-[10px] text-emerald-500/60 font-mono uppercase tracking-widest mb-3">
+                    <p className="text-[10px] text-primary/60 font-mono uppercase tracking-widest mb-3">
                         For your next job
                     </p>
                     <h2 className="text-2xl sm:text-3xl font-bold mb-3">
@@ -54,8 +54,8 @@ export function HiringSection() {
                             transition={{ duration: 0.4, delay: i * 0.08 }}
                             className="p-6 rounded-xl border border-border bg-card hover:-translate-y-[2px] transform-gpu transition-transform duration-300"
                         >
-                            <div className="w-9 h-9 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center mb-4">
-                                <step.icon className="w-4 h-4 text-emerald-500" />
+                            <div className="w-9 h-9 rounded-lg bg-primary/10 border border-primary/20 flex items-center justify-center mb-4">
+                                <step.icon className="w-4 h-4 text-primary" />
                             </div>
                             <p className="text-[10px] text-muted-foreground font-mono mb-2">
                                 Step {i + 1}
@@ -85,7 +85,7 @@ export function HiringSection() {
                                 <span className="w-2.5 h-2.5 rounded-full bg-zinc-600" />
                             </div>
                             <span className="text-xs text-muted-foreground font-mono ml-2">
-                                devproof.dev/p/<span className="text-emerald-500">yourname</span>
+                                devproof.dev/p/<span className="text-primary">yourname</span>
                             </span>
                         </div>
 

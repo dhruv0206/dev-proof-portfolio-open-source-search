@@ -149,7 +149,7 @@ function DemoSequence() {
         <>
             {/* Command */}
             <span className="text-zinc-300">
-                <span className="text-emerald-400">❯ </span>
+                <span className="text-[#CC785C]">❯ </span>
                 <span className="text-zinc-500">devproof score </span>
                 {step === 0 ? (
                     <TypingText duration={60} onComplete={() => setStep(1)} className="text-white font-medium">
@@ -161,7 +161,7 @@ function DemoSequence() {
             </span>
 
             {step >= 1 && <AnimLine className="text-zinc-600">{'  Scanning ' + repo.cmd + '...'}</AnimLine>}
-            {step >= 2 && <AnimLine className="text-emerald-400">{'  ✓ Stack detected: ' + repo.stack}</AnimLine>}
+            {step >= 2 && <AnimLine className="text-[#CC785C]">{'  ✓ Stack detected: ' + repo.stack}</AnimLine>}
 
             {step >= 3 && <span className="block h-1" />}
 
@@ -181,8 +181,8 @@ function DemoSequence() {
 
             {step >= 8 && (
                 <AnimLine className="text-zinc-300 mt-1">
-                    <span className="text-emerald-400">❯ </span>
-                    <span className="animate-pulse text-emerald-400">▌</span>
+                    <span className="text-[#CC785C]">❯ </span>
+                    <span className="animate-pulse text-[#CC785C]">▌</span>
                 </AnimLine>
             )}
         </>
@@ -220,7 +220,7 @@ function LiveSequence({ state, scanResult, scoreResult, repoUrl }: {
     return (
         <>
             <span className="text-zinc-300">
-                <span className="text-emerald-400">❯ </span>
+                <span className="text-[#CC785C]">❯ </span>
                 <span className="text-zinc-500">devproof score </span>
                 <span className="text-white font-medium">{repoName}</span>
             </span>
@@ -229,9 +229,9 @@ function LiveSequence({ state, scanResult, scoreResult, repoUrl }: {
                 const show = s.done || (i === 0 && state === 'scanning') || (i === 1 && (state === 'scanned' || state === 'auditing')) || (i >= 2 && state === 'auditing') || state === 'complete';
                 if (!show) return null;
                 return (
-                    <AnimLine key={i} className={s.done ? 'text-emerald-400' : 'text-zinc-400'}>
+                    <AnimLine key={i} className={s.done ? 'text-[#CC785C]' : 'text-zinc-400'}>
                         {s.done ? '  ✓ ' + s.label : (
-                            <>{'  '}<motion.span className="text-emerald-500" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity }}>⠋</motion.span>{' ' + s.label}</>
+                            <>{'  '}<motion.span className="text-primary" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity }}>⠋</motion.span>{' ' + s.label}</>
                         )}
                     </AnimLine>
                 );
@@ -251,13 +251,13 @@ function LiveSequence({ state, scanResult, scoreResult, repoUrl }: {
                         <span className="text-zinc-600">/100</span>
                         <span className="ml-2 text-xs font-bold uppercase" style={{ color: tierColor }}>{tier}</span>
                     </AnimLine>
-                    <AnimLine className="text-emerald-400">  ✓ Analysis complete</AnimLine>
+                    <AnimLine className="text-[#CC785C]">  ✓ Analysis complete</AnimLine>
                 </>
             )}
 
             {state !== 'complete' && (
                 <span className="block mt-1">
-                    <span className="animate-pulse text-emerald-400">▌</span>
+                    <span className="animate-pulse text-[#CC785C]">▌</span>
                     {state === 'auditing' && (
                         <span className="ml-3"><ElapsedTimer /></span>
                     )}
@@ -295,10 +295,10 @@ function ResultCard({ result }: { result: PublicScoreResult }) {
                 <div className="flex items-start justify-between mb-6">
                     <div>
                         <p className="text-xs text-muted-foreground flex items-center gap-1.5 mb-1">
-                            <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Scored
+                            <CheckCircle2 className="w-3 h-3 text-primary" /> Scored
                         </p>
                         <a href={result.repo_url} target="_blank" rel="noopener noreferrer"
-                            className="text-lg font-bold hover:text-emerald-500 transition-colors inline-flex items-center gap-1.5">
+                            className="text-lg font-bold hover:text-primary transition-colors inline-flex items-center gap-1.5">
                             {result.owner}/{result.repo} <ExternalLink className="w-3.5 h-3.5" />
                         </a>
                     </div>
@@ -344,13 +344,13 @@ function ResultCard({ result }: { result: PublicScoreResult }) {
                     </div>
                 )}
                 <div className="flex gap-2">
-                    <Button asChild className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white border-0 gap-1.5">
+                    <Button asChild className="flex-1 bg-primary hover:bg-primary/90 text-primary-foreground border-0 gap-1.5">
                         <a href={`/score/${result.owner}/${result.repo}`} target="_blank" rel="noopener noreferrer">
                             View Full Results <ArrowRight className="w-3.5 h-3.5" />
                         </a>
                     </Button>
                     <Button variant="outline" className="gap-1.5" onClick={handleShare}>
-                        {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5" />}
+                        {copied ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Share2 className="w-3.5 h-3.5" />}
                         {copied ? 'Copied!' : 'Share'}
                     </Button>
                 </div>

@@ -106,7 +106,7 @@ export function FilterBar({
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="h-9 px-3 text-sm font-medium">
-                        Language: <span className="ml-1 text-primary">{getLanguageDisplay()}</span>
+                        Language: <span className="ml-1 text-foreground">{getLanguageDisplay()}</span>
                         <ChevronDownIcon className="ml-2 h-4 w-4 opacity-50" />
                     </Button>
                 </DropdownMenuTrigger>
@@ -140,7 +140,7 @@ export function FilterBar({
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="h-9 px-3 text-sm font-medium">
-                        Label: <span className="ml-1 text-primary">{getLabelDisplay()}</span>
+                        Label: <span className="ml-1 text-foreground">{getLabelDisplay()}</span>
                         <ChevronDownIcon className="ml-2 h-4 w-4 opacity-50" />
                     </Button>
                 </DropdownMenuTrigger>
@@ -174,7 +174,7 @@ export function FilterBar({
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="h-9 px-3 text-sm font-medium">
-                        Time: <span className="ml-1 text-primary">{getSelectedTimeLabel()}</span>
+                        Time: <span className="ml-1 text-foreground">{getSelectedTimeLabel()}</span>
                         <ChevronDownIcon className="ml-2 h-4 w-4 opacity-50" />
                     </Button>
                 </DropdownMenuTrigger>
@@ -195,7 +195,7 @@ export function FilterBar({
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                     <Button variant="outline" className="h-9 px-3 text-sm font-medium">
-                        Sort: <span className="ml-1 text-primary">{
+                        Sort: <span className="ml-1 text-foreground">{
                             sortBy === "newest" ? "Newest" :
                                 sortBy === "recently_discussed" ? "Recently Discussed" :
                                     sortBy === "relevance" ? "Relevance" : "Stars"
@@ -223,7 +223,7 @@ export function FilterBar({
             <div className={`
                 flex items-center gap-2 h-9 px-3 rounded-md border transition-colors duration-200
                 ${unassignedOnly
-                    ? 'bg-emerald-500/10 border-emerald-500/50'
+                    ? 'bg-primary/10 border-primary/50'
                     : 'bg-transparent border-border'
                 }
             `}>
@@ -234,7 +234,7 @@ export function FilterBar({
                 />
                 <label
                     htmlFor="unassigned-only"
-                    className={`text-sm font-medium cursor-pointer select-none transition-colors duration-200 ${unassignedOnly ? 'text-emerald-400' : 'text-muted-foreground'}`}
+                    className={`text-sm font-medium cursor-pointer select-none transition-colors duration-200 ${unassignedOnly ? 'text-primary' : 'text-muted-foreground'}`}
                 >
                     Unassigned Only
                 </label>

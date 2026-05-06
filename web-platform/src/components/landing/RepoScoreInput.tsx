@@ -104,7 +104,7 @@ export function RepoScoreInput({ onStateChange, onScanResult, onScoreResult, onE
                         onKeyDown={handleKeyDown}
                         disabled={isProcessing}
                         placeholder="https://github.com/owner/repo"
-                        className="w-full h-11 pl-10 pr-4 rounded-lg border border-border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500 disabled:opacity-50"
+                        className="w-full h-11 pl-10 pr-4 rounded-lg border border-border bg-card text-sm placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary disabled:opacity-50"
                     />
                 </div>
                 {state === 'complete' ? (
@@ -119,7 +119,7 @@ export function RepoScoreInput({ onStateChange, onScanResult, onScoreResult, onE
                     <Button
                         onClick={handleScore}
                         disabled={isProcessing}
-                        className="h-11 px-6 bg-emerald-600 hover:bg-emerald-700 text-white border-0 disabled:opacity-50"
+                        className="h-11 px-6 bg-primary hover:bg-primary/90 text-primary-foreground border-0 disabled:opacity-50"
                     >
                         {isProcessing ? (
                             <span className="flex items-center gap-2">

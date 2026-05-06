@@ -55,10 +55,10 @@ export function LandingNavbar() {
                                 className="flex items-center text-xl font-bold"
                                 whileHover={{ scale: 1.02 }}
                             >
-                                <span className="text-muted-foreground group-hover:text-emerald-500 transition-colors">&lt;</span>
+                                <span className="text-muted-foreground group-hover:text-primary transition-colors">&lt;</span>
                                 <img src="/logo_transparent.png" alt="DevProof" className="w-8 h-8 mx-1" />
                                 <span>DevProof</span>
-                                <span className="text-muted-foreground group-hover:text-emerald-500 transition-colors">/&gt;</span>
+                                <span className="text-muted-foreground group-hover:text-primary transition-colors">/&gt;</span>
                             </motion.div>
                         </a>
 
@@ -103,7 +103,7 @@ export function LandingNavbar() {
                             ) : (
                                 <Button
                                     size="sm"
-                                    className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border-0 h-8 md:h-9"
+                                    className="gap-1.5 bg-primary hover:bg-primary/90 text-primary-foreground border-0 h-8 md:h-9"
                                     onClick={handleSignIn}
                                     disabled={isSigningIn}
                                 >

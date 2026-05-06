@@ -405,39 +405,31 @@ export function ProfileContent({ username }: ProfileContentProps) {
             {/* Dual-axis score hero — Phase 4.5 (replaces legacy ProfileScoreHero) */}
             <DualAxisHero username={username} />
 
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card>
-                    <CardContent className="p-4 text-center">
-                        <CheckCircle2 className="h-6 w-6 mx-auto text-green-500 mb-2" />
-                        <p className="text-2xl font-bold">{stats.verifiedPRs}</p>
-                        <p className="text-xs text-muted-foreground">Verified PRs</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="p-4 text-center">
-                        <GitFork className="h-6 w-6 mx-auto text-blue-500 mb-2" />
-                        <p className="text-2xl font-bold">{stats.repositories}</p>
-                        <p className="text-xs text-muted-foreground">Repositories</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="p-4 text-center">
-                        <Code className="h-6 w-6 mx-auto text-emerald-500 mb-2" />
-                        <p className="text-2xl font-bold text-emerald-600">+{formatNumber(stats.linesAdded)}</p>
-                        <p className="text-xs text-muted-foreground">Lines Added</p>
-                    </CardContent>
-                </Card>
-
-                <Card>
-                    <CardContent className="p-4 text-center">
-                        <Code className="h-6 w-6 mx-auto text-red-500 mb-2" />
-                        <p className="text-2xl font-bold text-red-600">-{formatNumber(stats.linesRemoved)}</p>
-                        <p className="text-xs text-muted-foreground">Lines Removed</p>
-                    </CardContent>
-                </Card>
+            {/* Stats Grid — bracket-corner technical treatment */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
+                {[
+                    { idx: '01', section: 'STATS', sub: 'VERIFIED_PRS', icon: CheckCircle2, color: 'text-green-500', value: stats.verifiedPRs.toString(), valueClass: '' },
+                    { idx: '02', section: 'STATS', sub: 'REPOSITORIES', icon: GitFork, color: 'text-blue-500', value: stats.repositories.toString(), valueClass: '' },
+                    { idx: '03', section: 'DIFF', sub: 'LINES_ADDED', icon: Code, color: 'text-green-500', value: '+' + formatNumber(stats.linesAdded), valueClass: 'text-green-500' },
+                    { idx: '04', section: 'DIFF', sub: 'LINES_REMOVED', icon: Code, color: 'text-red-500', value: '-' + formatNumber(stats.linesRemoved), valueClass: 'text-red-500' },
+                ].map((s) => (
+                    <div key={s.idx} className="relative bg-card p-5 border border-border/40 hover:border-border/70 transition-colors">
+                        <span className="pointer-events-none absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-foreground/[0.18]" />
+                        <span className="pointer-events-none absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-foreground/[0.18]" />
+                        <span className="pointer-events-none absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-foreground/[0.18]" />
+                        <span className="pointer-events-none absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-foreground/[0.18]" />
+                        <span className="pointer-events-none absolute top-1.5 left-3 font-mono text-[9px] tracking-[0.1em] text-muted-foreground/70 select-none">{s.idx}</span>
+                        <div className="flex items-center justify-between mt-2.5">
+                            <span className="font-mono text-[10px] tracking-[0.1em] uppercase text-muted-foreground">
+                                <span>{s.section}</span>
+                                <span className="opacity-50 mx-1.5">·</span>
+                                <span>{s.sub}</span>
+                            </span>
+                            <s.icon className={`h-3.5 w-3.5 ${s.color}`} />
+                        </div>
+                        <p className={`font-mono text-3xl font-bold tabular-nums tracking-[-0.02em] mt-3 ${s.valueClass}`}>{s.value}</p>
+                    </div>
+                ))}
             </div>
 
             {/* Contribution Heatmap */}
@@ -448,9 +440,11 @@ export function ProfileContent({ username }: ProfileContentProps) {
 
             {/* Verified Projects Section */}
             <div>
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    Verified Projects
+                <h2 className="mb-4 flex items-center gap-2 font-mono text-[11px] tracking-[0.1em] uppercase text-muted-foreground">
+                    <span className="text-primary">*</span>
+                    <span>PROJECTS</span>
+                    <span className="opacity-50">·</span>
+                    <span>VERIFIED_BY_AUDIT</span>
                 </h2>
 
                 {(!verifiedProjects || verifiedProjects.length === 0) ? (
@@ -481,9 +475,11 @@ export function ProfileContent({ username }: ProfileContentProps) {
 
             {/* Contributions List */}
             <div>
-                <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                    <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    Verified Contributions
+                <h2 className="mb-4 flex items-center gap-2 font-mono text-[11px] tracking-[0.1em] uppercase text-muted-foreground">
+                    <span className="text-primary">*</span>
+                    <span>CONTRIBUTIONS</span>
+                    <span className="opacity-50">·</span>
+                    <span>VERIFIED_PRS</span>
                 </h2>
 
                 {contributions.length === 0 ? (

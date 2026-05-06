@@ -49,7 +49,7 @@ export function RoadmapSection() {
                     className="text-center mb-20"
                 >
                     <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
-                        Building the <span className="text-emerald-500">Resume-Less Future</span>
+                        Building the <span className="text-primary">Resume-Less Future</span>
                     </h2>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
                         We are building the standard for how developers prove their worth. Here is where we are going.
@@ -63,10 +63,10 @@ export function RoadmapSection() {
                     {/* The Animated Fill Line */}
                     <motion.div
                         style={{ scaleY, originY: 0 }}
-                        className="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-emerald-500 to-emerald-400 -translate-x-1/2 origin-top shadow-[0_0_12px_2px_rgba(16,185,129,0.3)]"
+                        className="absolute left-8 md:left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#CC785C] to-[#D4866A] -translate-x-1/2 origin-top shadow-[0_0_12px_2px_rgba(204,120,92,0.3)]"
                     >
                         {/* Glowing Head */}
-                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_10px_2px_rgba(16,185,129,0.5)] blur-[1px]" />
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full bg-[#D4866A] shadow-[0_0_10px_2px_rgba(204,120,92,0.5)] blur-[1px]" />
                     </motion.div>
 
                     <div className="space-y-16 md:space-y-24 relative">
@@ -88,7 +88,7 @@ export function RoadmapSection() {
                                             </span>
                                         </div>
 
-                                        <h3 className="text-2xl font-bold mb-3 group-hover:text-emerald-400 transition-colors">{item.title}</h3>
+                                        <h3 className="text-2xl font-bold mb-3 group-hover:text-primary transition-colors">{item.title}</h3>
                                         <p className="text-muted-foreground text-base leading-relaxed">
                                             {item.description}
                                         </p>
@@ -104,9 +104,9 @@ export function RoadmapSection() {
                                         transition={{ duration: 0.4, delay: 0.2 }}
                                         className="relative w-4 h-4"
                                     >
-                                        <div className="absolute inset-0 rounded-full bg-emerald-500/20 animate-pulse" />
-                                        <div className="absolute inset-0 rounded-full border-2 border-emerald-500 bg-background shadow-[0_0_0_4px_rgba(16,185,129,0.1)]" />
-                                        <div className="absolute inset-[3px] rounded-full bg-emerald-500" />
+                                        <div className="absolute inset-0 rounded-full bg-primary/20 animate-pulse" />
+                                        <div className="absolute inset-0 rounded-full border-2 border-primary bg-background shadow-[0_0_0_4px_rgba(204,120,92,0.1)]" />
+                                        <div className="absolute inset-[3px] rounded-full bg-primary" />
                                     </motion.div>
                                 </div>
 

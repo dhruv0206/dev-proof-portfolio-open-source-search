@@ -44,7 +44,7 @@ export function FeaturedPortfolios() {
                     className="text-center mb-16"
                 >
                     <h2 className="text-3xl lg:text-4xl font-bold mb-4">
-                        Featured <span className="text-emerald-500">Portfolios</span>
+                        Featured <span className="text-primary">Portfolios</span>
                     </h2>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
                         See what verified developer profiles look like

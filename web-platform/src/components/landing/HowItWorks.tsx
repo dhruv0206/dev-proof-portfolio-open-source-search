@@ -33,7 +33,7 @@ export function HowItWorks() {
                             transition={{ delay: i * 0.1 }}
                             className="flex gap-6 items-start"
                         >
-                            <span className="text-3xl font-bold text-emerald-500/30 font-mono shrink-0 w-10 select-none">
+                            <span className="text-3xl font-bold text-primary/30 font-mono shrink-0 w-10 select-none">
                                 {step.num}
                             </span>
                             <div>

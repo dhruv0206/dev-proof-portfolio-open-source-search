@@ -82,7 +82,7 @@ export function DeveloperCard({ className = '' }: DeveloperCardProps) {
               alt="Sarah Chen"
               className="w-12 h-12 rounded-full object-cover border-2 border-border"
             />
-            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 rounded-full border-2 border-card flex items-center justify-center">
+            <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary rounded-full border-2 border-card flex items-center justify-center">
               <CheckCircle2 className="w-3 h-3 text-white" />
             </div>
           </div>
@@ -90,7 +90,7 @@ export function DeveloperCard({ className = '' }: DeveloperCardProps) {
             <div className="font-bold text-lg">Sarah Chen</div>
             <div className="text-muted-foreground text-sm font-mono">@sarah_dev</div>
           </div>
-          <a href="#" className="text-muted-foreground hover:text-emerald-500 transition-colors">
+          <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
             <ExternalLink className="w-4 h-4" />
           </a>
         </div>
@@ -129,7 +129,7 @@ export function DeveloperCard({ className = '' }: DeveloperCardProps) {
               {/* Data Shape (Deep Tech: High, Logic: Med, UI: Low) */}
               <polygon
                 points="50,15 85,75 25,75"
-                className="fill-emerald-500/20 stroke-emerald-500"
+                className="fill-primary/20 stroke-[#CC785C]"
                 strokeWidth="2"
               />
               {/* Dots */}
@@ -145,7 +145,7 @@ export function DeveloperCard({ className = '' }: DeveloperCardProps) {
         <div>
           <div className="flex items-center justify-between mb-3">
             <div className="text-xs font-bold text-muted-foreground tracking-wider uppercase">Verified Decisions</div>
-            <div className="text-xs font-mono text-emerald-500">12 Verified</div>
+            <div className="text-xs font-mono text-primary">12 Verified</div>
           </div>
           <div className="space-y-3">
             {verifiedContributions.map((contrib, i) => (
@@ -156,7 +156,7 @@ export function DeveloperCard({ className = '' }: DeveloperCardProps) {
                 transition={{ delay: 0.8 + i * 0.1 }}
                 className="group relative"
               >
-                <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-border group-hover:bg-emerald-500 transition-colors" />
+                <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-border group-hover:bg-primary transition-colors" />
                 <div className="pl-3">
                   <div className="flex items-center gap-2 mb-1">
                     <span className={`text-[10px] px-1.5 py-0.5 rounded border font-mono font-medium ${contrib.tierColor}`}>
@@ -166,11 +166,11 @@ export function DeveloperCard({ className = '' }: DeveloperCardProps) {
                   </div>
                   <div className="text-sm font-medium mb-1">{contrib.title}</div>
                   <div className="text-xs text-muted-foreground leading-relaxed">
-                    <span className="text-emerald-500 font-medium">Why: </span>
+                    <span className="text-primary font-medium">Why: </span>
                     {contrib.decision}
                   </div>
                   <div className="mt-1 flex items-center gap-1.5">
-                    <span className="w-1 h-1 rounded-full bg-emerald-500" />
+                    <span className="w-1 h-1 rounded-full bg-primary" />
                     <span className="text-[10px] font-mono text-muted-foreground uppercase">{contrib.impact}</span>
                   </div>
                 </div>
@@ -185,7 +185,7 @@ export function DeveloperCard({ className = '' }: DeveloperCardProps) {
             <Calendar className="w-3.5 h-3.5" />
             <span>Joined Jan 2024</span>
           </div>
-          <div className="text-xs font-mono text-emerald-500 flex items-center gap-1">
+          <div className="text-xs font-mono text-primary flex items-center gap-1">
             <CheckCircle2 className="w-3.5 h-3.5" />
             Verified by AI
           </div>

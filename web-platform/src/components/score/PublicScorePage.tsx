@@ -142,7 +142,7 @@ export function PublicScorePage({ data }: { data: ScoreData }) {
                             <Share2 className="w-3.5 h-3.5" />
                             <span className="hidden sm:inline">Share</span>
                         </Button>
-                        <Button size="sm" className="gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white border-0" asChild>
+                        <Button size="sm" className="gap-1.5" asChild>
                             <a href="/">Score a Repo</a>
                         </Button>
                     </div>
@@ -215,7 +215,7 @@ export function PublicScorePage({ data }: { data: ScoreData }) {
                                 </p>
                                 <a
                                     href={`/?repo=${encodeURIComponent(data.repo_url)}`}
-                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium transition-colors"
+                                    className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-sm font-medium transition-colors"
                                 >
                                     Re-score
                                     <ArrowRight className="w-3.5 h-3.5" />
@@ -370,7 +370,7 @@ export function PublicScorePage({ data }: { data: ScoreData }) {
                     transition={{ delay: 0.5 }}
                     className="flex flex-col sm:flex-row gap-3 p-6 rounded-xl border border-border bg-card"
                 >
-                    <Button className="flex-1 gap-2 bg-emerald-600 hover:bg-emerald-700 text-white border-0" asChild>
+                    <Button className="flex-1 gap-2" asChild>
                         <a href="/">
                             Score Your Own Repo
                             <ArrowRight className="w-4 h-4" />

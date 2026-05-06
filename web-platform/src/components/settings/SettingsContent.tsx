@@ -357,7 +357,7 @@ export function SettingsContent({ userId }: SettingsContentProps) {
                                     onClick={() => handleToggleRole(role)}
                                     className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
                                         preferredRoles.includes(role)
-                                            ? 'bg-emerald-500/10 border-emerald-500/50 text-emerald-500'
+                                            ? 'bg-primary/10 border-primary/50 text-primary'
                                             : 'bg-card border-border text-muted-foreground hover:border-foreground/30'
                                     }`}
                                 >
@@ -515,7 +515,7 @@ export function SettingsContent({ userId }: SettingsContentProps) {
                                                 placeholder="Present"
                                             />
                                             {!entry.endDate && entry.startDate && (
-                                                <p className="text-xs text-emerald-500">Present</p>
+                                                <p className="text-xs text-primary">Present</p>
                                             )}
                                         </div>
                                     </div>
@@ -539,11 +539,11 @@ export function SettingsContent({ userId }: SettingsContentProps) {
 
             {/* Save Button */}
             <div className="flex items-center gap-3">
-                <Button onClick={handleSaveAll} disabled={saving} className="bg-emerald-600 hover:bg-emerald-700">
+                <Button onClick={handleSaveAll} disabled={saving} className="bg-primary hover:bg-primary/90">
                     {saving ? 'Saving...' : 'Save Changes'}
                 </Button>
                 {savedMessage && (
-                    <span className="text-sm text-emerald-500 font-medium">Changes saved</span>
+                    <span className="text-sm text-primary font-medium">Changes saved</span>
                 )}
             </div>
         </div>

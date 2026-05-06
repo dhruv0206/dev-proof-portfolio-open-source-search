@@ -145,7 +145,7 @@ export default function GitHubAccessPage() {
                 {/* Hero */}
                 <header className="mb-8">
                     <div className="flex items-center gap-3 mb-2">
-                        <ShieldCheck className="h-7 w-7 text-emerald-500" />
+                        <ShieldCheck className="h-7 w-7 text-primary" />
                         <h1 className="text-2xl font-bold">GitHub Access</h1>
                     </div>
                     <p className="text-sm text-muted-foreground leading-relaxed">
@@ -169,7 +169,7 @@ export default function GitHubAccessPage() {
                         </div>
                         <Badge
                             variant="outline"
-                            className="text-xs text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                            className="text-xs text-green-600 dark:text-green-400 border-green-500/30"
                         >
                             <CheckCircle2 className="h-3 w-3 mr-1" />
                             Connected
@@ -201,14 +201,14 @@ export default function GitHubAccessPage() {
                                 key={scope.scope}
                                 className={`rounded-lg border p-4 ${
                                     scope.granted
-                                        ? 'border-emerald-500/30 bg-emerald-500/5'
+                                        ? 'border-green-500/30 bg-green-500/5'
                                         : 'border-border bg-card opacity-90'
                                 }`}
                             >
                                 <div className="flex items-start justify-between gap-4 mb-2">
                                     <div className="flex items-start gap-3 min-w-0">
                                         {scope.granted ? (
-                                            <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0 mt-0.5" />
+                                            <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0 mt-0.5" />
                                         ) : (
                                             <XCircle className="h-5 w-5 text-muted-foreground shrink-0 mt-0.5" />
                                         )}

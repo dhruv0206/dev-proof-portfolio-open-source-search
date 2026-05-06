@@ -62,7 +62,7 @@ export function StatsSection() {
                                 transition={{ delay: index * 0.1 }}
                                 className="text-center"
                             >
-                                <div className="text-4xl md:text-5xl font-bold text-emerald-500 mb-2">
+                                <div className="text-4xl md:text-5xl font-bold text-primary mb-2">
                                     <AnimatedCounter value={stat.value} suffix={stat.suffix} />
                                 </div>
                                 <div className="text-muted-foreground">{stat.label}</div>

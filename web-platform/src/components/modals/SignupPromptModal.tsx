@@ -21,7 +21,7 @@ export function SignupPromptModal({ mode, onDismiss }: SignupPromptModalProps) {
       fixed inset-0 z-50 flex items-center justify-center
       ${isHard ? 'bg-black/80 backdrop-blur-md' : 'bg-black/60 backdrop-blur-sm'}
     `}>
-            <div className="bg-background border border-border rounded-2xl p-8 max-w-md mx-4 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
+            <div className="bg-background border border-border rounded-md p-8 max-w-md mx-4 shadow-2xl animate-in fade-in zoom-in-95 duration-300">
                 {/* Icon */}
                 <div className={`
           w-16 h-16 mx-auto mb-6 rounded-full flex items-center justify-center

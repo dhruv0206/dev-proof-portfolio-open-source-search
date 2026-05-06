@@ -81,7 +81,7 @@ export default async function ScorePage({ params }: PageProps) {
                             </p>
                             <a
                                 href={`/?repo=https://github.com/${owner}/${repo}`}
-                                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-medium transition-colors"
+                                className="inline-flex items-center gap-2 px-6 py-3 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground font-medium transition-colors"
                             >
                                 Score This Repo
                                 <span className="text-lg">&rarr;</span>

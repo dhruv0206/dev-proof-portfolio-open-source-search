@@ -39,7 +39,7 @@ export function SearchBar({ onSearch, isLoading, placeholder }: SearchBarProps) 
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={placeholder || 'Search for contribution opportunities...'}
-                    className="pl-12 pr-28 py-6 text-lg"
+                    className="pl-12 pr-28 py-6 text-lg rounded-md border-border/60 focus-visible:ring-primary/50 focus-visible:border-primary"
                     disabled={isLoading}
                 />
                 {query && (
@@ -83,6 +83,7 @@ export function SearchBar({ onSearch, isLoading, placeholder }: SearchBarProps) 
                             setQuery(suggestion);
                             onSearch(suggestion);
                         }}
+                        className="rounded-md text-xs font-mono tracking-tight border border-border/40 hover:border-primary/40 hover:text-primary transition-colors"
                     >
                         {suggestion}
                     </Button>

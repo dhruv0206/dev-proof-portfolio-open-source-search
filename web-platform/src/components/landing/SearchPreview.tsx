@@ -172,7 +172,7 @@ export function SearchPreview({ initialIssues }: { initialIssues?: SearchResult[
                     className="text-center mb-10"
                 >
                     <h2 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-4">
-                        Find Your Next <span className="text-emerald-500">Contribution</span>
+                        Find Your Next <span className="text-primary">Contribution</span>
                     </h2>
                     <p className="text-muted-foreground max-w-2xl mx-auto">
                         Semantic search across 400,000+ open source issues
@@ -203,7 +203,7 @@ export function SearchPreview({ initialIssues }: { initialIssues?: SearchResult[
                         <Button
                             type="submit"
                             size="sm"
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white border-0"
+                            className="bg-primary hover:bg-primary/90 text-primary-foreground border-0"
                             disabled={searching || !query.trim()}
                         >
                             {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}

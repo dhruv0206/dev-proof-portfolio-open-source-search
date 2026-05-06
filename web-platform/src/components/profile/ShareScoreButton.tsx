@@ -34,7 +34,7 @@ export function ShareScoreButton({ username }: { username: string }) {
         <Button variant="outline" size="sm" onClick={handleCopy} className="gap-2">
             {copied ? (
                 <>
-                    <Check className="h-4 w-4 text-emerald-500" />
+                    <Check className="h-4 w-4 text-green-500" />
                     Copied!
                 </>
             ) : (

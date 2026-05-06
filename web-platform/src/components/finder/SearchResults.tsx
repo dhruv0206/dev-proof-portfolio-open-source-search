@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import { SearchResult } from '@/lib/api';
 import { IssueCard } from './IssueCard';
-import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
@@ -16,22 +15,27 @@ interface SearchResultsProps {
 export function SearchResults({ results, isLoading, userId }: SearchResultsProps) {
     if (isLoading) {
         return (
-            <div className="space-y-4">
+            <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
                 {[...Array(3)].map((_, i) => (
-                    <Card key={i}>
-                        <CardContent className="p-5">
-                            <div className="space-y-3">
-                                <Skeleton className="h-4 w-1/3" />
-                                <Skeleton className="h-6 w-3/4" />
-                                <Skeleton className="h-4 w-full" />
-                                <Skeleton className="h-4 w-2/3" />
-                                <div className="flex gap-2 pt-2">
-                                    <Skeleton className="h-6 w-24 rounded-full" />
-                                    <Skeleton className="h-6 w-20 rounded-full" />
-                                </div>
+                    <div
+                        key={i}
+                        className="relative p-5 bg-[rgba(255,255,255,0.02)] border border-white/[0.06]"
+                    >
+                        <span aria-hidden className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-white/[0.18]" />
+                        <span aria-hidden className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-white/[0.18]" />
+                        <span aria-hidden className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-white/[0.18]" />
+                        <span aria-hidden className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-white/[0.18]" />
+                        <div className="space-y-3">
+                            <Skeleton className="h-4 w-1/3" />
+                            <Skeleton className="h-6 w-3/4" />
+                            <Skeleton className="h-4 w-full" />
+                            <Skeleton className="h-4 w-2/3" />
+                            <div className="flex gap-2 pt-2">
+                                <Skeleton className="h-6 w-24" />
+                                <Skeleton className="h-6 w-20" />
                             </div>
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 ))}
             </div>
         );
@@ -48,9 +52,9 @@ export function SearchResults({ results, isLoading, userId }: SearchResultsProps
                 animate={{ opacity: 1 }}
                 className="space-y-4"
             >
-                <p className="text-sm text-muted-foreground mb-4">
-                    Found {results.length} contribution opportunities
-                </p>
+                <div className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground mb-4">
+                    RESULTS <span className="opacity-60">·</span> <span className="tabular-nums text-foreground">{results.length}</span> CONTRIBUTION_OPPORTUNITIES
+                </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
                     {results.map((issue, index) => (
                         <IssueCard key={issue.issue_id} issue={issue} index={index} userId={userId} />

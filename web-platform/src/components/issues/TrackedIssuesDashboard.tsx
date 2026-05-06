@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -285,19 +284,23 @@ export function TrackedIssuesDashboard({ userId }: TrackedIssuesDashboardProps) 
         return (
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                    <h2 className="text-xl font-semibold">Tracked Issues</h2>
+                    <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-muted-foreground">
+                        <span className="text-primary">*</span> TRACKED_ISSUES <span className="opacity-60">·</span> LOADING
+                    </div>
                     {TrackIssueDialog}
                 </div>
                 {[1, 2, 3].map((i) => (
-                    <Card key={i}>
-                        <CardHeader>
+                    <div key={i} className="relative p-6 bg-[rgba(255,255,255,0.02)] border border-white/[0.06]">
+                        <span aria-hidden className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-white/[0.18]" />
+                        <span aria-hidden className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-white/[0.18]" />
+                        <span aria-hidden className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-white/[0.18]" />
+                        <span aria-hidden className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-white/[0.18]" />
+                        <div className="space-y-3">
                             <Skeleton className="h-4 w-48" />
                             <Skeleton className="h-6 w-full" />
-                        </CardHeader>
-                        <CardContent>
                             <Skeleton className="h-8 w-32" />
-                        </CardContent>
-                    </Card>
+                        </div>
+                    </div>
                 ))}
             </div>
         );
@@ -305,42 +308,51 @@ export function TrackedIssuesDashboard({ userId }: TrackedIssuesDashboardProps) 
 
     if (error) {
         return (
-            <Card>
-                <CardContent className="py-8 text-center">
-                    <p className="text-destructive mb-4">{error}</p>
-                    <Button variant="outline" onClick={() => fetchIssues()}>
-                        <RefreshCw className="h-4 w-4 mr-2" />
-                        Try Again
-                    </Button>
-                </CardContent>
-            </Card>
+            <div className="relative p-8 bg-[rgba(255,255,255,0.02)] border border-white/[0.06] text-center">
+                <span aria-hidden className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-white/[0.18]" />
+                <span aria-hidden className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-white/[0.18]" />
+                <span aria-hidden className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-white/[0.18]" />
+                <span aria-hidden className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-white/[0.18]" />
+                <p className="text-destructive mb-4">{error}</p>
+                <Button variant="outline" onClick={() => fetchIssues()}>
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Try Again
+                </Button>
+            </div>
         );
     }
 
     if (issues.length === 0) {
         return (
-            <Card>
-                <CardContent className="py-12 text-center">
-                    <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-medium mb-2">No Tracked Issues</h3>
-                    <p className="text-muted-foreground mb-4">
-                        Start working on an issue to track your progress here.
-                    </p>
-                    <div className="flex items-center justify-center gap-2">
-                        {TrackIssueDialog}
-                        <Button variant="outline" asChild>
-                            <a href="/">Browse Issues</a>
-                        </Button>
-                    </div>
-                </CardContent>
-            </Card>
+            <div className="relative p-12 bg-[rgba(255,255,255,0.02)] border border-white/[0.06] text-center">
+                <span aria-hidden className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-white/[0.18]" />
+                <span aria-hidden className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-white/[0.18]" />
+                <span aria-hidden className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-white/[0.18]" />
+                <span aria-hidden className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-white/[0.18]" />
+                <Clock className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-2">
+                    NO_TRACKED_ISSUES
+                </div>
+                <h3 className="text-lg font-medium mb-2">Nothing here yet</h3>
+                <p className="text-muted-foreground mb-4">
+                    Start working on an issue to track your progress here.
+                </p>
+                <div className="flex items-center justify-center gap-2">
+                    {TrackIssueDialog}
+                    <Button variant="outline" asChild>
+                        <a href="/">Browse Issues</a>
+                    </Button>
+                </div>
+            </div>
         );
     }
 
     return (
         <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <h2 className="text-xl font-semibold">Tracked Issues ({issues.length})</h2>
+            <div className="flex items-center justify-between flex-wrap gap-2">
+                <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-muted-foreground">
+                    <span className="text-primary">*</span> TRACKED_ISSUES <span className="opacity-60">·</span> <span className="tabular-nums text-foreground">{issues.length}</span>
+                </div>
                 <div className="flex items-center gap-2">
                     {TrackIssueDialog}
                     <Button variant="ghost" size="sm" onClick={() => fetchIssues()}>
@@ -350,11 +362,11 @@ export function TrackedIssuesDashboard({ userId }: TrackedIssuesDashboardProps) 
                 </div>
             </div>
 
-            {/* How it Works Section */}
-            <Card className="border-dashed">
+            {/* How it Works Section — hairline panel */}
+            <div className="border border-dashed border-white/[0.10]">
                 <button
                     onClick={() => setShowHelp(!showHelp)}
-                    className="w-full px-6 py-3 flex items-center justify-between text-left hover:bg-muted/50 transition-colors"
+                    className="w-full px-6 py-3 flex items-center justify-between text-left hover:bg-white/[0.02] transition-colors"
                 >
                     <div className="flex items-center gap-2">
                         <HelpCircle className="h-4 w-4 text-muted-foreground" />
@@ -367,7 +379,7 @@ export function TrackedIssuesDashboard({ userId }: TrackedIssuesDashboardProps) 
                     )}
                 </button>
                 {showHelp && (
-                    <CardContent className="pt-0 pb-4">
+                    <div className="px-6 pt-0 pb-4">
                         <div className="grid gap-4 md:grid-cols-2 text-sm">
                             <div className="space-y-2">
                                 <h4 className="font-semibold flex items-center gap-2">
@@ -393,99 +405,105 @@ export function TrackedIssuesDashboard({ userId }: TrackedIssuesDashboardProps) 
                                 </ol>
                             </div>
                         </div>
-                    </CardContent>
+                    </div>
                 )}
-            </Card>
+            </div>
 
-            {/* Issues Grid */}
+            {/* Issues Grid — bracket-corner cards */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
                 {issues.map((issue) => {
                     const config = statusConfig[issue.status] || statusConfig.in_progress;
                     const StatusIcon = config.icon;
 
                     return (
-                        <Card key={issue.id} className="bg-card h-full flex flex-col">
-                            <CardContent className="p-6 flex-1 flex flex-col">
-                                <div className="flex flex-col gap-4 flex-1">
-                                    {/* Issue Info */}
-                                    <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
-                                            <span>{issue.repo_owner}/{issue.repo_name}</span>
-                                        </div>
+                        <div
+                            key={issue.id}
+                            className="relative p-6 bg-[rgba(255,255,255,0.02)] border border-white/[0.06] hover:border-white/[0.14] transition-colors h-full flex flex-col"
+                        >
+                            <span aria-hidden className="absolute top-0 left-0 w-2.5 h-2.5 border-t border-l border-white/[0.18]" />
+                            <span aria-hidden className="absolute top-0 right-0 w-2.5 h-2.5 border-t border-r border-white/[0.18]" />
+                            <span aria-hidden className="absolute bottom-0 left-0 w-2.5 h-2.5 border-b border-l border-white/[0.18]" />
+                            <span aria-hidden className="absolute bottom-0 right-0 w-2.5 h-2.5 border-b border-r border-white/[0.18]" />
 
-                                        <h3 className="text-lg font-semibold mb-2 flex items-center gap-2 flex-wrap">
-                                            <span className="text-primary">#{issue.issue_number}</span>
-                                            <span className="truncate max-w-[300px]" title={issue.issue_title || ''}>
-                                                {issue.issue_title || 'Untitled Issue'}
-                                            </span>
-                                            <a
-                                                href={issue.issue_url}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-muted-foreground hover:text-primary transition-colors"
-                                            >
-                                                <ExternalLink className="h-4 w-4" />
-                                            </a>
-                                        </h3>
-
-                                        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                                            <span>
-                                                Started: {new Date(issue.started_at).toLocaleDateString()}
-                                            </span>
-                                            {issue.verified_at && (
-                                                <span>
-                                                    • Verified: {new Date(issue.verified_at).toLocaleDateString()}
-                                                </span>
-                                            )}
-                                        </div>
+                            <div className="flex flex-col gap-4 flex-1">
+                                {/* Issue Info */}
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+                                        <span className="font-mono text-[12px]">{issue.repo_owner}/{issue.repo_name}</span>
                                     </div>
 
-                                    {/* Status & Actions - pushed to bottom or flexible */}
-                                    <div className="flex flex-wrap items-center justify-between gap-4 mt-auto pt-4 border-t border-border">
-                                        <Badge
-                                            variant="outline"
-                                            className={`flex items-center gap-1`}
+                                    <h3 className="text-lg font-semibold mb-2 flex items-center gap-2 flex-wrap">
+                                        <span className="font-mono text-primary">#{issue.issue_number}</span>
+                                        <span className="truncate max-w-[300px]" title={issue.issue_title || ''}>
+                                            {issue.issue_title || 'Untitled Issue'}
+                                        </span>
+                                        <a
+                                            href={issue.issue_url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-muted-foreground hover:text-primary transition-colors"
                                         >
-                                            <StatusIcon className="h-3 w-3" />
-                                            {config.label}
-                                        </Badge>
+                                            <ExternalLink className="h-4 w-4" />
+                                        </a>
+                                    </h3>
 
-                                        <div className="flex items-center gap-2">
-                                            {issue.status === 'in_progress' && (
-                                                <VerifyPRButton
-                                                    issueId={issue.id}
-                                                    userId={userId}
-                                                    currentStatus={issue.status}
-                                                    prUrl={issue.pr_url || undefined}
-                                                    onVerify={() => fetchIssues()}
-                                                />
-                                            )}
-
-                                            {issue.status === 'pr_submitted' && (
-                                                <VerifyPRButton
-                                                    issueId={issue.id}
-                                                    userId={userId}
-                                                    currentStatus={issue.status}
-                                                    prUrl={issue.pr_url || undefined}
-                                                    onVerify={() => fetchIssues()}
-                                                />
-                                            )}
-
-                                            {issue.status !== 'verified' && (
-                                                <Button
-                                                    variant="ghost"
-                                                    size="sm"
-                                                    onClick={() => handleAbandon(issue.id)}
-                                                    className="text-muted-foreground hover:text-destructive"
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            )}
-                                        </div>
+                                    <div className="flex flex-wrap items-center gap-3 text-xs font-mono text-muted-foreground tabular-nums">
+                                        <span>
+                                            Started: {new Date(issue.started_at).toLocaleDateString()}
+                                        </span>
+                                        {issue.verified_at && (
+                                            <span>
+                                                <span className="opacity-60">·</span> Verified: {new Date(issue.verified_at).toLocaleDateString()}
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
-                            </CardContent>
-                        </Card>
+
+                                {/* Status & Actions - pushed to bottom */}
+                                <div className="flex flex-wrap items-center justify-between gap-4 mt-auto pt-4 border-t border-white/[0.06]">
+                                    <Badge
+                                        variant="outline"
+                                        className={`flex items-center gap-1`}
+                                    >
+                                        <StatusIcon className="h-3 w-3" />
+                                        {config.label}
+                                    </Badge>
+
+                                    <div className="flex items-center gap-2">
+                                        {issue.status === 'in_progress' && (
+                                            <VerifyPRButton
+                                                issueId={issue.id}
+                                                userId={userId}
+                                                currentStatus={issue.status}
+                                                prUrl={issue.pr_url || undefined}
+                                                onVerify={() => fetchIssues()}
+                                            />
+                                        )}
+
+                                        {issue.status === 'pr_submitted' && (
+                                            <VerifyPRButton
+                                                issueId={issue.id}
+                                                userId={userId}
+                                                currentStatus={issue.status}
+                                                prUrl={issue.pr_url || undefined}
+                                                onVerify={() => fetchIssues()}
+                                            />
+                                        )}
+
+                                        {issue.status !== 'verified' && (
+                                            <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                onClick={() => handleAbandon(issue.id)}
+                                                className="text-muted-foreground hover:text-destructive"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     );
                 })}
             </div>

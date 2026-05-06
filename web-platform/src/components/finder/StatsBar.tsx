@@ -38,14 +38,16 @@ export function StatsBar({ className }: StatsBarProps) {
     const formattedCount = totalIssues.toLocaleString();
 
     return (
-        <div className={`flex items-center gap-2 text-sm text-muted-foreground ${className}`}>
-            <span className="inline-flex items-center gap-1.5">
+        <div className={`flex items-center gap-2 text-xs text-muted-foreground ${className}`}>
+            <span className="inline-flex items-center gap-2">
                 <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-500/70 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                 </span>
-                <span className="font-medium text-foreground">{formattedCount}</span>
-                <span>issues indexed</span>
+                <span className="font-mono uppercase tracking-[0.1em] text-[10px]">INDEX</span>
+                <span className="opacity-50">·</span>
+                <span className="font-mono tabular-nums font-semibold text-foreground">{formattedCount}</span>
+                <span className="font-mono uppercase tracking-[0.1em] text-[10px]">ISSUES</span>
             </span>
         </div>
     );

@@ -69,11 +69,11 @@ export function RecentlyScored() {
                                 viewport={{ once: true }}
                                 transition={{ delay: index * 0.06 }}
                                 whileHover={{ y: -2, transition: { duration: 0.2 } }}
-                                className="group p-6 rounded-xl border border-border bg-card hover:border-emerald-500/30 hover:bg-card/80 transition-all cursor-pointer"
+                                className="group p-6 rounded-xl border border-border bg-card hover:border-primary/30 hover:bg-card/80 transition-all cursor-pointer"
                             >
                                 <div className="flex items-start justify-between mb-4">
                                     <div className="min-w-0 flex-1">
-                                        <p className="text-base font-semibold truncate group-hover:text-emerald-500 transition-colors flex items-center gap-1">
+                                        <p className="text-base font-semibold truncate group-hover:text-primary transition-colors flex items-center gap-1">
                                             {score.owner}/{score.repo}
                                             <ArrowUpRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                                         </p>
@@ -100,7 +100,7 @@ export function RecentlyScored() {
                                     </span>
                                 </div>
 
-                                <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-emerald-500 transition-colors pt-3 border-t border-border">
+                                <div className="flex items-center gap-1 text-xs text-muted-foreground group-hover:text-primary transition-colors pt-3 border-t border-border">
                                     View score
                                     <ArrowUpRight className="w-3 h-3" />
                                 </div>

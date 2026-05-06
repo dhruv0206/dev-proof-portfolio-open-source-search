@@ -1,7 +1,5 @@
 'use client';
 
-import { Badge } from '@/components/ui/badge';
-import { BentoLabel } from '@/components/dashboard/BentoCard';
 import {
     GitPullRequest,
     PlayCircle,
@@ -38,9 +36,9 @@ const activityConfig = {
     verified: {
         icon: CheckCircle2,
         label: 'Verified',
-        color: 'text-emerald-500',
-        bgColor: 'bg-emerald-500/10',
-        dotColor: 'bg-emerald-500',
+        color: 'text-green-500',
+        bgColor: 'bg-green-500/10',
+        dotColor: 'bg-green-500',
     },
 };
 
@@ -61,8 +59,6 @@ function formatRelativeTime(dateString: string): string {
 export function ActivityTimeline({ activities }: ActivityTimelineProps) {
     return (
         <div>
-            <BentoLabel>Recent Activity</BentoLabel>
-
             {activities.length === 0 ? (
                 <p className="text-sm text-muted-foreground mt-4">
                     No activity yet. Start tracking an issue to see your progress here.

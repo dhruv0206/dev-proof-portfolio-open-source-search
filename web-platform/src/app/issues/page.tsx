@@ -24,7 +24,10 @@ export default async function MyIssuesPage() {
         <DashboardLayout>
             <main className="w-full px-8 py-8">
                 <div className="mb-6">
-                    <h1 className="text-2xl font-semibold mb-1">My Issues</h1>
+                    <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-2">
+                        <span className="text-primary">*</span> ISSUES <span className="opacity-60">·</span> TRACKED_CONTRIBUTIONS
+                    </div>
+                    <h1 className="text-2xl font-semibold mb-1 tracking-tight">My Issues</h1>
                     <p className="text-muted-foreground">
                         Track issues you&apos;re working on and submit your PRs for verification.
                     </p>

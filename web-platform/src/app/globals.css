@@ -3,16 +3,28 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --radius: 0.5rem;
-  /* Pure black and white neutral theme - Light mode */
+  /* Sharp 2px radius across the system. No soft pillows. */
+  --radius: 2px;
+
+  /* Brand accent — Anthropic-clay coral. The ONE accent color in the system,
+     used only on primary CTA, focus ring, active nav, and primary score number.
+     Never on cards, never decoratively. */
+  --clay: #CC785C;
+  --clay-hover: #D4866A;
+  --clay-bg: rgba(204, 120, 92, 0.10);
+
+  /* Light-mode tokens (kept functional but the app is dark-by-default).
+     IMPORTANT: --primary is the BRAND color (Clay, used on CTAs).
+     --accent is the SHADCN semantic for "subtle hover background" — keep it muted.
+     Skeleton, hover states, dropdown items use --accent. They must stay subtle. */
   --background: #ffffff;
   --foreground: #0a0a0a;
   --card: #ffffff;
   --card-foreground: #0a0a0a;
   --popover: #ffffff;
   --popover-foreground: #0a0a0a;
-  --primary: #0a0a0a;
-  --primary-foreground: #fafafa;
+  --primary: var(--clay);
+  --primary-foreground: #ffffff;
   --secondary: #f5f5f5;
   --secondary-foreground: #0a0a0a;
   --muted: #f4f4f5;
@@ -21,32 +33,34 @@
   --accent-foreground: #0a0a0a;
   --destructive: #ef4444;
   --destructive-foreground: #fafafa;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #0a0a0a;
+  --border: rgba(0, 0, 0, 0.08);
+  --input: rgba(0, 0, 0, 0.08);
+  --ring: var(--clay);
 }
 
 .dark {
-  /* Pure black and white neutral theme - Dark mode */
-  --background: #09090b;
-  --foreground: #fafafa;
-  --card: #18181b;
-  --card-foreground: #fafafa;
-  --popover: #18181b;
-  --popover-foreground: #fafafa;
-  --primary: #fafafa;
-  --primary-foreground: #0a0a0a;
-  --secondary: #27272a;
-  --secondary-foreground: #fafafa;
-  --muted: #27272a;
-  --muted-foreground: #a1a1aa;
-  --accent: #27272a;
-  --accent-foreground: #fafafa;
+  /* Researched spec — bg #0A0A0A, 3-step text, hairline borders @ 8% white.
+     Clay is the BRAND accent (CTAs, focus rings only). --accent stays muted
+     for hover states, dropdowns, skeletons, etc. */
+  --background: #0A0A0A;
+  --foreground: #EDEDED;
+  --card: #0A0A0A;
+  --card-foreground: #EDEDED;
+  --popover: #111111;
+  --popover-foreground: #EDEDED;
+  --primary: var(--clay);
+  --primary-foreground: #FFFFFF;
+  --secondary: #161616;
+  --secondary-foreground: #EDEDED;
+  --muted: #161616;
+  --muted-foreground: #A1A1A1;
+  --accent: #1A1A1A;
+  --accent-foreground: #EDEDED;
   --destructive: #7f1d1d;
   --destructive-foreground: #fafafa;
-  --border: #3f3f46;
-  --input: #3f3f46;
-  --ring: #d4d4d4;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: var(--clay);
 }
 
 html {
@@ -58,6 +72,39 @@ body {
   color: var(--foreground);
   font-family: var(--font-geist-sans, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif);
   font-size: 14px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Minimalist Tech Utilities */
+.sys-label {
+  font-family: var(--font-geist-mono, ui-monospace, monospace);
+  font-size: 0.6875rem; /* 11px */
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.tech-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  display: inline-block;
+}
+.tech-dot.active {
+  background-color: #00FF41;
+  box-shadow: 0 0 8px rgba(0,255,65,0.6);
+}
+.tech-dot.inactive {
+  background-color: var(--muted-foreground);
+}
+
+.hairline-border {
+  border: 1px solid var(--border);
+}
+
+.hairline-top {
+  border-top: 1px solid var(--border);
 }
 
 /* Line clamp utility */
@@ -150,10 +197,10 @@ body {
   }
 }
 
-/* Landing Page Accent Colors - Refined */
+/* Landing Page Accent Colors — Clay coral system */
 :root {
-  --accent-primary: #10b981;
-  --accent-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  --accent-primary: var(--clay);
+  --accent-gradient: linear-gradient(135deg, #CC785C 0%, #B5654E 100%);
 }
 
 /* Hero animated gradient orb drift */
@@ -173,9 +220,41 @@ body {
 
 /* Gradient Text */
 .gradient-text {
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  background: linear-gradient(135deg, #CC785C 0%, #B5654E 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Universal techy primitives — opt-in via className. Use on score pages,
+   profile, methodology. Skip on finder, forms, dashboard. */
+.mono-label {
+  font-family: var(--font-geist-mono, ui-monospace, monospace);
+  font-size: 0.625rem; /* 10px */
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted-foreground);
+}
+
+.tech-bracket-card {
+  position: relative;
+  padding: 32px 24px;
+}
+.tech-bracket-card::before,
+.tech-bracket-card::after,
+.tech-bracket-card > .tech-corner-bl,
+.tech-bracket-card > .tech-corner-br {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  pointer-events: none;
+  border-color: rgba(255, 255, 255, 0.18);
+  border-style: solid;
+  border-width: 0;
+}
+.tech-bracket-card::before { top: 0; left: 0; border-top-width: 1px; border-left-width: 1px; }
+.tech-bracket-card::after { top: 0; right: 0; border-top-width: 1px; border-right-width: 1px; }
+.tech-bracket-card > .tech-corner-bl { bottom: 0; left: 0; border-bottom-width: 1px; border-left-width: 1px; }
+.tech-bracket-card > .tech-corner-br { bottom: 0; right: 0; border-bottom-width: 1px; border-right-width: 1px; }
 

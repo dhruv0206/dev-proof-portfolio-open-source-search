@@ -96,9 +96,14 @@ export function DashboardSidebar() {
                 >
                     <div className="h-full flex flex-col">
                         <div className="p-6 border-b border-border flex justify-between items-center">
-                            <Link href="/" className="flex items-center gap-3 font-bold text-2xl" onClick={() => setOpenMobile(false)}>
-                                <img src="/logo_transparent.png" alt="DevProof" className="h-10 w-10 object-contain" />
-                                <span>DevProof</span>
+                            <Link href="/" className="flex items-center gap-2.5 font-bold text-xl tracking-tight" onClick={() => setOpenMobile(false)}>
+                                <img src="/logo_transparent.png" alt="DevProof" className="h-9 w-9 object-contain" />
+                                <span className="font-mono text-base">
+                                    <span className="text-muted-foreground">&lt;</span>
+                                    <span>devproof</span>
+                                    <span className="text-primary">/</span>
+                                    <span className="text-muted-foreground">&gt;</span>
+                                </span>
                             </Link>
                             <Button variant="ghost" size="icon" onClick={() => setOpenMobile(false)}>
                                 <PanelLeftClose className="h-5 w-5" />
@@ -128,9 +133,14 @@ export function DashboardSidebar() {
         >
             <div className={cn("p-4 border-b border-border flex items-center h-16", state === 'collapsed' ? "justify-center" : "justify-between")}>
                 {state !== 'collapsed' && (
-                    <Link href="/" className="flex items-center gap-2 font-bold text-xl overflow-hidden whitespace-nowrap">
-                        <img src="/logo_transparent.png" alt="DevProof" className="h-8 w-8 object-contain" />
-                        <span>DevProof</span>
+                    <Link href="/" className="flex items-center gap-2 overflow-hidden whitespace-nowrap">
+                        <img src="/logo_transparent.png" alt="DevProof" className="h-7 w-7 object-contain" />
+                        <span className="font-mono text-sm font-semibold tracking-tight">
+                            <span className="text-muted-foreground">&lt;</span>
+                            <span>devproof</span>
+                            <span className="text-primary">/</span>
+                            <span className="text-muted-foreground">&gt;</span>
+                        </span>
                     </Link>
                 )}
 
@@ -165,7 +175,7 @@ function SidebarContent({
 }) {
     return (
         <div className="flex-1 flex flex-col min-h-0">
-            <nav className="flex-1 p-2 space-y-2 overflow-y-auto">
+            <nav className="flex-1 p-2 space-y-1 overflow-y-auto">
                 <TooltipProvider delayDuration={0}>
                     {menuItems.map((item) => {
                         const Icon = item.icon;
@@ -179,7 +189,7 @@ function SidebarContent({
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className={cn("w-full h-10", isActive && 'bg-emerald-500/10 text-emerald-500')}
+                                                className={cn("w-full h-10", isActive && 'bg-primary/10 text-primary')}
                                             >
                                                 <Icon className="h-5 w-5" />
                                                 <span className="sr-only">{item.name}</span>
@@ -197,7 +207,7 @@ function SidebarContent({
                             <Link key={item.href} href={item.href} onClick={onItemClick}>
                                 <Button
                                     variant="ghost"
-                                    className={cn("w-full justify-start gap-3", isActive && 'bg-emerald-500/10 text-emerald-500')}
+                                    className={cn("w-full justify-start gap-3 text-sm tracking-tight font-medium", isActive && 'bg-primary/10 text-primary')}
                                 >
                                     <Icon className="h-5 w-5" />
                                     {item.name}

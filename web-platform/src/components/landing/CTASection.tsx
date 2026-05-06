@@ -24,7 +24,7 @@ export function CTASection() {
                     <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                         <Button
                             size="lg"
-                            className="gap-2 bg-emerald-600 hover:bg-emerald-700 text-white border-0 px-8"
+                            className="gap-2 bg-primary hover:bg-primary/90 text-primary-foreground border-0 px-8"
                             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
                         >
                             Score a Repo

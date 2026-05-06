@@ -213,14 +213,17 @@ export default function MethodologyPage() {
 
             <main className="container mx-auto px-4 py-12 max-w-5xl">
                 <section className="mb-12">
+                    <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-3">
+                        <span className="text-primary">*</span> METHODOLOGY <span className="opacity-60">·</span> CALIBRATION_V1
+                    </div>
                     <h1 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
                         Methodology
                     </h1>
                     <p className="text-lg text-muted-foreground leading-relaxed mb-6">
                         We test our developer-scoring algorithm against {stats.total} hand-curated
                         repos covering wrappers, SDK-glue MVPs, senior production infra,
-                        and deep-tech foundations. <strong>Here's how it scores them and how
-                        close that lands to a human reviewer's judgment.</strong>
+                        and deep-tech foundations. <strong>Here&apos;s how it scores them and how
+                        close that lands to a human reviewer&apos;s judgment.</strong>
                     </p>
 
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-6">
@@ -329,7 +332,7 @@ export default function MethodologyPage() {
                     })}
                 </section>
 
-                <section className="mt-16 p-6 rounded-xl border border-amber-500/30 bg-amber-500/5">
+                <section className="mt-16 p-6 rounded-md border border-amber-500/30 bg-amber-500/5">
                     <h2 className="text-lg font-semibold mb-2">Known limitations</h2>
                     <p className="text-sm text-muted-foreground leading-relaxed mb-4">
                         Two repos in the calibration set drift slightly above
@@ -372,7 +375,7 @@ export default function MethodologyPage() {
                     </div>
                 </section>
 
-                <section className="mt-8 p-6 rounded-xl border bg-muted/30">
+                <section className="mt-8 p-6 rounded-md border bg-muted/30">
                     <h2 className="text-lg font-semibold mb-2">Disagree with a score?</h2>
                     <p className="text-sm text-muted-foreground leading-relaxed mb-4">
                         Hand-labels are subjective. If you think a repo's expected range is

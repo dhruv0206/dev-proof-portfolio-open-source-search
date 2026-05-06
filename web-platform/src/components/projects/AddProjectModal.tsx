@@ -276,7 +276,7 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
             }
 
             // Log V2 pipeline info
-            console.log(`%c[DevProof Audit] Pipeline: ${data.pipeline_version || 'v1'} | Evidence files: ${data.evidence_file_count || 'N/A'} | Score: ${data.score} | Tier: ${data.tier}`, 'color: #10b981; font-weight: bold;')
+            console.log(`%c[DevProof Audit] Pipeline: ${data.pipeline_version || 'v1'} | Evidence files: ${data.evidence_file_count || 'N/A'} | Score: ${data.score} | Tier: ${data.tier}`, 'color: #CC785C; font-weight: bold;')
             console.log('[DevProof Audit] Full result:', data)
 
             // Success! Fast forward to end and show results
@@ -344,16 +344,27 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto">
                 <DialogHeader>
-                    <DialogTitle>Import & Verify Project</DialogTitle>
-                    <DialogDescription>
-                        {auditResult ? "Verification Complete" :
+                    <DialogTitle className="text-xl tracking-tight font-semibold">Import & Verify Project</DialogTitle>
+                    {(() => {
+                        const stepNum = auditResult ? 4 : isAuditing ? 4 : rejectionReason ? null : structuredError ? null : isContributionDetected && !confirmedContribution ? 1.5 : !scanned ? 1 : !claimsReviewed ? 2 : 3;
+                        const stepLabel = auditResult ? "Verification Complete" :
                             isAuditing ? "Deep Mentor Analysis Running..." :
                                 rejectionReason ? "Verification Failed" :
                                     isContributionDetected && !confirmedContribution ? "Contributor Verification" :
-                                        !scanned ? "Step 1: Enter your GitHub URL to start." :
-                                            !claimsReviewed ? "Step 2: Detect & Confirm Stack." :
-                                                "Step 3: Confirm features to verify."}
-                    </DialogDescription>
+                                        !scanned ? "Enter your GitHub URL to start." :
+                                            !claimsReviewed ? "Detect & confirm stack." :
+                                                "Confirm features to verify.";
+                        return (
+                            <>
+                                {typeof stepNum === 'number' && (
+                                    <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-1 mt-1">
+                                        STEP <span className="opacity-60">·</span> <span className="tabular-nums text-foreground">{String(Math.floor(stepNum)).padStart(2, '0')}_OF_03</span>
+                                    </div>
+                                )}
+                                <DialogDescription>{stepLabel}</DialogDescription>
+                            </>
+                        );
+                    })()}
                 </DialogHeader>
 
                 {auditResult ? (
@@ -414,7 +425,7 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
                                         {Math.round(v4Data?.output?.repo_score ?? 0)}
                                     </span>
                                     <div className="text-left">
-                                        <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+                                        <Badge className="bg-primary/10 text-primary border-primary/30">
                                             {v4Data?.output?.repo_tier ?? 'V4'}
                                         </Badge>
                                         {v4Data?.output?.discipline && (
@@ -424,7 +435,7 @@ export function AddProjectModal({ userId, defaultGithubUsername }: { userId?: st
                                         )}
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs">
+                                <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 text-primary text-xs">
                                     <Sparkles className="w-3.5 h-3.5" />
                                     <span>Scored by V4 deep analysis</span>
                                 </div>

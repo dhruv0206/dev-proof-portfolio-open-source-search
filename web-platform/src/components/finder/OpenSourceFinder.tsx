@@ -277,18 +277,43 @@ export function OpenSourceFinder({ showSidebarTrigger = false, initialRecentIssu
         ) : null
     );
 
+    // Count active filters for the FILTERS · N_ACTIVE label
+    const activeFilterCount =
+        languages.length +
+        selectedLabels.length +
+        (daysAgo !== null ? 1 : 0) +
+        (sortBy !== "recently_discussed" ? 1 : 0) +
+        (unassignedOnly ? 1 : 0);
+
     return (
         <div className="w-full">
+            {/* Page Header — left-aligned mono treatment */}
+            <section className="pt-8 pb-2 px-4">
+                <div className="w-full max-w-5xl mx-auto">
+                    <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-2">
+                        <span className="text-primary">*</span> FINDER <span className="opacity-60">·</span> CONTRIBUTION_OPPORTUNITIES
+                    </div>
+                    <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight text-foreground">
+                        Find OSS issues to contribute to.
+                    </h1>
+                </div>
+            </section>
+
             {/* Search Layout */}
-            <section className="pt-8 pb-8 px-4">
-                <div className="w-full max-w-5xl mx-auto flex flex-col items-center">
+            <section className="pt-6 pb-8 px-4">
+                <div className="w-full max-w-5xl mx-auto flex flex-col">
                     <div className="w-full mb-6">
                         <SearchBar onSearch={handleSearch} isLoading={isLoading} />
                     </div>
 
-                    <div className="w-full h-px bg-border/50 mb-6" />
+                    {/* Filter section header */}
+                    <div className="border-t border-white/[0.06] pt-4 mb-3">
+                        <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-muted-foreground">
+                            <span className="text-primary">*</span> FILTERS <span className="opacity-60">·</span> <span className="tabular-nums">{activeFilterCount}_ACTIVE</span>
+                        </div>
+                    </div>
 
-                    <div className="w-full flex justify-center">
+                    <div className="w-full">
                         <FilterBar
                             languages={languages}
                             sortBy={sortBy}
@@ -322,28 +347,34 @@ export function OpenSourceFinder({ showSidebarTrigger = false, initialRecentIssu
                         <ParsedQueryDisplay parsedQuery={parsedQuery} onClear={handleClear} />
                     )}
 
-                    {/* Section Title */}
+                    {/* Section Title — Recent Contribution Opportunities */}
                     {!hasSearched && !recentLoading && allRecentIssues.length > 0 && (
-                        <div className="mb-6">
+                        <div className="mb-6 border-t border-b border-white/[0.06] py-4">
                             <div className="flex items-center justify-between gap-4 flex-wrap">
-                                <h2 className="text-xl font-semibold text-muted-foreground">
-                                    🔥 Recent Contribution Opportunities
+                                <h2 className="text-lg font-semibold text-foreground flex items-center gap-2">
+                                    <span aria-hidden>🔥</span>
+                                    <span>Recent Contribution Opportunities</span>
                                 </h2>
                                 <StatsBar />
                             </div>
-                            <p className="text-sm text-muted-foreground mt-1">
-                                Updated every 2 hours
+                            <div className="font-mono text-[10px] tracking-[0.08em] uppercase text-muted-foreground mt-2">
+                                UPDATED_EVERY_2H
                                 {lastUpdated && (
-                                    <span className="ml-2 text-xs opacity-70">
-                                        • Last update: {new Date(lastUpdated).toLocaleString(undefined, {
-                                            month: 'short',
-                                            day: 'numeric',
-                                            hour: 'numeric',
-                                            minute: '2-digit'
-                                        })}
-                                    </span>
+                                    <>
+                                        <span className="opacity-60 mx-1.5">·</span>
+                                        LAST_UPDATE
+                                        <span className="opacity-60 mx-1">=</span>
+                                        <span className="tabular-nums">
+                                            {new Date(lastUpdated).toLocaleString(undefined, {
+                                                month: 'short',
+                                                day: 'numeric',
+                                                hour: 'numeric',
+                                                minute: '2-digit'
+                                            }).replace(/\s+/g, '_').toUpperCase()}
+                                        </span>
+                                    </>
                                 )}
-                            </p>
+                            </div>
                         </div>
                     )}
 
@@ -368,12 +399,14 @@ export function OpenSourceFinder({ showSidebarTrigger = false, initialRecentIssu
                         </div>
                     </div>
 
-                    {/* Soft limit banner */}
+                    {/* Soft limit banner — hairline strip, no gradient */}
                     {isAtSoftLimit && !isAtHardLimit && !isSignedIn && hasSearched && !softLimitDismissed && (
-                        <div className="mt-6 p-4 bg-gradient-to-r from-purple-500/10 to-blue-500/10 border border-purple-500/20 rounded-xl flex items-center justify-between gap-4 flex-wrap">
+                        <div className="mt-6 p-4 bg-[rgba(255,255,255,0.02)] border border-white/[0.06] flex items-center justify-between gap-4 flex-wrap">
                             <div>
-                                <p className="font-medium">🔐 Sign up for unlimited searches</p>
-                                <p className="text-sm text-muted-foreground">You have {4 - searchCount} searches remaining</p>
+                                <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-1">
+                                    <span className="text-primary">*</span> SEARCH_LIMIT <span className="opacity-60">·</span> <span className="tabular-nums">{4 - searchCount}_REMAINING</span>
+                                </div>
+                                <p className="text-sm text-foreground">Sign up for unlimited searches.</p>
                             </div>
                             <div className="flex gap-2">
                                 <Button
@@ -399,7 +432,9 @@ export function OpenSourceFinder({ showSidebarTrigger = false, initialRecentIssu
                     {/* Empty State - only after search */}
                     {hasSearched && !isLoading && results.length === 0 && !error && (
                         <div className="text-center py-12">
-                            <div className="text-6xl mb-4">🔍</div>
+                            <div className="font-mono text-[10px] tracking-[0.1em] uppercase text-muted-foreground mb-3">
+                                <span className="text-primary">*</span> SEARCH <span className="opacity-60">·</span> NO_RESULTS
+                            </div>
                             <h3 className="text-xl font-semibold mb-2">No issues found</h3>
                             <p className="text-muted-foreground">
                                 Try adjusting your search query or using different keywords.

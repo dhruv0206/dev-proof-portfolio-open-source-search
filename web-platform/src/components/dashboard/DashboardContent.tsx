@@ -6,7 +6,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { NumberTicker } from '@/components/ui/number-ticker';
-import { BentoCard, BentoLabel } from '@/components/dashboard/BentoCard';
+import { BentoCard, BentoLabel, BentoValue } from '@/components/dashboard/BentoCard';
 import { ScoreRadial } from '@/components/dashboard/ScoreRadial';
 import { ScoreBreakdownChart } from '@/components/dashboard/ScoreBreakdownChart';
 import { ProjectMiniCard } from '@/components/dashboard/ProjectMiniCard';
@@ -64,26 +64,30 @@ interface ProjectData {
 }
 
 function StatCell({
-    label,
+    section,
+    sub,
     value,
     icon: Icon,
     color,
     delay,
+    index,
 }: {
-    label: string;
+    section: string;
+    sub: string;
     value: number;
     icon: React.ComponentType<{ className?: string }>;
     color: string;
     delay: number;
+    index?: string;
 }) {
     return (
-        <BentoCard delay={delay}>
-            <BentoLabel>{label}</BentoLabel>
-            <div className="flex items-end justify-between mt-2">
-                <span className="text-3xl font-bold font-mono tabular-nums">
+        <BentoCard delay={delay} index={index}>
+            <BentoLabel section={section} sub={sub} className="mt-2.5" />
+            <div className="flex items-end justify-between mt-3">
+                <BentoValue>
                     {value > 0 ? <NumberTicker value={value} delay={delay} /> : '0'}
-                </span>
-                <Icon className={`h-5 w-5 ${color} mb-1`} />
+                </BentoValue>
+                <Icon className={`h-5 w-5 ${color} mb-1.5`} />
             </div>
         </BentoCard>
     );
@@ -158,6 +162,7 @@ export function DashboardContent({ userId }: { userId: string }) {
                         className="lg:col-span-4 flex items-center justify-center min-h-[280px]"
                         delay={0}
                         highlight
+                        status="LIVE"
                     >
                         <ScoreRadial
                             score={bestProject.score}
@@ -166,7 +171,7 @@ export function DashboardContent({ userId }: { userId: string }) {
                         />
                     </BentoCard>
                 ) : (
-                    <BentoCard className="lg:col-span-4 flex flex-col items-center justify-center min-h-[280px] gap-3" delay={0}>
+                    <BentoCard className="lg:col-span-4 flex flex-col items-center justify-center min-h-[280px] gap-3" delay={0} status="EMPTY">
                         <div className="p-4 rounded-full bg-muted">
                             <FolderCode className="h-8 w-8 text-muted-foreground" />
                         </div>
@@ -181,16 +186,16 @@ export function DashboardContent({ userId }: { userId: string }) {
 
                 {/* 2x2 Stats */}
                 <div className="lg:col-span-4 grid grid-cols-2 gap-5">
-                    <StatCell label="Verified PRs" value={stats.verifiedPRs} icon={CheckCircle2} color="text-emerald-500" delay={0.05} />
-                    <StatCell label="In Progress" value={stats.inProgress} icon={Clock} color="text-amber-500" delay={0.08} />
-                    <StatCell label="PR Submitted" value={stats.prSubmitted} icon={GitPullRequestDraft} color="text-blue-500" delay={0.1} />
-                    <StatCell label="Repositories" value={stats.repositories} icon={GitFork} color="text-purple-500" delay={0.12} />
+                    <StatCell section="STATS" sub="VERIFIED_PRS" index="01" value={stats.verifiedPRs} icon={CheckCircle2} color="text-primary" delay={0.05} />
+                    <StatCell section="STATS" sub="IN_PROGRESS" index="02" value={stats.inProgress} icon={Clock} color="text-amber-500" delay={0.08} />
+                    <StatCell section="STATS" sub="PR_SUBMITTED" index="03" value={stats.prSubmitted} icon={GitPullRequestDraft} color="text-blue-500" delay={0.1} />
+                    <StatCell section="STATS" sub="REPOSITORIES" index="04" value={stats.repositories} icon={GitFork} color="text-purple-500" delay={0.12} />
                 </div>
 
                 {/* Radar Chart */}
-                <BentoCard className="lg:col-span-4 min-h-[280px] flex flex-col" delay={0.08}>
-                    <div className="flex items-center justify-between mb-1">
-                        <BentoLabel>Score Breakdown</BentoLabel>
+                <BentoCard className="lg:col-span-4 min-h-[280px] flex flex-col" delay={0.08} status={breakdown ? 'OK' : 'PENDING'}>
+                    <div className="flex items-center justify-between mt-2.5 mb-1">
+                        <BentoLabel section="CHART" sub="SCORE_BREAKDOWN" />
                         {bestProject && (
                             <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[120px]">
                                 {bestProject.name}
@@ -218,64 +223,56 @@ export function DashboardContent({ userId }: { userId: string }) {
 
             {/* ═══ ROW 2: Quick Stats ═══ */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-                <BentoCard className="flex items-center gap-3" delay={0.12}>
-                    <div className="p-2.5 rounded-lg bg-emerald-500/10">
-                        <FolderCode className="h-4 w-4 text-emerald-500" />
+                <BentoCard delay={0.12} index="05">
+                    <div className="flex items-center justify-between mt-2.5">
+                        <BentoLabel section="META" sub="PROJECTS" />
+                        <FolderCode className="h-3.5 w-3.5 text-primary" />
                     </div>
-                    <div>
-                        <p className="text-xs text-muted-foreground font-medium">Projects</p>
-                        <p className="text-lg font-bold font-mono">
-                            {stats.projectCount > 0 ? <NumberTicker value={stats.projectCount} delay={0.12} /> : '0'}
-                        </p>
-                    </div>
+                    <BentoValue className="block mt-3 text-3xl">
+                        {stats.projectCount > 0 ? <NumberTicker value={stats.projectCount} delay={0.12} /> : '0'}
+                    </BentoValue>
                 </BentoCard>
 
-                <BentoCard className="flex items-center gap-3" delay={0.14}>
-                    <div className="p-2.5 rounded-lg bg-blue-500/10">
-                        <CheckCircle2 className="h-4 w-4 text-blue-500" />
+                <BentoCard delay={0.14} index="06">
+                    <div className="flex items-center justify-between mt-2.5">
+                        <BentoLabel section="META" sub="AVG_SCORE" />
+                        <CheckCircle2 className="h-3.5 w-3.5 text-blue-500" />
                     </div>
-                    <div>
-                        <p className="text-xs text-muted-foreground font-medium">Avg Score</p>
-                        <p className="text-lg font-bold font-mono">
-                            {stats.avgScore > 0 ? (
-                                <NumberTicker value={parseFloat(stats.avgScore.toFixed(1))} decimalPlaces={1} delay={0.14} />
-                            ) : '0'}
-                        </p>
-                    </div>
+                    <BentoValue className="block mt-3 text-3xl">
+                        {stats.avgScore > 0 ? (
+                            <NumberTicker value={parseFloat(stats.avgScore.toFixed(1))} decimalPlaces={1} delay={0.14} />
+                        ) : '0'}
+                    </BentoValue>
                 </BentoCard>
 
-                <BentoCard className="flex items-center gap-3" delay={0.16}>
-                    <div className="p-2.5 rounded-lg bg-amber-500/10">
-                        <ArrowRight className="h-4 w-4 text-amber-500" />
+                <BentoCard delay={0.16} index="07" highlight={stats.bestScore > 0}>
+                    <div className="flex items-center justify-between mt-2.5">
+                        <BentoLabel section="META" sub="BEST_SCORE" />
+                        <ArrowRight className="h-3.5 w-3.5 text-amber-500" />
                     </div>
-                    <div>
-                        <p className="text-xs text-muted-foreground font-medium">Best Score</p>
-                        <p className="text-lg font-bold font-mono">
-                            {stats.bestScore > 0 ? <NumberTicker value={Math.round(stats.bestScore)} delay={0.16} /> : '0'}
-                        </p>
-                    </div>
+                    <BentoValue className={`block mt-3 text-3xl ${stats.bestScore > 0 ? 'text-primary' : ''}`}>
+                        {stats.bestScore > 0 ? <NumberTicker value={Math.round(stats.bestScore)} delay={0.16} /> : '0'}
+                    </BentoValue>
                 </BentoCard>
 
-                <BentoCard className="flex items-center gap-3" delay={0.18}>
-                    <div className="p-2.5 rounded-lg bg-purple-500/10">
-                        <GitFork className="h-4 w-4 text-purple-500" />
+                <BentoCard delay={0.18} index="08">
+                    <div className="flex items-center justify-between mt-2.5">
+                        <BentoLabel section="META" sub="TOTAL_PRS" />
+                        <GitFork className="h-3.5 w-3.5 text-purple-500" />
                     </div>
-                    <div>
-                        <p className="text-xs text-muted-foreground font-medium">Total PRs</p>
-                        <p className="text-lg font-bold font-mono">
-                            {(stats.verifiedPRs + stats.prSubmitted) > 0 ? (
-                                <NumberTicker value={stats.verifiedPRs + stats.prSubmitted} delay={0.18} />
-                            ) : '0'}
-                        </p>
-                    </div>
+                    <BentoValue className="block mt-3 text-3xl">
+                        {(stats.verifiedPRs + stats.prSubmitted) > 0 ? (
+                            <NumberTicker value={stats.verifiedPRs + stats.prSubmitted} delay={0.18} />
+                        ) : '0'}
+                    </BentoValue>
                 </BentoCard>
             </div>
 
             {/* ═══ ROW 3: Projects + Activity ═══ */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-                <BentoCard className="lg:col-span-7" delay={0.18}>
-                    <div className="flex items-center justify-between mb-4">
-                        <BentoLabel>Your Projects</BentoLabel>
+                <BentoCard className="lg:col-span-7" delay={0.18} status={projects.length > 0 ? `${projects.length}` : 'EMPTY'}>
+                    <div className="flex items-center justify-between mt-2.5 mb-4">
+                        <BentoLabel section="LIST" sub="YOUR_PROJECTS" />
                         <Link href="/projects">
                             <Button variant="ghost" size="sm" className="text-xs h-7 gap-1">
                                 View All <ArrowRight className="h-3 w-3" />
@@ -309,16 +306,19 @@ export function DashboardContent({ userId }: { userId: string }) {
                     )}
                 </BentoCard>
 
-                <BentoCard className="lg:col-span-5" delay={0.2}>
+                <BentoCard className="lg:col-span-5" delay={0.2} status={stats.recentActivity.length > 0 ? 'LIVE' : 'IDLE'}>
+                    <div className="mt-2.5 mb-3">
+                        <BentoLabel section="FEED" sub="RECENT_ACTIVITY" />
+                    </div>
                     <ActivityTimeline activities={stats.recentActivity} />
                 </BentoCard>
             </div>
 
             {/* ═══ ROW 4: Active Issues ═══ */}
             {stats.activeIssues.length > 0 && (
-                <BentoCard delay={0.22}>
-                    <div className="flex items-center justify-between mb-4">
-                        <BentoLabel>Active Issues</BentoLabel>
+                <BentoCard delay={0.22} status={`${stats.activeIssues.length}`}>
+                    <div className="flex items-center justify-between mt-2.5 mb-4">
+                        <BentoLabel section="QUEUE" sub="ACTIVE_ISSUES" />
                         <Link href="/issues">
                             <Button variant="ghost" size="sm" className="text-xs h-7 gap-1">
                                 View All <ArrowRight className="h-3 w-3" />
