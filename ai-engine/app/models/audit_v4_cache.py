@@ -8,7 +8,7 @@ See ``audit_v4_code_cache.py`` for the shared tier-1 intermediate cache.
 import uuid
 from datetime import datetime, timezone
 
-from sqlalchemy import Column, String, JSON, DateTime, Index
+from sqlalchemy import Column, String, JSON, DateTime, Index, Integer
 from sqlalchemy.dialects.postgresql import UUID
 
 from app.database import Base
@@ -24,6 +24,11 @@ class AuditV4Cache(Base):
     applicant_username = Column(String, nullable=False)
 
     v4_output = Column(JSON, nullable=False)
+
+    # Sum of all V4 pipeline phase latencies (ingest+skeleton+tag+map+reduce+verify).
+    # Internal observability — never shown to end users.
+    # Used for capacity planning (hackathons), perf regressions, cost models.
+    deep_analysis_seconds = Column(Integer, nullable=True)
 
     pipeline_version = Column(String, default="v4.0")
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

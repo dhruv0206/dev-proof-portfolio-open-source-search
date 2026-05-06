@@ -223,6 +223,29 @@ class V4CacheService:
         return entry.v4_output
 
     @staticmethod
+    def _compute_deep_analysis_seconds(v4_output: dict[str, Any]) -> Optional[int]:
+        """Sum the 6 V4 pipeline phase latencies and convert to seconds.
+
+        Returns None if pipeline_meta is missing or all latencies are 0.
+        """
+        try:
+            latencies = (
+                v4_output.get("pipeline_meta", {})
+                .get("stage_latencies_ms", {})
+            )
+            total_ms = (
+                int(latencies.get("ingest") or 0)
+                + int(latencies.get("skeleton") or 0)
+                + int(latencies.get("tag") or 0)
+                + int(latencies.get("map") or 0)
+                + int(latencies.get("reduce") or 0)
+                + int(latencies.get("verify") or 0)
+            )
+            return round(total_ms / 1000) if total_ms > 0 else None
+        except Exception:  # noqa: BLE001 — defensive, observability is best-effort
+            return None
+
+    @staticmethod
     def put(
         db: Session, repo_url: str, code_hash: str, applicant_username: str,
         v4_output: dict[str, Any],
@@ -231,6 +254,7 @@ class V4CacheService:
     ) -> None:
         """Upsert tier-2 cache row. Silent on errors."""
         expires_at = datetime.now(timezone.utc) + timedelta(days=ttl_days)
+        deep_analysis_seconds = V4CacheService._compute_deep_analysis_seconds(v4_output)
         existing = db.query(AuditV4Cache).filter(
             AuditV4Cache.repo_url == repo_url,
             AuditV4Cache.code_hash == code_hash,
@@ -242,12 +266,14 @@ class V4CacheService:
                 existing.v4_output = v4_output
                 existing.pipeline_version = pipeline_version
                 existing.expires_at = expires_at
+                existing.deep_analysis_seconds = deep_analysis_seconds
             else:
                 db.add(AuditV4Cache(
                     repo_url=repo_url, code_hash=code_hash,
                     applicant_username=applicant_username,
                     v4_output=v4_output,
                     pipeline_version=pipeline_version, expires_at=expires_at,
+                    deep_analysis_seconds=deep_analysis_seconds,
                 ))
             db.commit()
         except Exception as e:  # noqa: BLE001
